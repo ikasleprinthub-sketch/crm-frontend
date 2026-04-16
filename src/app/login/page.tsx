@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { Eye, EyeOff } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function LoginPage() {
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const { login, currentUser } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +38,7 @@ export default function LoginPage() {
           <div className={styles.logoDot}>
             <div className={styles.dotInner}></div>
           </div>
-          <span className={styles.logo}>BARBARA <span className={styles.thin}>CRM</span></span>
+          <span className={styles.logo}>Ikasle <span className={styles.thin}> </span></span>
         </div>
         <h1 className={styles.title}>Welcome Back</h1>
         <p className={styles.subtitle}>Enter your credentials to access your account.</p>
@@ -46,23 +48,33 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
             <label>Email Address</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={e => setEmail(e.target.value)} 
-              placeholder="admin@barbara.com" 
-              required 
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="[EMAIL_ADDRESS]"
+              required
             />
           </div>
           <div className={styles.field}>
             <label>Password</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              placeholder="••••••••" 
-              required 
-            />
+            <div className={styles.passwordWrapper}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                className={styles.eyeBtn}
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+              </button>
+            </div>
           </div>
           <button type="submit" disabled={loading} className={styles.submitBtn}>
             {loading ? 'Authenticating...' : 'Sign In'}

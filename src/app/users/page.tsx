@@ -2,26 +2,83 @@
 import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
-import { useApp } from '@/context/AppContext';
+import { useApp, User } from '@/context/AppContext';
+import { Modal, AddUserForm, EditUserForm } from '@/components/Modals';
 import styles from '../page.module.css';
+import { UserPlus, Edit2, Trash2 } from 'lucide-react';
 
 export default function UsersPage() {
-  const { currentUser, users, tasks } = useApp();
+  const { currentUser, users, tasks, fetchInitialData, addUser, approveUser, rejectUser, deleteUser, updateUser } = useApp();
   const [roleFilter, setRoleFilter] = useState<string>('All');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const filters = ['All', 'ADMIN', 'MANAGER', 'EMPLOYEE'];
-  const filtered = roleFilter === 'All' ? users : users.filter(u => u.role === roleFilter);
+  const filters = ['All', 'SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE'];
+  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PENDING'>('ACTIVE');
+
+  // Filter based on both role and status
+  const filtered = users.filter(u => {
+    const matchesRole = roleFilter === 'All' || u.role === roleFilter;
+    const matchesStatus = (activeTab === 'PENDING') ? u.status === 'PENDING' : u.status === 'ACTIVE';
+    return matchesRole && matchesStatus;
+  });
+
+  const pendingCount = users.filter(u => u.status === 'PENDING').length;
+  const activeCount = users.filter(u => u.status === 'ACTIVE').length;
+
+  const handleApprove = async (id: string) => {
+    if (confirm('Approve this user account?')) {
+      await approveUser(id);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    if (confirm('Reject and delete this request?')) {
+      await rejectUser(id);
+    }
+  };
+
+  const handleCreateUser = async (data: any) => {
+    try {
+      await addUser(data);
+      setIsModalOpen(false);
+      fetchInitialData();
+    } catch (e: any) {
+      alert(e.message || 'Failed to create account. Please check all fields.');
+    }
+  };
+
+  const handleUpdateUser = async (data: any) => {
+    if (!editingUser) return;
+    try {
+      await updateUser(editingUser.id, data);
+      setEditingUser(null);
+      fetchInitialData();
+    } catch (e: any) {
+      alert(e.message || 'Failed to update account');
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      try {
+        await deleteUser(id);
+      } catch (e: any) {
+        alert(e.message);
+      }
+    }
+  };
 
   const roleBadge = (role: string) => `role-${role.toLowerCase()}`;
 
-  if (currentUser?.role !== 'ADMIN') {
+  if (currentUser?.role !== 'SUPER_ADMIN' && currentUser?.role !== 'ADMIN' && currentUser?.role !== 'MANAGER') {
     return (
       <div className={styles.wrapper}>
         <Sidebar />
         <main className={styles.main}>
           <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', marginTop: '2rem' }}>
             <h2 style={{ color: 'var(--accent-red)' }}>Access Denied</h2>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Only administrators can access User Configuration.</p>
+            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Only administrators and managers can access Team Configuration.</p>
           </div>
         </main>
       </div>
@@ -36,18 +93,42 @@ export default function UsersPage() {
 
         <div className={styles.pageTitleRow}>
           <div>
-            <h2>All Users ({users.length})</h2>
-            <p>View administrative and staff personnel</p>
+            <h2>All Members ({users.length})</h2>
+            <p>View and manage administrative and staff personnel</p>
           </div>
+          <button className={styles.primaryBtn} onClick={() => setIsModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <UserPlus size={18} /> Add Member
+          </button>
         </div>
 
-        {/* Filters */}
-        <div className={styles.filterRow}>
-          {filters.map(f => (
-            <button key={f} className={`${styles.filterBtn} ${roleFilter === f ? styles.active : ''}`} onClick={() => setRoleFilter(f)}>
-              {f} ({f === 'All' ? users.length : users.filter(u => u.role === f).length})
+        {/* Tabs & Filters */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div className={styles.filterRow} style={{ marginBottom: 0 }}>
+            <button 
+              className={`${styles.filterBtn} ${activeTab === 'ACTIVE' ? styles.active : ''}`} 
+              onClick={() => setActiveTab('ACTIVE')}
+            >
+              Active Members ({activeCount})
             </button>
-          ))}
+            {(currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN') && (
+              <button 
+                className={`${styles.filterBtn} ${activeTab === 'PENDING' ? styles.active : ''}`} 
+                onClick={() => setActiveTab('PENDING')}
+                style={{ position: 'relative' }}
+              >
+                Approval Requests ({pendingCount})
+                {pendingCount > 0 && <span className="pulse-dot" style={{ position: 'absolute', top: -4, right: -4 }}></span>}
+              </button>
+            )}
+          </div>
+
+          <div className={styles.filterRow} style={{ marginBottom: 0 }}>
+            {filters.map(f => (
+              <button key={f} className={`${styles.filterBtn} ${roleFilter === f ? styles.active : ''}`} onClick={() => setRoleFilter(f)}>
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Employee Cards */}
@@ -75,6 +156,29 @@ export default function UsersPage() {
                   <span className={`${styles.badge} ${roleBadge(user.role)}`} style={{ marginTop: '0.5rem' }}>
                     {user.role}
                   </span>
+
+                  {/* Edit/Delete Actions */}
+                  {((currentUser?.role === 'SUPER_ADMIN') || 
+                    (currentUser?.role === 'ADMIN' && (user.role === 'MANAGER' || user.role === 'EMPLOYEE'))) && (
+                    <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        className={styles.iconBtn} 
+                        onClick={(e) => { e.stopPropagation(); setEditingUser(user); }}
+                        title="Edit User"
+                        style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px', cursor: 'pointer' }}
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button 
+                        className={styles.iconBtn} 
+                        style={{ color: 'var(--accent-red)', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px', cursor: 'pointer' }}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.id); }}
+                        title="Delete User"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Stats */}
@@ -94,14 +198,51 @@ export default function UsersPage() {
                 </div>
 
                 <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Joined</span>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{new Date(user.createdAt).toLocaleDateString()}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    {user.status === 'PENDING' ? 'Requested' : 'Joined'}
+                  </span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
+
+                {user.status === 'PENDING' && (
+                  <div style={{ marginTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <button 
+                      className={styles.primaryBtn} 
+                      onClick={() => handleApprove(user.id)}
+                      style={{ padding: '0.5rem', fontSize: '0.75rem' }}
+                    >
+                      Approve
+                    </button>
+                    <button 
+                      className={styles.secondaryBtn} 
+                      onClick={() => handleReject(user.id)}
+                      style={{ padding: '0.5rem', fontSize: '0.75rem', color: 'var(--accent-red)' }}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
+
+        {filtered.length === 0 && (
+          <div className="glass-card" style={{ padding: '4rem', textAlign: 'center' }}>
+            <p style={{ color: 'var(--text-secondary)' }}>No {activeTab === 'PENDING' ? 'pending requests' : 'members'} found.</p>
+          </div>
+        )}
       </main>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Team Member">
+        <AddUserForm onSubmit={handleCreateUser} />
+      </Modal>
+
+      <Modal isOpen={!!editingUser} onClose={() => setEditingUser(null)} title="Edit User">
+        {editingUser && <EditUserForm user={editingUser} onSubmit={handleUpdateUser} />}
+      </Modal>
     </div>
   );
 }

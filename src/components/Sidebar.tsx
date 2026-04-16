@@ -31,9 +31,10 @@ export default function Sidebar() {
     return navGroups.map(group => {
       if (group.label === 'MANAGEMENT') {
         const items = group.items.filter(item => {
+          if (currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN') return true;
           if (currentUser?.role === 'EMPLOYEE') return item.label === 'Tasks';
           if (currentUser?.role === 'MANAGER') return item.label === 'Tasks' || item.label === 'Leads';
-          return true; // ADMIN sees everything
+          return false;
         });
         return { ...group, items };
       }
@@ -50,7 +51,7 @@ export default function Sidebar() {
         <div className={styles.logoDot}>
           <div className={styles.dotInner}></div>
         </div>
-        <span className={styles.logo}>BARBARA <span className={styles.thin}>CRM</span></span>
+        <span className={styles.logo}>Ikasle<span className={styles.thin}></span></span>
       </div>
 
       {/* Nav Groups */}

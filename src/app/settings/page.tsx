@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [targetId, setTargetId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', departmentId: '' });
 
-  if (currentUser?.role !== 'ADMIN') {
+  if (currentUser?.role !== 'SUPER_ADMIN' && currentUser?.role !== 'ADMIN') {
     return (
       <div className={styles.wrapper}>
         <Sidebar />

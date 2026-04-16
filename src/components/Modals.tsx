@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { useApp, LeadStatus, Priority, TaskStatus } from '@/context/AppContext';
+import { Eye, EyeOff } from 'lucide-react';
+import { useApp, LeadStatus, Priority, TaskStatus, Role, User } from '@/context/AppContext';
 import styles from './Modals.module.css';
 
 /* ── Modal Shell ── */
@@ -108,14 +109,14 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
 export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
   const { departments, taskTypes, users, leads } = useApp();
   const [form, setForm] = useState({
-    leadId: '', 
+    leadId: '',
     assignedToId: '',
-    departmentId: '', 
+    departmentId: '',
     taskTypeId: '',
-    priority: 'REGULAR' as Priority, 
+    priority: 'REGULAR' as Priority,
     status: 'NOT_YET_STARTED' as TaskStatus,
-    startDate: '', 
-    completionDate: '', 
+    startDate: '',
+    completionDate: '',
     remarks: '',
   });
 
@@ -140,7 +141,7 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Explicit Validation
     if (!form.leadId || !form.assignedToId || !form.departmentId || !form.taskTypeId) {
       alert("Please ensure all required fields (*) are selected.");
@@ -205,6 +206,239 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       </FormField>
       <div className={styles.formActions}>
         <button type="submit" className={styles.submitBtn}>Create Task</button>
+      </div>
+    </form>
+  );
+}
+
+/* ── Add User Form ── */
+export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
+  const { currentUser, users } = useApp();
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'EMPLOYEE' as Role,
+    managerId: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const isSuper = currentUser?.role === 'SUPER_ADMIN';
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const isManager = currentUser?.role === 'MANAGER';
+
+  // Role options based on who is creating
+  const roleOptions: Role[] = isSuper
+    ? ['ADMIN', 'MANAGER', 'EMPLOYEE']
+    : isAdmin
+      ? ['MANAGER', 'EMPLOYEE']
+      : ['EMPLOYEE'];
+
+  // Manager options based on selected role
+  const managerOptions = users.filter(u => {
+    if (form.role === 'EMPLOYEE') return u.role === 'MANAGER' || u.role === 'SUPER_ADMIN' || u.role === 'ADMIN';
+    if (form.role === 'MANAGER') return u.role === 'SUPER_ADMIN' || u.role === 'ADMIN';
+    return false;
+  });
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.name) newErrors.name = 'Name is required';
+    if (!form.email || !/\S+@\S+\.\S+/.test(form.email)) newErrors.email = 'Valid email is required';
+    if (!form.password || form.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validate()) {
+      const submissionData = {
+        ...form,
+        managerId: form.managerId === "" ? null : form.managerId
+      };
+      onSubmit(submissionData);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <FormField label="Full Name *">
+        <input
+          className={styles.input}
+          required
+          value={form.name}
+          onChange={e => setForm({ ...form, name: e.target.value })}
+          placeholder="John Doe"
+        />
+        {errors.name && <p className={styles.errorText}>{errors.name}</p>}
+      </FormField>
+
+      <div className={styles.formRow}>
+        <FormField label="Email Address *">
+          <input
+            className={styles.input}
+            type="email"
+            required
+            value={form.email}
+            onChange={e => setForm({ ...form, email: e.target.value })}
+            placeholder="john@example.com"
+          />
+          {errors.email && <p className={styles.errorText}>{errors.email}</p>}
+        </FormField>
+        <FormField label="Temporary Password *">
+          <div className={styles.passwordWrapper}>
+            <input
+              className={styles.input}
+              type={showPassword ? 'text' : 'password'}
+              required
+              value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })}
+              placeholder="Min 6 characters"
+            />
+            <button
+              type="button"
+              className={styles.eyeBtn}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+            </button>
+          </div>
+          {errors.password && <p className={styles.errorText}>{errors.password}</p>}
+        </FormField>
+      </div>
+
+      <div className={styles.formRow}>
+        <FormField label="Assign Role *">
+          <select
+            className={styles.select}
+            value={form.role}
+            onChange={e => setForm({ ...form, role: e.target.value as Role })}
+          >
+            {roleOptions.map(r => (
+              <option key={r} value={r}>
+                {r === 'MANAGER' ? 'Team Leader' : r.replace('_', ' ')}
+              </option>
+            ))}
+          </select>
+        </FormField>
+        <FormField label="Reporting Manager">
+          <select
+            className={styles.select}
+            value={form.managerId}
+            onChange={e => setForm({ ...form, managerId: e.target.value })}
+          >
+            <option value="">No Manager (Direct)</option>
+            {managerOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
+          </select>
+        </FormField>
+      </div>
+
+      <div className={styles.formActions}>
+        <button type="submit" className={styles.submitBtn}>
+          {isManager ? 'Submit Request' : 'Create Account'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* ── Edit User Form ── */
+export function EditUserForm({ user, onSubmit }: { user: User; onSubmit: (data: any) => void }) {
+  const { users } = useApp();
+  const [form, setForm] = useState({
+    name: user.name,
+    email: user.email,
+    password: '',
+    role: user.role,
+    managerId: user.managerId || '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+
+  const roleOptions: Role[] = ['ADMIN', 'MANAGER', 'EMPLOYEE'];
+
+  const managerOptions = users.filter(u => {
+    if (form.role === 'EMPLOYEE') return u.role === 'MANAGER' || u.role === 'ADMIN' || u.role === 'SUPER_ADMIN';
+    if (form.role === 'MANAGER') return u.role === 'ADMIN' || u.role === 'SUPER_ADMIN';
+    return false;
+  }).filter(u => u.id !== user.id);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const submissionData: any = { ...form };
+    if (!submissionData.password) delete submissionData.password;
+    submissionData.managerId = submissionData.managerId === "" ? null : submissionData.managerId;
+    onSubmit(submissionData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <FormField label="Full Name *">
+        <input
+          className={styles.input}
+          required
+          value={form.name}
+          onChange={e => setForm({ ...form, name: e.target.value })}
+        />
+      </FormField>
+
+      <div className={styles.formRow}>
+        <FormField label="Email Address *">
+          <input
+            className={styles.input}
+            type="email"
+            required
+            value={form.email}
+            onChange={e => setForm({ ...form, email: e.target.value })}
+          />
+        </FormField>
+        <FormField label="New Password (optional)">
+          <div className={styles.passwordWrapper}>
+            <input
+              className={styles.input}
+              type={showPassword ? 'text' : 'password'}
+              value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })}
+              placeholder="Leave blank to keep"
+            />
+            <button
+              type="button"
+              className={styles.eyeBtn}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </FormField>
+      </div>
+
+      <div className={styles.formRow}>
+        <FormField label="Role *">
+          <select
+            className={styles.select}
+            value={form.role}
+            onChange={e => setForm({ ...form, role: e.target.value as Role })}
+          >
+            {roleOptions.map(r => (
+              <option key={r} value={r}>{r.replace('_', ' ')}</option>
+            ))}
+          </select>
+        </FormField>
+        <FormField label="Reporting Manager">
+          <select
+            className={styles.select}
+            value={form.managerId}
+            onChange={e => setForm({ ...form, managerId: e.target.value })}
+          >
+            <option value="">No Manager (Direct)</option>
+            {managerOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
+          </select>
+        </FormField>
+      </div>
+
+      <div className={styles.formActions}>
+        <button type="submit" className={styles.submitBtn}>Save Changes</button>
       </div>
     </form>
   );

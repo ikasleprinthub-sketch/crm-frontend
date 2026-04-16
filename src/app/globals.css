@@ -129,6 +129,6 @@ button { font-family: var(--font-sans); }
 .priority-high   { background: rgba(245, 158, 11, 0.1);  color: var(--accent-yellow); }
 .priority-urgent { background: rgba(239, 68, 68, 0.1);   color: var(--accent-red); }
 
-.role-admin    { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
+.role-super_admin { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
 .role-manager  { background: rgba(245, 158, 11, 0.15); color: var(--accent-yellow); }
 .role-employee { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }

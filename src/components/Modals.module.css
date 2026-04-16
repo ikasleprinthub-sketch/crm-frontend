@@ -154,3 +154,33 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(67,24,255,0.35);
 }
+
+.passwordWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.eyeBtn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: all 0.2s;
+  z-index: 2;
+}
+
+.eyeBtn:hover {
+  color: var(--primary);
+}
+
+.eyeBtn:focus {
+  outline: none;
+}

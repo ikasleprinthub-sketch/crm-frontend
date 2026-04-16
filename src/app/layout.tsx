@@ -4,7 +4,7 @@ import { AppProvider } from "@/context/AppContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Barbara CRM | Business Management",
+  title: "Ikasle  | Business Management",
   description: "Modern CRM & Task Management System",
 };
 

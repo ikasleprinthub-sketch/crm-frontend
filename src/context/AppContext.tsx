@@ -4,7 +4,8 @@ import api from '@/lib/api';
 
 // ─── ENUMS / TYPES ────────────────────────────────────────────────────────────
 
-export type Role = 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
+export type UserStatus = 'ACTIVE' | 'PENDING' | 'REJECTED';
 export type LeadStatus = 'NEW' | 'CONVERTED';
 export type TaskStatus = 'NOT_YET_STARTED' | 'DATA_NOT_RECEIVED' | 'WORK_IN_PROGRESS' | 'PENDING_FOR_APPROVAL' | 'COMPLETED';
 export type Priority = 'REGULAR' | 'IMPORTANT' | 'URGENT';
@@ -33,7 +34,9 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  status: UserStatus;
   managerId?: string;
+  requestedBy?: { id: string; name: string };
   createdAt: string;
 }
 
@@ -109,6 +112,11 @@ interface AppContextType {
 
   // Users
   users: User[];
+  addUser: (userData: any) => Promise<void>;
+  updateUser: (id: string, updates: any) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
+  approveUser: (id: string) => Promise<void>;
+  rejectUser: (id: string) => Promise<void>;
 
   // Leads
   leads: Lead[];
@@ -123,6 +131,7 @@ interface AppContextType {
   updateTaskStep: (taskId: string, stepId: string, isCompleted: boolean) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   refreshTasks: () => Promise<void>;
+  fetchInitialData: () => Promise<void>;
 }
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -170,11 +179,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const fetchInitialData = async () => {
     try {
+      const isManagerOrAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER';
+
       const [depsRes, typesRes, usersRes, leadsRes, tasksRes, sourcesRes] = await Promise.all([
         api.get('/departments'),
         api.get('/task-types'),
         api.get('/users'),
-        api.get('/leads'),
+        isManagerOrAdmin ? api.get('/leads') : Promise.resolve({ data: { success: true, data: [] } }),
         api.get('/tasks'),
         api.get('/sources')
       ]);
@@ -231,6 +242,65 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(null);
     localStorage.removeItem('crm_user');
     router.push('/login');
+  };
+
+  // Users
+  const addUser = async (userData: any) => {
+    try {
+      const res = await api.post('/auth/register', userData);
+      if (res.data?.success) {
+        // We fetch instead of just adding to state to get the full relations and status
+        await fetchInitialData(); 
+      }
+    } catch (e: any) {
+      const msg = e.response?.data?.message || 'Failed to create user';
+      console.error('❌ [Register Error]', e.response?.data || e.message);
+      throw new Error(msg);
+    }
+  };
+
+  const updateUser = async (id: string, updates: any) => {
+    try {
+      const res = await api.put(`/users/${id}`, updates);
+      if (res.data?.success) {
+        setUsers(prev => prev.map(u => u.id === id ? { ...u, ...res.data.data } : u));
+      }
+    } catch (e: any) {
+      console.error('❌ [Update User Error]', e.response?.data || e.message);
+    }
+  };
+
+  const deleteUser = async (id: string) => {
+    try {
+      await api.delete(`/users/${id}`);
+      setUsers(prev => prev.filter(u => u.id !== id));
+    } catch (e: any) {
+      const msg = e.response?.data?.message || 'Failed to delete user';
+      console.error('❌ [Delete User Error]', e.response?.data || e.message);
+      throw new Error(msg);
+    }
+  };
+
+  const approveUser = async (id: string) => {
+    try {
+      const res = await api.patch(`/users/${id}/approve`);
+      if (res.data?.success) {
+        setUsers(prev => prev.map(u => u.id === id ? res.data.data : u));
+      }
+    } catch (e: any) { 
+      console.error('❌ [Approve Error]', e.response?.data || e.message); 
+    }
+  };
+
+  const rejectUser = async (id: string) => {
+    try {
+      const res = await api.patch(`/users/${id}/reject`);
+      if (res.data?.success) {
+        setUsers(prev => prev.map(u => u.id === id ? res.data.data : u));
+      }
+    } catch (e: any) { 
+      console.error('❌ [Reject Error]', e.response?.data || e.message); 
+    }
   };
 
   // Leads
@@ -296,9 +366,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{
       currentUser, login, logout,
       departments, taskTypes, sources,
-      users,
+      users, addUser, updateUser, deleteUser, approveUser, rejectUser,
       leads, addLead, updateLead, deleteLead,
-      tasks, addTask, updateTask, updateTaskStep, deleteTask, refreshTasks
+      tasks, addTask, updateTask, updateTaskStep, deleteTask, refreshTasks,
+      fetchInitialData
     }}>
       {children}
     </AppContext.Provider>
