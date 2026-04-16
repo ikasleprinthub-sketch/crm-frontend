@@ -5,15 +5,36 @@ import Header from '@/components/Header';
 import { useApp, LeadStatus } from '@/context/AppContext';
 import { Modal, AddLeadForm } from '@/components/Modals';
 import styles from '../page.module.css';
-import { Trash2, Users } from 'lucide-react';
+import { Trash2, Users, Search, Building, Globe, Calendar, RotateCcw } from 'lucide-react';
+import CustomSelect from '@/components/CustomSelect';
+import CustomDatePicker from '@/components/CustomDatePicker';
 
 export default function LeadsPage() {
-  const { currentUser, leads, addLead, updateLead, deleteLead, departments, users, sources } = useApp();
+  const { currentUser, leads, addLead, updateLead, deleteLead, departments, users, sources, taskTypes } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filter, setFilter] = useState<string>('All');
+  const [deptFilter, setDeptFilter] = useState<string>('All');
+  const [sourceFilter, setSourceFilter] = useState<string>('All');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  
+  const filters: string[] = ['All', 'NEW', 'CONVERTED', 'HOLD_BY_LEAD', 'NOT_RESPONDED', 'DROPPED', 'AWAITING_CONFIRMATION', 'MEETING_SCHEDULED'];
 
-  const filters: string[] = ['All', 'NEW', 'CONVERTED'];
-  const filtered = filter === 'All' ? leads : leads.filter(l => l.status === filter);
+  const filtered = leads.filter(l => {
+    const matchesStatus = filter === 'All' || l.status === filter;
+    const matchesDept = deptFilter === 'All' || l.departmentId === deptFilter;
+    const matchesSource = sourceFilter === 'All' || l.sourceId === sourceFilter;
+    
+    // Date Filtering
+    let matchesDate = true;
+    if (startDate || endDate) {
+      const leadDate = new Date(l.date).getTime();
+      if (startDate) matchesDate = matchesDate && leadDate >= startDate.getTime();
+      if (endDate) matchesDate = matchesDate && leadDate <= endDate.getTime();
+    }
+
+    return matchesStatus && matchesDept && matchesSource && matchesDate;
+  });
 
   const getDeptName = (id: string) => departments.find(d => d.id === id)?.name || '—';
   const getUserName = (id: string) => users.find(u => u.id === id)?.name || 'Unassigned';
@@ -23,11 +44,10 @@ export default function LeadsPage() {
     return status === 'CONVERTED' ? 'badge-converted' : 'badge-new';
   };
 
-  const statusCounts = {
-    All: leads.length,
-    NEW: leads.filter(l => l.status === 'NEW').length,
-    CONVERTED: leads.filter(l => l.status === 'CONVERTED').length,
-  };
+  const statusCounts = filters.reduce((acc, curr) => {
+    acc[curr] = curr === 'All' ? leads.length : leads.filter(l => l.status === curr).length;
+    return acc;
+  }, {} as any);
 
   if (currentUser?.role === 'EMPLOYEE') {
     return (
@@ -59,13 +79,57 @@ export default function LeadsPage() {
           </div>
         </div>
 
-        {/* Filters */}
         <div className={styles.filterRow}>
           {filters.map(f => (
-            <button key={f} className={`${styles.filterBtn} ${filter === f ? styles.active : ''}`} onClick={() => setFilter(f)}>
-              {f} ({(statusCounts as any)[f] || 0})
+            <button 
+              key={f} 
+              className={`${styles.filterBtn} ${filter === f ? styles.active : ''}`}
+              onClick={() => setFilter(f)}
+            >
+              {f.replace(/_/g, ' ')} <span className={styles.badge}>{statusCounts[f] || 0}</span>
             </button>
           ))}
+        </div>
+
+        {/* Advanced Filters */}
+        <div className={styles.filterCard}>
+          <div className={styles.filterGrid} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+            
+            <CustomSelect 
+              label="Department"
+              icon={<Building size={14} />}
+              value={deptFilter}
+              onChange={setDeptFilter}
+              options={[{ id: 'All', name: 'All Departments' }, ...departments.map(d => ({ id: d.id, name: d.name }))]}
+            />
+
+            <CustomSelect 
+              label="Lead Source"
+              icon={<Globe size={14} />}
+              value={sourceFilter}
+              onChange={setSourceFilter}
+              options={[{ id: 'All', name: 'All Sources' }, ...sources.map(s => ({ id: s.id, name: s.name }))]}
+            />
+
+            <CustomDatePicker 
+              label="From"
+              selected={startDate}
+              onChange={setStartDate}
+            />
+
+            <CustomDatePicker 
+              label="To"
+              selected={endDate}
+              onChange={setEndDate}
+            />
+
+            <button 
+              className={styles.filterResetBtn} 
+              onClick={() => { setFilter('All'); setDeptFilter('All'); setSourceFilter('All'); setStartDate(null); setEndDate(null); }}
+            >
+              <RotateCcw size={14} /> Reset Filters
+            </button>
+          </div>
         </div>
 
         {/* Table */}
@@ -103,14 +167,14 @@ export default function LeadsPage() {
                       {lead.date ? new Date(lead.date).toLocaleDateString() : '—'}
                     </td>
                     <td>
-                      <select
+                      <select 
                         className={`${styles.badge} ${statusBadge(lead.status)}`}
                         value={lead.status}
                         onChange={e => updateLead(lead.id, { status: e.target.value as LeadStatus })}
-                        style={{ border: 'none', cursor: 'pointer', background: 'transparent', fontWeight: 700, fontSize: '0.72rem', padding: '0.25rem 0.5rem' }}
+                        style={{ border: 'none', cursor: 'pointer', background: 'transparent', fontWeight: 700, fontSize: '0.65rem', padding: '0.25rem 0.5rem' }}
                       >
-                        {(['NEW', 'CONVERTED'] as LeadStatus[]).map(s => (
-                          <option key={s} value={s}>{s}</option>
+                        {filters.filter(f => f !== 'All').map(s => (
+                          <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
                         ))}
                       </select>
                     </td>

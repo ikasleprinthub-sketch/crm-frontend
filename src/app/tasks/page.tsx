@@ -6,18 +6,37 @@ import { useApp, TaskStatus } from '@/context/AppContext';
 import SOPList from '@/components/SOPList';
 import { Modal, AddTaskForm } from '@/components/Modals';
 import styles from '../page.module.css';
-import { Trash2, ClipboardList } from 'lucide-react';
+import { Trash2, ClipboardList, Search, Building, User, Calendar, RotateCcw } from 'lucide-react';
+import CustomSelect from '@/components/CustomSelect';
+import CustomDatePicker from '@/components/CustomDatePicker';
 
 export default function TasksPage() {
   const { currentUser, tasks, leads, addTask, updateTask, updateTaskStep, deleteTask, users, departments, taskTypes } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [deptFilter, setDeptFilter] = useState<string>('All');
+  const [userFilter, setUserFilter] = useState<string>('All');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  
   const isEmployee = currentUser?.role === 'EMPLOYEE';
-
-  const activeTask = tasks.find(t => t.id === selectedTask);
   const filters = ['All', 'NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'COMPLETED', 'DATA_NOT_RECEIVED'];
-  const filtered = filter === 'All' ? tasks : tasks.filter(t => t.status === filter);
+
+  const filtered = tasks.filter(t => {
+    const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
+    const matchesDept = deptFilter === 'All' || t.departmentId === deptFilter;
+    const matchesUser = userFilter === 'All' || t.assignedToId === userFilter;
+    
+    let matchesDate = true;
+    if (startDate || endDate) {
+      const taskDate = new Date(t.createdAt).getTime();
+      if (startDate) matchesDate = matchesDate && taskDate >= startDate.getTime();
+      if (endDate) matchesDate = matchesDate && taskDate <= endDate.getTime();
+    }
+
+    return matchesStatus && matchesDept && matchesUser && matchesDate;
+  });
 
   const getUserName = (id: string) => users.find(u => u.id === id)?.name || '—';
   const getDeptName = (id: string) => departments.find(d => d.id === id)?.name || '—';
@@ -27,14 +46,10 @@ export default function TasksPage() {
   const statusBadge = (status: string) => `badge-${status.replace(/_/g, '').toLowerCase()}`;
   const priorityBadge = (priority: string) => `priority-${priority.toLowerCase()}`;
 
-  const statusCounts: Record<string, number> = {
-    All: tasks.length,
-    'NOT_YET_STARTED': tasks.filter(t => t.status === 'NOT_YET_STARTED').length,
-    'WORK_IN_PROGRESS': tasks.filter(t => t.status === 'WORK_IN_PROGRESS').length,
-    'PENDING_FOR_APPROVAL': tasks.filter(t => t.status === 'PENDING_FOR_APPROVAL').length,
-    'COMPLETED': tasks.filter(t => t.status === 'COMPLETED').length,
-    'DATA_NOT_RECEIVED': tasks.filter(t => t.status === 'DATA_NOT_RECEIVED').length,
-  };
+  const statusCounts = filters.reduce((acc, curr) => {
+    acc[curr] = curr === 'All' ? tasks.length : tasks.filter(t => t.status === curr).length;
+    return acc;
+  }, {} as any);
 
   const getStatusLabel = (s: string) => s.replace(/_/g, ' ');
 
@@ -56,13 +71,59 @@ export default function TasksPage() {
           </div>
         </div>
 
-        {/* Filters */}
         <div className={styles.filterRow}>
           {filters.map(f => (
-            <button key={f} className={`${styles.filterBtn} ${filter === f ? styles.active : ''}`} onClick={() => setFilter(f)}>
-              {getStatusLabel(f)} ({statusCounts[f] || 0})
+            <button 
+              key={f} 
+              className={`${styles.filterBtn} ${statusFilter === f ? styles.active : ''}`}
+              onClick={() => setStatusFilter(f)}
+            >
+              {getStatusLabel(f)} <span className={styles.badge}>{statusCounts[f] || 0}</span>
             </button>
           ))}
+        </div>
+
+        {/* Advanced Filters */}
+        <div className={styles.filterCard}>
+          <div className={styles.filterGrid} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+            
+            <CustomSelect 
+              label="Department"
+              icon={<Building size={14} />}
+              value={deptFilter}
+              onChange={setDeptFilter}
+              options={[{ id: 'All', name: 'All Departments' }, ...departments.map(d => ({ id: d.id, name: d.name }))]}
+            />
+
+            {!isEmployee && (
+              <CustomSelect 
+                label="Assigned Staff"
+                icon={<User size={14} />}
+                value={userFilter}
+                onChange={setUserFilter}
+                options={[{ id: 'All', name: 'All Staff' }, ...users.map(u => ({ id: u.id, name: u.name }))]}
+              />
+            )}
+
+            <CustomDatePicker 
+              label="From"
+              selected={startDate}
+              onChange={setStartDate}
+            />
+
+            <CustomDatePicker 
+              label="To"
+              selected={endDate}
+              onChange={setEndDate}
+            />
+
+            <button 
+              className={styles.filterResetBtn} 
+              onClick={() => { setStatusFilter('All'); setDeptFilter('All'); setUserFilter('All'); setStartDate(null); setEndDate(null); }}
+            >
+              <RotateCcw size={14} /> Reset Filters
+            </button>
+          </div>
         </div>
 
         {/* Table */}
@@ -100,7 +161,7 @@ export default function TasksPage() {
                       <td style={{ fontSize: '0.8rem' }}>{getTypeName(task.taskTypeId)}</td>
                       <td>{getUserName(task.assignedToId)}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        {task.completionDate ? new Date(task.completionDate).toLocaleDateString() : '—'}
+                        {task.completionDate ? new Date(task.completionDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
                       </td>
                       <td><span className={`${styles.priority} ${priorityBadge(task.priority)}`}>{task.priority}</span></td>
                       <td>
@@ -145,18 +206,18 @@ export default function TasksPage() {
         </section>
 
         {/* SOP Modal */}
-        <Modal isOpen={!!selectedTask} onClose={() => setSelectedTask(null)} title={activeTask?.taskNo || 'Task SOP'}>
-          {activeTask && (
+        <Modal isOpen={!!selectedTask} onClose={() => setSelectedTask(null)} title={tasks.find(t => t.id === selectedTask)?.taskNo || 'Task SOP'}>
+          {tasks.find(t => t.id === selectedTask) && (
             <div style={{ padding: '0.25rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
-                <p style={{ color: 'var(--text-secondary)' }}>Lead: <strong style={{ color: 'var(--text-primary)' }}>{getLeadName(activeTask.leadId)}</strong></p>
-                <p style={{ color: 'var(--text-secondary)' }}>Assigned: <strong style={{ color: 'var(--text-primary)' }}>{getUserName(activeTask.assignedToId)}</strong></p>
-                <p style={{ color: 'var(--text-secondary)' }}>Type: <strong style={{ color: 'var(--text-primary)' }}>{getTypeName(activeTask.taskTypeId)}</strong></p>
-                <p style={{ color: 'var(--text-secondary)' }}>Priority: <strong style={{ color: activeTask.priority === 'URGENT' ? 'var(--accent-red)' : 'var(--text-primary)' }}>{activeTask.priority}</strong></p>
-                {activeTask.remarks && <p style={{ color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Remarks: <strong style={{ color: 'var(--text-primary)' }}>{activeTask.remarks}</strong></p>}
+                <p style={{ color: 'var(--text-secondary)' }}>Lead: <strong style={{ color: 'var(--text-primary)' }}>{getLeadName(tasks.find(t => t.id === selectedTask)!.leadId)}</strong></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Assigned: <strong style={{ color: 'var(--text-primary)' }}>{getUserName(tasks.find(t => t.id === selectedTask)!.assignedToId)}</strong></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Type: <strong style={{ color: 'var(--text-primary)' }}>{getTypeName(tasks.find(t => t.id === selectedTask)!.taskTypeId)}</strong></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Priority: <strong style={{ color: tasks.find(t => t.id === selectedTask)!.priority === 'URGENT' ? 'var(--accent-red)' : 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.priority}</strong></p>
+                {tasks.find(t => t.id === selectedTask)!.remarks && <p style={{ color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Remarks: <strong style={{ color: 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.remarks}</strong></p>}
               </div>
               <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>SOP CHECKLIST</h3>
-              <SOPList steps={activeTask.sopSteps || []} onToggle={(stepId, completed) => updateTaskStep(activeTask.id, stepId, completed)} />
+              <SOPList steps={tasks.find(t => t.id === selectedTask)!.sopSteps || []} onToggle={(stepId, completed) => updateTaskStep(selectedTask!, stepId, completed)} />
             </div>
           )}
         </Modal>

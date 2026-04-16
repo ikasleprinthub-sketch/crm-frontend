@@ -6,7 +6,7 @@ import api from '@/lib/api';
 
 export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
 export type UserStatus = 'ACTIVE' | 'PENDING' | 'REJECTED';
-export type LeadStatus = 'NEW' | 'CONVERTED';
+export type LeadStatus = 'NEW' | 'CONVERTED' | 'HOLD_BY_LEAD' | 'NOT_RESPONDED' | 'DROPPED' | 'AWAITING_CONFIRMATION' | 'MEETING_SCHEDULED';
 export type TaskStatus = 'NOT_YET_STARTED' | 'DATA_NOT_RECEIVED' | 'WORK_IN_PROGRESS' | 'PENDING_FOR_APPROVAL' | 'COMPLETED';
 export type Priority = 'REGULAR' | 'IMPORTANT' | 'URGENT';
 
@@ -107,8 +107,19 @@ interface AppContextType {
 
   // Master Data
   departments: Department[];
+  addDepartment: (name: string) => Promise<void>;
+  updateDepartment: (id: string, name: string) => Promise<void>;
+  deleteDepartment: (id: string) => Promise<void>;
+
   taskTypes: TaskType[];
+  addTaskType: (data: { name: string; departmentId: string }) => Promise<void>;
+  updateTaskType: (id: string, name: string) => Promise<void>;
+  deleteTaskType: (id: string) => Promise<void>;
+
   sources: SourceOfLead[];
+  addSource: (name: string) => Promise<void>;
+  updateSource: (id: string, name: string) => Promise<void>;
+  deleteSource: (id: string) => Promise<void>;
 
   // Users
   users: User[];
@@ -207,6 +218,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to fetch initial data', error);
     }
+  };
+
+  // Master Data CRUD
+  const addDepartment = async (name: string) => {
+    try {
+      const res = await api.post('/departments', { name });
+      if (res.data?.success) setDepartments(prev => [...prev, res.data.data]);
+    } catch (e) { console.error(e); }
+  };
+  const updateDepartment = async (id: string, name: string) => {
+    try {
+      const res = await api.put(`/departments/${id}`, { name });
+      if (res.data?.success) setDepartments(prev => prev.map(d => d.id === id ? res.data.data : d));
+    } catch (e) { console.error(e); }
+  };
+  const deleteDepartment = async (id: string) => {
+    try {
+      await api.delete(`/departments/${id}`);
+      setDepartments(prev => prev.filter(d => d.id !== id));
+    } catch (e) { console.error(e); }
+  };
+
+  const addTaskType = async (data: { name: string; departmentId: string }) => {
+    try {
+      const res = await api.post('/task-types', data);
+      if (res.data?.success) setTaskTypes(prev => [...prev, res.data.data]);
+    } catch (e) { console.error(e); }
+  };
+  const updateTaskType = async (id: string, name: string) => {
+    try {
+      const res = await api.put(`/task-types/${id}`, { name });
+      if (res.data?.success) setTaskTypes(prev => prev.map(t => t.id === id ? res.data.data : t));
+    } catch (e) { console.error(e); }
+  };
+  const deleteTaskType = async (id: string) => {
+    try {
+      await api.delete(`/task-types/${id}`);
+      setTaskTypes(prev => prev.filter(t => t.id !== id));
+    } catch (e) { console.error(e); }
+  };
+
+  const addSource = async (name: string) => {
+    try {
+      const res = await api.post('/sources', { name });
+      if (res.data?.success) setSources(prev => [...prev, res.data.data]);
+    } catch (e) { console.error(e); }
+  };
+  const updateSource = async (id: string, name: string) => {
+    try {
+      const res = await api.put(`/sources/${id}`, { name });
+      if (res.data?.success) setSources(prev => prev.map(s => s.id === id ? res.data.data : s));
+    } catch (e) { console.error(e); }
+  };
+  const deleteSource = async (id: string) => {
+    try {
+      await api.delete(`/sources/${id}`);
+      setSources(prev => prev.filter(s => s.id !== id));
+    } catch (e) { console.error(e); }
   };
 
   const refreshTasks = async () => {
@@ -365,8 +434,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{
       currentUser, login, logout,
-      departments, taskTypes, sources,
       users, addUser, updateUser, deleteUser, approveUser, rejectUser,
+      departments, addDepartment, updateDepartment, deleteDepartment,
+      taskTypes, addTaskType, updateTaskType, deleteTaskType,
+      sources, addSource, updateSource, deleteSource,
       leads, addLead, updateLead, deleteLead,
       tasks, addTask, updateTask, updateTaskStep, deleteTask, refreshTasks,
       fetchInitialData

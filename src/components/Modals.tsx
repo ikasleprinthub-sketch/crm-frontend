@@ -3,6 +3,10 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useApp, LeadStatus, Priority, TaskStatus, Role, User } from '@/context/AppContext';
 import styles from './Modals.module.css';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { Calendar } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 
 /* ── Modal Shell ── */
 interface ModalProps {
@@ -72,28 +76,32 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
         </FormField>
       </div>
       <div className={styles.formRow}>
-        <FormField label="Source">
-          <select className={styles.select} value={form.sourceId} onChange={e => setForm({ ...form, sourceId: e.target.value })}>
-            {sources.map(s => (<option key={s.id} value={s.id}>{s.name}</option>))}
-          </select>
-        </FormField>
-        <FormField label="Status">
-          <select className={styles.select} value={form.status} onChange={e => setForm({ ...form, status: e.target.value as LeadStatus })}>
-            {(['NEW', 'CONVERTED'] as LeadStatus[]).map(s => (<option key={s} value={s}>{s}</option>))}
-          </select>
-        </FormField>
+        <CustomSelect
+          label="Source"
+          options={sources.map(s => ({ id: s.id, name: s.name }))}
+          value={form.sourceId}
+          onChange={val => setForm({ ...form, sourceId: val })}
+        />
+        <CustomSelect
+          label="Status"
+          options={(['NEW', 'CONVERTED'] as LeadStatus[]).map(s => ({ id: s, name: s }))}
+          value={form.status}
+          onChange={val => setForm({ ...form, status: val as LeadStatus })}
+        />
       </div>
       <div className={styles.formRow}>
-        <FormField label="Department">
-          <select className={styles.select} value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value, taskTypeId: taskTypes.find(t => t.departmentId === e.target.value)?.id || '' })}>
-            {departments.map(d => (<option key={d.id} value={d.id}>{d.name}</option>))}
-          </select>
-        </FormField>
-        <FormField label="Task Type">
-          <select className={styles.select} value={form.taskTypeId} onChange={e => setForm({ ...form, taskTypeId: e.target.value })}>
-            {filteredTypes.map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}
-          </select>
-        </FormField>
+        <CustomSelect
+          label="Department"
+          options={departments.map(d => ({ id: d.id, name: d.name }))}
+          value={form.departmentId}
+          onChange={val => setForm({ ...form, departmentId: val, taskTypeId: taskTypes.find(t => t.departmentId === val)?.id || '' })}
+        />
+        <CustomSelect
+          label="Task Type"
+          options={filteredTypes.map(t => ({ id: t.id, name: t.name }))}
+          value={form.taskTypeId}
+          onChange={val => setForm({ ...form, taskTypeId: val })}
+        />
       </div>
       <FormField label="Remarks">
         <textarea className={styles.textarea} value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Additional remarks..." rows={3} />
@@ -105,6 +113,37 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
   );
 }
 
+/* ── Form Helpers ── */
+const generateTimeOptions = () => {
+  const options = [];
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 15) {
+      const h = hour % 12 || 12;
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const m = minute.toString().padStart(2, '0');
+      const label = `${h}:${m} ${ampm}`;
+      const value = `${hour.toString().padStart(2, '0')}:${m}`;
+      options.push({ id: value, name: label });
+    }
+  }
+  return options;
+};
+
+const combineDateAndTime = (date: Date | null, timeStr: string) => {
+  if (!date) return null;
+  const newDate = new Date(date);
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  newDate.setHours(hours, minutes, 0, 0);
+  return newDate;
+};
+
+const getTimeFromDate = (date: Date | null) => {
+  if (!date) return '09:00';
+  const h = date.getHours().toString().padStart(2, '0');
+  const m = date.getMinutes().toString().padStart(2, '0');
+  return `${h}:${m}`;
+};
+
 /* ── Add Task Form ── */
 export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
   const { departments, taskTypes, users, leads } = useApp();
@@ -115,8 +154,8 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
     taskTypeId: '',
     priority: 'REGULAR' as Priority,
     status: 'NOT_YET_STARTED' as TaskStatus,
-    startDate: '',
-    completionDate: '',
+    startDate: new Date() as Date | null,
+    completionDate: null as Date | null,
     remarks: '',
   });
 
@@ -128,9 +167,15 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       setForm(curr => ({ ...curr, assignedToId: firstEmp?.id || users[0].id }));
     }
     if (departments.length > 0 && !form.departmentId) setForm(curr => ({ ...curr, departmentId: departments[0].id }));
+    
+    // Default start time to next 15-min interval
+    const now = new Date();
+    now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+    setForm(curr => ({ ...curr, startDate: now }));
   }, [leads, users, departments]);
 
   const filteredTypes = taskTypes.filter(t => t.departmentId === form.departmentId);
+  const timeOptions = generateTimeOptions();
 
   // Sync task type when department changes or types load
   React.useEffect(() => {
@@ -154,52 +199,100 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
       <div className={styles.formRow}>
-        <FormField label="Associated Lead *">
-          <select className={styles.select} required value={form.leadId} onChange={e => setForm({ ...form, leadId: e.target.value })}>
-            <option value="" disabled>Select a Lead</option>
-            {leads.map(l => (<option key={l.id} value={l.id}>{l.leadName} ({l.leadNo})</option>))}
-          </select>
-        </FormField>
-        <FormField label="Assign To *">
-          <select className={styles.select} required value={form.assignedToId} onChange={e => setForm({ ...form, assignedToId: e.target.value })}>
-            <option value="" disabled>Select Employee</option>
-            {users.map(u => (<option key={u.id} value={u.id}>{u.name} ({u.role})</option>))}
-          </select>
-        </FormField>
+        <CustomSelect
+          label="Associated Lead *"
+          options={leads.map(l => ({ id: l.id, name: `${l.leadName} (${l.leadNo})` }))}
+          value={form.leadId}
+          onChange={val => setForm({ ...form, leadId: val })}
+        />
+        <CustomSelect
+          label="Assign To *"
+          options={users.map(u => ({ id: u.id, name: `${u.name} (${u.role})` }))}
+          value={form.assignedToId}
+          onChange={val => setForm({ ...form, assignedToId: val })}
+        />
       </div>
       <div className={styles.formRow}>
-        <FormField label="Department *">
-          <select className={styles.select} required value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value })}>
-            <option value="" disabled>Select Department</option>
-            {departments.map(d => (<option key={d.id} value={d.id}>{d.name}</option>))}
-          </select>
-        </FormField>
-        <FormField label="Task Type *">
-          <select className={styles.select} required value={form.taskTypeId} onChange={e => setForm({ ...form, taskTypeId: e.target.value })}>
-            <option value="" disabled>{filteredTypes.length ? "Select Task Type" : "No types in this dept"}</option>
-            {filteredTypes.map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}
-          </select>
-        </FormField>
+        <CustomSelect
+          label="Department *"
+          options={departments.map(d => ({ id: d.id, name: d.name }))}
+          value={form.departmentId}
+          onChange={val => setForm({ ...form, departmentId: val })}
+        />
+        <CustomSelect
+          label="Task Type *"
+          options={filteredTypes.map(t => ({ id: t.id, name: t.name }))}
+          value={form.taskTypeId}
+          onChange={val => setForm({ ...form, taskTypeId: val })}
+          placeholder={filteredTypes.length ? "Select Task Type" : "No types in this dept"}
+        />
       </div>
       <div className={styles.formRow}>
-        <FormField label="Priority">
-          <select className={styles.select} value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value as Priority })}>
-            {(['REGULAR', 'IMPORTANT', 'URGENT'] as Priority[]).map(p => (<option key={p} value={p}>{p}</option>))}
-          </select>
-        </FormField>
-        <FormField label="Initial Status">
-          <select className={styles.select} value={form.status} onChange={e => setForm({ ...form, status: e.target.value as TaskStatus })}>
-            {(['NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'DATA_NOT_RECEIVED'] as TaskStatus[]).map(p => (<option key={p} value={p}>{p.replace(/_/g, ' ')}</option>))}
-          </select>
-        </FormField>
+        <CustomSelect
+          label="Priority"
+          options={(['REGULAR', 'IMPORTANT', 'URGENT'] as Priority[]).map(p => ({ id: p, name: p }))}
+          value={form.priority}
+          onChange={val => setForm({ ...form, priority: val as Priority })}
+        />
+        <CustomSelect
+          label="Initial Status"
+          options={(['NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'DATA_NOT_RECEIVED'] as TaskStatus[]).map(p => ({ id: p, name: p.replace(/_/g, ' ') }))}
+          value={form.status}
+          onChange={val => setForm({ ...form, status: val as TaskStatus })}
+        />
       </div>
       <div className={styles.formRow}>
-        <FormField label="Start Date">
-          <input className={styles.input} type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} />
+        <FormField label="Start Date *">
+          <div className={styles.datePickerWrapper}>
+            <Calendar size={14} className={styles.dateIcon} />
+            <DatePicker
+              selected={form.startDate}
+              onChange={(date: Date | null) => {
+                const time = getTimeFromDate(form.startDate);
+                setForm({ ...form, startDate: combineDateAndTime(date, time) });
+              }}
+              dateFormat="MMM d, yyyy"
+              className={styles.input}
+              placeholderText="Select start date"
+              required
+              calendarClassName={styles.premiumCalendar}
+              dayClassName={() => styles.premiumDay}
+            />
+          </div>
         </FormField>
-        <FormField label="Target Completion">
-          <input className={styles.input} type="date" value={form.completionDate} onChange={e => setForm({ ...form, completionDate: e.target.value })} />
+        <CustomSelect 
+          label="Start Time *"
+          options={timeOptions}
+          value={getTimeFromDate(form.startDate)}
+          onChange={time => setForm({ ...form, startDate: combineDateAndTime(form.startDate, time) })}
+        />
+      </div>
+
+      <div className={styles.formRow}>
+        <FormField label="Target Completion Date *">
+          <div className={styles.datePickerWrapper}>
+            <Calendar size={14} className={styles.dateIcon} />
+            <DatePicker
+              selected={form.completionDate}
+              onChange={(date: Date | null) => {
+                const time = getTimeFromDate(form.completionDate || new Date());
+                setForm({ ...form, completionDate: combineDateAndTime(date, time) });
+              }}
+              dateFormat="MMM d, yyyy"
+              className={styles.input}
+              placeholderText="Select completion date"
+              required
+              calendarClassName={styles.premiumCalendar}
+              dayClassName={() => styles.premiumDay}
+            />
+          </div>
         </FormField>
+        <CustomSelect 
+          label="Target Completion Time *"
+          options={timeOptions}
+          value={getTimeFromDate(form.completionDate)}
+          onChange={time => setForm({ ...form, completionDate: combineDateAndTime(form.completionDate || new Date(), time) })}
+        />
       </div>
       <FormField label="Remarks">
         <textarea className={styles.textarea} value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Any specific instructions..." rows={3} />
