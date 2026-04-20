@@ -96,13 +96,15 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        <div className={styles.pageTitleRow}>
+        <div className={styles.pageTitleRow} style={{ alignItems: 'center', marginBottom: '2rem' }}>
           <div>
-            <h2>{activeTab === 'depts' ? 'Teams' : activeTab === 'types' ? 'Task Types' : 'Lead Sources'}</h2>
-            <p>Manage list of {activeTab === 'depts' ? 'functional teams' : activeTab === 'types' ? 'services offered' : 'marketing sources'}</p>
+            <h2 style={{ fontSize: '1.75rem', letterSpacing: '-0.5px' }}>
+              {activeTab === 'depts' ? 'Teams' : activeTab === 'types' ? 'Task Types' : 'Lead Sources'}
+            </h2>
+            <p style={{ fontWeight: 500 }}>Manage list of {activeTab === 'depts' ? 'functional teams' : activeTab === 'types' ? 'services offered' : 'marketing sources'}</p>
           </div>
-          <button className={styles.submitBtn} onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Plus size={18} /> Add New
+          <button className={styles.primaryBtn} onClick={openAdd} style={{ padding: '0.8rem 1.8rem' }}>
+            <Plus size={20} /> Add New
           </button>
         </div>
 
@@ -121,19 +123,27 @@ export default function SettingsPage() {
               <tbody>
                 {(activeTab === 'depts' ? departments : activeTab === 'types' ? taskTypes : sources).map((item: any) => (
                   <tr key={item.id}>
-                    <td style={{ fontWeight: 600 }}>{item.name}</td>
-                    {activeTab === 'types' && <td>{item.department?.name || '—'}</td>}
+                    <td style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{item.name}</td>
+                    {activeTab === 'types' && <td style={{ fontWeight: 500 }}>{item.department?.name || '—'}</td>}
                     <td>
-                      {activeTab === 'depts' ? item._count?.tasks || 0 : 
-                       activeTab === 'types' ? item._count?.tasks || 0 : 
-                       item._count?.leads || 0}
+                      <span style={{ 
+                        background: 'var(--surface-hover)', 
+                        padding: '0.35rem 0.75rem', 
+                        borderRadius: '8px', 
+                        fontWeight: 700,
+                        color: 'var(--primary)'
+                      }}>
+                        {activeTab === 'depts' ? item._count?.tasks || 0 : 
+                         activeTab === 'types' ? item._count?.tasks || 0 : 
+                         item._count?.leads || 0}
+                      </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                        <button className={styles.iconBtn} onClick={() => openEdit(item, activeTab)} title="Edit">
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                        <button className={styles.iconBtn} onClick={() => openEdit(item, activeTab)} title="Edit" style={{ width: 36, height: 36 }}>
                           <Edit2 size={16} />
                         </button>
-                        <button className={styles.iconBtn} onClick={() => handleDelete(item.id)} title="Delete" style={{ color: 'var(--accent-red)' }}>
+                        <button className={styles.iconBtn} onClick={() => handleDelete(item.id)} title="Delete" style={{ color: 'var(--accent-red)', width: 36, height: 36 }}>
                           <Trash2 size={16} />
                         </button>
                       </div>

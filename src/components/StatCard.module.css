@@ -14,7 +14,7 @@
 }
 
 .main {
-  background: linear-gradient(135deg, var(--primary), #7551FF);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   border: none;
   color: white;
 }

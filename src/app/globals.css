@@ -5,18 +5,22 @@
   --surface-hover: #F9FAFB;
   --text-primary: #111827;
   --text-secondary: #6B7280;
-  --primary: #10B981;
-  --primary-light: rgba(16, 185, 129, 0.08);
-  --primary-glow: rgba(16, 185, 129, 0.2);
+  --primary: #1A4B8C;
+  --primary-dark: #103058;
+  --primary-light: rgba(26, 75, 140, 0.08);
+  --primary-glow: rgba(26, 75, 140, 0.2);
   --accent-red: #EF4444;
   --accent-green: #10B981;
   --accent-yellow: #F59E0B;
-  --accent-blue: #3B82F6;
+  --accent-blue: #5B92D0;
   --accent-purple: #8B5CF6;
   --border: #E5E7EB;
   --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
   --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  --sidebar-active: rgba(16, 185, 129, 0.1);
+  --sidebar-active: rgba(26, 75, 140, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --surface-deep: #F9FAFB;
 }
 
 :root[data-theme='dark'] {
@@ -26,18 +30,22 @@
   --surface-hover: #334155;
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
-  --primary: #10B981;
-  --primary-light: rgba(16, 185, 129, 0.12);
-  --primary-glow: rgba(16, 185, 129, 0.3);
+  --primary: #EBC052;
+  --primary-dark: #B48D2A;
+  --primary-light: rgba(235, 192, 82, 0.12);
+  --primary-glow: rgba(235, 192, 82, 0.3);
   --accent-red: #F87171;
   --accent-green: #34D399;
-  --accent-yellow: #FBBF24;
-  --accent-blue: #60A5FA;
+  --accent-yellow: #EBC052;
+  --accent-blue: #5B92D0;
   --accent-purple: #A78BFA;
   --border: rgba(255, 255, 255, 0.05);
   --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   --shadow-sm: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-  --sidebar-active: rgba(16, 185, 129, 0.15);
+  --sidebar-active: rgba(235, 192, 82, 0.15);
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --surface-deep: #0D1321;
 }
 
 :root {
@@ -94,21 +102,27 @@ button { font-family: var(--font-sans); }
 
 /* ── Utility Classes ── */
 .glass-card {
-  background: var(--surface);
+  background: var(--glass-bg);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   padding: 1.5rem;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
 }
 
 .glass-card-sm {
-  background: var(--surface);
+  background: var(--glass-bg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   padding: 1.25rem;
+  backdrop-filter: blur(8px);
 }
 
 /* ── Badge Colors ── */
@@ -129,6 +143,7 @@ button { font-family: var(--font-sans); }
 .priority-high   { background: rgba(245, 158, 11, 0.1);  color: var(--accent-yellow); }
 .priority-urgent { background: rgba(239, 68, 68, 0.1);   color: var(--accent-red); }
 
-.role-super_admin { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
-.role-manager  { background: rgba(245, 158, 11, 0.15); color: var(--accent-yellow); }
-.role-employee { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+.role-super_admin { background: rgba(167, 139, 250, 0.15); color: var(--accent-purple); }
+.role-team_leader { background: rgba(235, 192, 82, 0.15); color: var(--primary); font-weight: 700; border: 1px solid rgba(235, 192, 82, 0.2); }
+.role-admin      { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.role-employee   { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }

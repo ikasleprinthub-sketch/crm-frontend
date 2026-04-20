@@ -3,11 +3,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { Eye, EyeOff } from 'lucide-react';
+import Image from 'next/image';
+import { useTheme } from '@/context/ThemeContext';
 import styles from './page.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, currentUser } = useApp();
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,11 +37,15 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <div className={styles.logoRow}>
-          <div className={styles.logoDot}>
-            <div className={styles.dotInner}></div>
-          </div>
-          <span className={styles.logo}>Ikasle <span className={styles.thin}> </span></span>
+        <div className={styles.logoSection}>
+          <Image 
+            src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'} 
+            alt="Capnero Logo" 
+            width={240} 
+            height={64} 
+            priority
+            className={styles.logoImage}
+          />
         </div>
         <h1 className={styles.title}>Welcome Back</h1>
         <p className={styles.subtitle}>Enter your credentials to access your account.</p>

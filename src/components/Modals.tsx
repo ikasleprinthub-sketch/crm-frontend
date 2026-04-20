@@ -207,7 +207,7 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
         />
         <CustomSelect
           label="Assign To *"
-          options={users.map(u => ({ id: u.id, name: `${u.name} (${u.role})` }))}
+          options={users.map(u => ({ id: u.id, name: `${u.name} (${u.role === 'MANAGER' ? 'Team Leader' : u.role.replace('_', ' ')})` }))}
           value={form.assignedToId}
           onChange={val => setForm({ ...form, assignedToId: val })}
         />
@@ -319,7 +319,7 @@ export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
 
   const isSuper = currentUser?.role === 'SUPER_ADMIN';
   const isAdmin = currentUser?.role === 'ADMIN';
-  const isManager = currentUser?.role === 'MANAGER';
+  const isTeamLeader = currentUser?.role === 'MANAGER';
 
   // Role options based on who is creating
   const roleOptions: Role[] = isSuper
@@ -328,8 +328,8 @@ export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       ? ['MANAGER', 'EMPLOYEE']
       : ['EMPLOYEE'];
 
-  // Manager options based on selected role
-  const managerOptions = users.filter(u => {
+  // Team Leader options based on selected role
+  const teamLeaderOptions = users.filter(u => {
     if (form.role === 'EMPLOYEE') return u.role === 'MANAGER' || u.role === 'SUPER_ADMIN' || u.role === 'ADMIN';
     if (form.role === 'MANAGER') return u.role === 'SUPER_ADMIN' || u.role === 'ADMIN';
     return false;
@@ -416,21 +416,21 @@ export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
             ))}
           </select>
         </FormField>
-        <FormField label="Reporting Manager">
+        <FormField label="Reporting Team Leader">
           <select
             className={styles.select}
             value={form.managerId}
             onChange={e => setForm({ ...form, managerId: e.target.value })}
           >
-            <option value="">No Manager (Direct)</option>
-            {managerOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
+            <option value="">No Team Leader (Direct)</option>
+            {teamLeaderOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role === 'MANAGER' ? 'Team Leader' : m.role})</option>)}
           </select>
         </FormField>
       </div>
 
       <div className={styles.formActions}>
         <button type="submit" className={styles.submitBtn}>
-          {isManager ? 'Submit Request' : 'Create Account'}
+          {isTeamLeader ? 'Submit Request' : 'Create Account'}
         </button>
       </div>
     </form>
@@ -451,7 +451,7 @@ export function EditUserForm({ user, onSubmit }: { user: User; onSubmit: (data: 
 
   const roleOptions: Role[] = ['ADMIN', 'MANAGER', 'EMPLOYEE'];
 
-  const managerOptions = users.filter(u => {
+  const teamLeaderOptions = users.filter(u => {
     if (form.role === 'EMPLOYEE') return u.role === 'MANAGER' || u.role === 'ADMIN' || u.role === 'SUPER_ADMIN';
     if (form.role === 'MANAGER') return u.role === 'ADMIN' || u.role === 'SUPER_ADMIN';
     return false;
@@ -514,18 +514,18 @@ export function EditUserForm({ user, onSubmit }: { user: User; onSubmit: (data: 
             onChange={e => setForm({ ...form, role: e.target.value as Role })}
           >
             {roleOptions.map(r => (
-              <option key={r} value={r}>{r.replace('_', ' ')}</option>
+              <option key={r} value={r}>{r === 'MANAGER' ? 'Team Leader' : r.replace('_', ' ')}</option>
             ))}
           </select>
         </FormField>
-        <FormField label="Reporting Manager">
+        <FormField label="Reporting Team Leader">
           <select
             className={styles.select}
             value={form.managerId}
             onChange={e => setForm({ ...form, managerId: e.target.value })}
           >
-            <option value="">No Manager (Direct)</option>
-            {managerOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
+            <option value="">No Team Leader (Direct)</option>
+            {teamLeaderOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role === 'MANAGER' ? 'Team Leader' : m.role})</option>)}
           </select>
         </FormField>
       </div>

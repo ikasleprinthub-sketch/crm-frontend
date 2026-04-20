@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import Image from 'next/image';
+import { useTheme } from '@/context/ThemeContext';
 import styles from './Sidebar.module.css';
 import { LayoutDashboard, Target, CheckSquare, Users, User, BarChart2, BellRing, LogOut } from 'lucide-react';
 
@@ -26,6 +28,7 @@ const navGroups = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { currentUser, logout } = useApp();
+  const { theme } = useTheme();
 
   const getFilteredGroups = () => {
     return navGroups.map(group => {
@@ -33,7 +36,10 @@ export default function Sidebar() {
         const items = group.items.filter(item => {
           if (currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN') return true;
           if (currentUser?.role === 'EMPLOYEE') return item.label === 'Tasks';
-          if (currentUser?.role === 'MANAGER') return item.label === 'Tasks' || item.label === 'Leads';
+          if (currentUser?.role === 'MANAGER') {
+            // Team Leader (Manager) can only see Tasks
+            return item.label === 'Tasks';
+          }
           return false;
         });
         return { ...group, items };
@@ -46,12 +52,18 @@ export default function Sidebar() {
 
   return (
     <aside className={styles.sidebar}>
-      {/* Logo */}
-      <div className={styles.logoRow}>
-        <div className={styles.logoDot}>
-          <div className={styles.dotInner}></div>
+      {/* Logo Section */}
+      <div className={styles.logoSection}>
+        <div className={styles.logoWrapper}>
+          <Image 
+            src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'} 
+            alt="Capnero Logo" 
+            width={200} 
+            height={55} 
+            priority
+            className={styles.logoImage}
+          />
         </div>
-        <span className={styles.logo}>Ikasle<span className={styles.thin}></span></span>
       </div>
 
       {/* Nav Groups */}
@@ -73,18 +85,6 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-
-      {/* User Profile + Logout */}
-      <div className={styles.userCard}>
-        <div className={styles.userAvatar}>{currentUser?.name?.slice(0, 2).toUpperCase() ?? 'U'}</div>
-        <div className={styles.userInfo}>
-          <p className={styles.userName}>{currentUser?.name ?? 'Guest'}</p>
-          <p className={styles.userRole}>{currentUser?.role ?? '—'}</p>
-        </div>
-        <button className={styles.logoutBtn} onClick={logout} title="Logout">
-          <LogOut size={16} />
-        </button>
-      </div>
     </aside>
   );
 }

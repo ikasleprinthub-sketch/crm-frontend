@@ -13,12 +13,12 @@ export default function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const filters = ['All', 'SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE'];
+  const filters = ['All', 'SUPER_ADMIN', 'ADMIN', 'TEAM_LEADER', 'EMPLOYEE'];
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PENDING'>('ACTIVE');
 
-  // Filter based on both role and status
   const filtered = users.filter(u => {
-    const matchesRole = roleFilter === 'All' || u.role === roleFilter;
+    const roleValue = u.role === 'MANAGER' ? 'TEAM_LEADER' : u.role;
+    const matchesRole = roleFilter === 'All' || roleValue === roleFilter;
     const matchesStatus = (activeTab === 'PENDING') ? u.status === 'PENDING' : u.status === 'ACTIVE';
     return matchesRole && matchesStatus;
   });
@@ -69,7 +69,10 @@ export default function UsersPage() {
     }
   };
 
-  const roleBadge = (role: string) => `role-${role.toLowerCase()}`;
+  const roleBadge = (role: string) => {
+    if (role === 'MANAGER') return 'role-team_leader';
+    return `role-${role.toLowerCase()}`;
+  };
 
   if (currentUser?.role !== 'SUPER_ADMIN' && currentUser?.role !== 'ADMIN' && currentUser?.role !== 'MANAGER') {
     return (
@@ -78,7 +81,7 @@ export default function UsersPage() {
         <main className={styles.main}>
           <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', marginTop: '2rem' }}>
             <h2 style={{ color: 'var(--accent-red)' }}>Access Denied</h2>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Only administrators and managers can access Team Configuration.</p>
+            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Only administrators and Team Leaders can access Team Configuration.</p>
           </div>
         </main>
       </div>
@@ -125,13 +128,13 @@ export default function UsersPage() {
           <div className={styles.filterRow} style={{ marginBottom: 0 }}>
             {filters.map(f => (
               <button key={f} className={`${styles.filterBtn} ${roleFilter === f ? styles.active : ''}`} onClick={() => setRoleFilter(f)}>
-                {f}
+                {f === 'TEAM_LEADER' ? 'Team Leader' : f}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Employee Cards */}
+        {/* Employee Cards - Sophisticated Grid */}
         <div className={styles.grid3Col}>
           {filtered.map(user => {
             const userTasks = tasks.filter(t => t.assignedToId === user.id);
@@ -139,61 +142,90 @@ export default function UsersPage() {
             const activeTasks = userTasks.filter(t => t.status !== 'COMPLETED').length;
 
             return (
-              <div key={user.id} className="glass-card" style={{ padding: '1.5rem', position: 'relative' }}>
+              <div key={user.id} className="glass-card" style={{ 
+                padding: '2rem 1.5rem', 
+                position: 'relative', 
+                textAlign: 'center',
+                overflow: 'hidden'
+              }}>
+                {/* Decorative background element */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-40px',
+                  right: '-40px',
+                  width: '120px',
+                  height: '120px',
+                  background: 'var(--primary-glow)',
+                  borderRadius: '50%',
+                  filter: 'blur(40px)',
+                  opacity: 0.4,
+                  zIndex: -1
+                }}></div>
 
-                {/* Avatar + Info */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.25rem' }}>
+                {/* Avatar Section - Premium Focus */}
+                <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{
-                    width: 56, height: 56, borderRadius: 16,
-                    background: 'linear-gradient(135deg, var(--primary), #7551FF)',
+                    width: 72, height: 72, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontSize: '1rem', fontWeight: 700,
-                    boxShadow: '0 6px 16px rgba(67,24,255,0.3)',
-                    marginBottom: '0.75rem',
+                    color: 'white', fontSize: '1.4rem', fontWeight: 800,
+                    boxShadow: '0 10px 20px var(--primary-glow)',
+                    margin: '0 auto 1.25rem',
+                    border: '4px solid var(--surface)',
                   }}>{user.name.slice(0,2).toUpperCase()}</div>
-                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>{user.name}</h3>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 2 }}>{user.email}</p>
-                  <span className={`${styles.badge} ${roleBadge(user.role)}`} style={{ marginTop: '0.5rem' }}>
-                    {user.role}
-                  </span>
+                  
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>{user.name}</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4, fontWeight: 500 }}>{user.email}</p>
+                  
+                  <div style={{ marginTop: '0.875rem' }}>
+                    <span className={`${styles.badge} ${roleBadge(user.role)}`}>
+                      {user.role === 'MANAGER' ? 'Team Leader' : user.role.replace('_', ' ')}
+                    </span>
+                  </div>
 
-                  {/* Edit/Delete Actions */}
+                  {/* Actions - Subtle & Clean */}
                   {((currentUser?.role === 'SUPER_ADMIN') || 
                     (currentUser?.role === 'ADMIN' && (user.role === 'MANAGER' || user.role === 'EMPLOYEE'))) && (
-                    <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', display: 'flex', gap: '0.4rem' }}>
                       <button 
                         className={styles.iconBtn} 
                         onClick={(e) => { e.stopPropagation(); setEditingUser(user); }}
-                        title="Edit User"
-                        style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px', cursor: 'pointer' }}
+                        style={{ width: 28, height: 28, opacity: 0.6 }}
                       >
-                        <Edit2 size={14} />
+                        <Edit2 size={12} />
                       </button>
                       <button 
                         className={styles.iconBtn} 
-                        style={{ color: 'var(--accent-red)', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px', cursor: 'pointer' }}
+                        style={{ color: 'var(--accent-red)', width: 28, height: 28, opacity: 0.6 }}
                         onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.id); }}
-                        title="Delete User"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={12} />
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', textAlign: 'center', padding: '0.75rem', background: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)' }}>
-                  <div>
-                    <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>{activeTasks}</p>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Active Tasks</p>
+                {/* Statistics Box - Clean Aesthetic */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(3, 1fr)', 
+                  gap: '1px', 
+                  background: 'var(--border)', 
+                  borderRadius: 'var(--radius-lg)',
+                  overflow: 'hidden',
+                  margin: '1.5rem 0'
+                }}>
+                  <div style={{ padding: '0.875rem 0.5rem', background: 'var(--surface)' }}>
+                    <p style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>{activeTasks}</p>
+                    <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active</p>
                   </div>
-                  <div>
-                    <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-green)' }}>{completedTasks}</p>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Done</p>
+                  <div style={{ padding: '0.875rem 0.5rem', background: 'var(--surface)' }}>
+                    <p style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-green)' }}>{completedTasks}</p>
+                    <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Done</p>
                   </div>
-                  <div>
-                    <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>{userTasks.length}</p>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Total Tasks</p>
+                  <div style={{ padding: '0.875rem 0.5rem', background: 'var(--surface)' }}>
+                    <p style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>{userTasks.length}</p>
+                    <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total</p>
                   </div>
                 </div>
 

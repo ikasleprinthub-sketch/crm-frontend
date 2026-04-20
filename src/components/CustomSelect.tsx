@@ -40,7 +40,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
 
   return (
     <div className={`${styles.customSelectContainer} ${size === 'sm' ? styles.sm : ''}`} ref={containerRef}>
-      {label && <label className={styles.filterLabel}>{icon} {label}</label>}
+      {label && <label className={styles.filterLabel}>{label}</label>}
       
       <div 
         className={`${styles.customSelectTrigger} ${isOpen ? styles.active : ''} ${size === 'sm' ? styles.smTrigger : ''}`}

@@ -14,7 +14,7 @@ interface CustomDatePickerProps {
 export default function CustomDatePicker({ label, selected, onChange, placeholder = 'mm/dd/yyyy' }: CustomDatePickerProps) {
   return (
     <div className={styles.customSelectContainer}>
-      <label className={styles.filterLabel}><CalendarIcon size={12} /> {label}</label>
+      <label className={styles.filterLabel}>{label}</label>
       <div className={styles.filterInputWrapper}>
         <CalendarIcon size={16} className={styles.filterInputIcon} />
         <DatePicker

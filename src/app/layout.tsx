@@ -4,8 +4,8 @@ import { AppProvider } from "@/context/AppContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Ikasle  | Business Management",
-  description: "Modern CRM & Task Management System",
+  title: "Capnero | Flow Smarter, Grow Stronger",
+  description: "Modern Business Management & CRM System",
 };
 
 export default function RootLayout({
