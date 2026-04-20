@@ -5,7 +5,7 @@ import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { useTheme } from '@/context/ThemeContext';
 import styles from './Sidebar.module.css';
-import { LayoutDashboard, Target, CheckSquare, Users, User, BarChart2, BellRing, LogOut } from 'lucide-react';
+import { LayoutDashboard, Target, CheckSquare, Users, BarChart2, ClockIcon } from 'lucide-react';
 
 const navGroups = [
   {
@@ -17,10 +17,11 @@ const navGroups = [
   {
     label: 'MANAGEMENT',
     items: [
-      { label: 'Leads', href: '/leads', icon: <Target size={18} /> },
-      { label: 'Tasks', href: '/tasks', icon: <CheckSquare size={18} /> },
-      { label: 'Users', href: '/users', icon: <Users size={18} /> },
-      { label: 'Configurations', href: '/settings', icon: <BarChart2 size={18} /> },
+      { label: 'Leads',          href: '/leads',      icon: <Target size={18} /> },
+      { label: 'Tasks',          href: '/tasks',      icon: <CheckSquare size={18} /> },
+      { label: 'Attendance',     href: '/attendance', icon: <ClockIcon size={18} /> },
+      { label: 'Users',          href: '/users',      icon: <Users size={18} /> },
+      { label: 'Configurations', href: '/settings',   icon: <BarChart2 size={18} /> },
     ],
   },
 ];
@@ -35,11 +36,8 @@ export default function Sidebar() {
       if (group.label === 'MANAGEMENT') {
         const items = group.items.filter(item => {
           if (currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN') return true;
-          if (currentUser?.role === 'EMPLOYEE') return item.label === 'Tasks';
-          if (currentUser?.role === 'MANAGER') {
-            // Team Leader (Manager) can only see Tasks
-            return item.label === 'Tasks';
-          }
+          if (currentUser?.role === 'EMPLOYEE') return item.label === 'Tasks' || item.label === 'Attendance';
+          if (currentUser?.role === 'MANAGER') return item.label === 'Leads' || item.label === 'Tasks' || item.label === 'Attendance';
           return false;
         });
         return { ...group, items };
