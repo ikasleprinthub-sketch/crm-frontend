@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
+import { useRouter } from 'next/navigation';
 import { Bell, Search, Moon, Sun, User, Settings, LogOut, ChevronRight } from 'lucide-react';
 import styles from './Header.module.css';
 
@@ -19,6 +20,7 @@ const mockNotifications = [
 export default function Header({ title, subtitle }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { currentUser, logout } = useApp();
+  const router = useRouter();
   const [showNotif, setShowNotif] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   
@@ -108,10 +110,10 @@ export default function Header({ title, subtitle }: HeaderProps) {
               </div>
               <div className={styles.dropdownDivider} />
               <div className={styles.profileLinks}>
-                <button className={styles.profileLink}>
+                <button className={styles.profileLink} onClick={() => { setShowProfile(false); router.push('/settings'); }}>
                   <User size={16} /> My Profile <ChevronRight size={14} className={styles.chevron} />
                 </button>
-                <button className={styles.profileLink}>
+                <button className={styles.profileLink} onClick={() => { setShowProfile(false); router.push('/settings'); }}>
                   <Settings size={16} /> Settings <ChevronRight size={14} className={styles.chevron} />
                 </button>
                 <div className={styles.dropdownDivider} />
