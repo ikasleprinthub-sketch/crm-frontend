@@ -59,6 +59,10 @@ export default function SettingsPage() {
 
   const handleEmailSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.email)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
     setLoading(true);
     try {
       await api.put(`/users/${currentUser?.id}`, { email: emailForm.email });

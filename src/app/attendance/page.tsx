@@ -56,7 +56,7 @@ function formatTime(iso: string | null): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function statusBadgeClass(s: AttendanceStatus): string {
@@ -92,9 +92,9 @@ function roleLabel(role: string | undefined): string {
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const PERMISSION_TYPES: { value: PermissionType; label: string }[] = [
+  { value: 'LATE_PERMISSION', label: 'Late Permission' },
   { value: 'HALF_DAY',        label: 'Half Day' },
   { value: 'LEAVE',           label: 'Full Leave' },
-  { value: 'LATE_PERMISSION', label: 'Late Permission' },
 ];
 const PIE_COLORS: Record<AttendanceStatus, string> = {
   PRESENT:    '#22c55e',
@@ -264,8 +264,8 @@ function SuperAdminMonitor() {
     return slice.map(d => ({
       ...d,
       label: chartView === 'weekly'
-        ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
-        : new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric' }),
+        ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' })
+        : new Date(d.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric' }),
     }));
   }, [monthlyData, chartView]);
 
@@ -766,7 +766,7 @@ function RegularAttendancePage() {
   const [allAttendance,       setAllAttendance]       = useState<AttendanceRecord[]>([]);
   const [activeTab,           setActiveTab]           = useState<'team' | 'permissions' | 'all'>('team');
   const [showPermModal,       setShowPermModal]       = useState(false);
-  const [permType,            setPermType]            = useState<PermissionType>('HALF_DAY');
+  const [permType,            setPermType]            = useState<PermissionType>('LATE_PERMISSION');
   const [permReason,          setPermReason]          = useState('');
   const [permDate,            setPermDate]            = useState('');
   const [overrideRecord,      setOverrideRecord]      = useState<AttendanceRecord | null>(null);

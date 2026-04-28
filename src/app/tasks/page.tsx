@@ -6,7 +6,7 @@ import { useApp, TaskStatus } from '@/context/AppContext';
 import SOPList from '@/components/SOPList';
 import { Modal, AddTaskForm } from '@/components/Modals';
 import styles from '../page.module.css';
-import { Trash2, ClipboardList, Search, Building, User, Calendar, RotateCcw } from 'lucide-react';
+import { Trash2, ClipboardList, Search, Building, User, Users, Calendar, RotateCcw } from 'lucide-react';
 import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -17,6 +17,7 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
   const [userFilter, setUserFilter] = useState<string>('All');
+  const [leadCategory, setLeadCategory] = useState<string>('All');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   
@@ -28,6 +29,12 @@ export default function TasksPage() {
     const matchesDept = deptFilter === 'All' || t.departmentId === deptFilter;
     const matchesUser = userFilter === 'All' || t.assignedToId === userFilter;
     
+    // Lead Category Filter
+    const lead = leads.find(l => l.id === t.leadId);
+    const matchesCategory = leadCategory === 'All' 
+      ? true 
+      : leadCategory === 'New' ? lead?.status === 'NEW' : lead?.status !== 'NEW';
+    
     let matchesDate = true;
     if (startDate || endDate) {
       const taskDate = new Date(t.createdAt).getTime();
@@ -35,7 +42,7 @@ export default function TasksPage() {
       if (endDate) matchesDate = matchesDate && taskDate <= endDate.getTime();
     }
 
-    return matchesStatus && matchesDept && matchesUser && matchesDate;
+    return matchesStatus && matchesDept && matchesUser && matchesDate && matchesCategory;
   });
 
   const getUserName = (id: string) => users.find(u => u.id === id)?.name || '—';
@@ -52,6 +59,28 @@ export default function TasksPage() {
   }, {} as any);
 
   const getStatusLabel = (s: string) => s.replace(/_/g, ' ');
+
+  const getStatusColor = (s: string) => {
+    switch (s) {
+      case 'NOT_YET_STARTED': return 'var(--text-secondary)';
+      case 'WORK_IN_PROGRESS': return 'var(--accent-blue)';
+      case 'PENDING_FOR_APPROVAL': return 'var(--accent-yellow)';
+      case 'COMPLETED': return 'var(--accent-green)';
+      case 'DATA_NOT_RECEIVED': return 'var(--accent-red)';
+      default: return 'inherit';
+    }
+  };
+
+  const getStatusBgColor = (s: string) => {
+    switch (s) {
+      case 'NOT_YET_STARTED': return 'rgba(148, 163, 184, 0.12)';
+      case 'WORK_IN_PROGRESS': return 'rgba(91, 146, 208, 0.12)';
+      case 'PENDING_FOR_APPROVAL': return 'rgba(245, 158, 11, 0.12)';
+      case 'COMPLETED': return 'rgba(16, 185, 129, 0.12)';
+      case 'DATA_NOT_RECEIVED': return 'rgba(239, 68, 68, 0.12)';
+      default: return 'transparent';
+    }
+  };
 
   return (
     <div className={styles.wrapper}>
@@ -104,6 +133,18 @@ export default function TasksPage() {
                 options={[{ id: 'All', name: 'All Staff' }, ...users.map(u => ({ id: u.id, name: u.name }))]}
               />
             )}
+ 
+            <CustomSelect 
+              label="Lead Category"
+              icon={<Users size={14} />}
+              value={leadCategory}
+              onChange={setLeadCategory}
+              options={[
+                { id: 'All', name: 'All Categories' },
+                { id: 'New', name: 'New Leads' },
+                { id: 'Old', name: 'Old Leads' }
+              ]}
+            />
 
             <CustomDatePicker 
               label="From"
@@ -119,7 +160,7 @@ export default function TasksPage() {
 
             <button 
               className={styles.filterResetBtn} 
-              onClick={() => { setStatusFilter('All'); setDeptFilter('All'); setUserFilter('All'); setStartDate(null); setEndDate(null); }}
+              onClick={() => { setStatusFilter('All'); setDeptFilter('All'); setUserFilter('All'); setLeadCategory('All'); setStartDate(null); setEndDate(null); }}
             >
               <RotateCcw size={14} /> Reset Filters
             </button>
@@ -161,7 +202,7 @@ export default function TasksPage() {
                       <td style={{ fontSize: '0.8rem' }}>{getTypeName(task.taskTypeId)}</td>
                       <td>{getUserName(task.assignedToId)}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        {task.completionDate ? new Date(task.completionDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+                        {task.completionDate ? new Date(task.completionDate).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
                       </td>
                       <td><span className={`${styles.priority} ${priorityBadge(task.priority)}`}>{task.priority}</span></td>
                       <td>
@@ -169,12 +210,22 @@ export default function TasksPage() {
                           className={`${styles.badge} ${statusBadge(task.status)}`}
                           value={task.status}
                           onChange={e => updateTask(task.id, { status: e.target.value as TaskStatus })}
-                          style={{ border: 'none', cursor: 'pointer', background: 'transparent', fontWeight: 700, fontSize: '0.72rem', padding: '0.25rem 0.5rem' }}
+                          style={{ 
+                            border: 'none', 
+                            cursor: 'pointer', 
+                            background: getStatusBgColor(task.status), 
+                            fontWeight: 700, 
+                            fontSize: '0.68rem', 
+                            padding: '0.3rem 0.6rem',
+                            color: getStatusColor(task.status),
+                            borderRadius: '8px',
+                            transition: 'all 0.3s ease'
+                          }}
                         >
                           {(['NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'COMPLETED', 'DATA_NOT_RECEIVED'] as TaskStatus[])
                             .filter(s => !isEmployee || s !== 'COMPLETED')
                             .map(s => (
-                              <option key={s} value={s}>{getStatusLabel(s)}</option>
+                              <option key={s} value={s} style={{ color: getStatusColor(s), background: 'var(--surface)' }}>{getStatusLabel(s)}</option>
                             ))}
                         </select>
                       </td>
