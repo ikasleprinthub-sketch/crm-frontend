@@ -3,12 +3,12 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import StatCard from '@/components/StatCard';
 import { useApp } from '@/context/AppContext';
-import { Target, CheckSquare, Users, FolderOpen, Trophy, ClipboardList } from 'lucide-react';
+import { Target, CheckSquare, Users, FolderOpen, Trophy, ClipboardList, Bell } from 'lucide-react';
 import Charts from '@/components/Charts';
 import styles from './page.module.css';
 
 export default function Dashboard() {
-  const { currentUser, leads, tasks, users, departments, sources } = useApp();
+  const { currentUser, leads, tasks, users, departments, sources, unreadCount, activities, notes, addNote, deleteNote } = useApp();
   const isEmployee = currentUser?.role === 'EMPLOYEE';
 
   const totalLeads = leads.length;
@@ -57,46 +57,119 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* Tables Row */}
-        <div className={styles.grid2Col}>
-          {/* Active Tasks */}
-          <section className="glass-card">
-            <div className={styles.sectionHeader}>
-              <h2>Active Tasks</h2>
-              <a href="/tasks" className={styles.viewAll}>See all →</a>
+        {/* Employee Specific Dashboard */}
+        {isEmployee && (
+          <div className={styles.dashboardContainer}>
+            {/* Top Row: Performance Stats */}
+            <div className={styles.statsGrid}>
+              <StatCard label="My Tasks" value={tasks.filter(t => t.assignedToId === currentUser?.id).length} icon={<CheckSquare size={20} />} isMain />
+              <StatCard label="Tasks Done" value={tasks.filter(t => t.assignedToId === currentUser?.id && t.status === 'COMPLETED').length} icon={<Trophy size={20} />} />
+              <StatCard label="Active Alerts" value={unreadCount} icon={<Bell size={20} />} change="Immediate" />
+              <StatCard label="Daily Status" value={tasks.filter(t => t.assignedToId === currentUser?.id && t.status === 'WORK_IN_PROGRESS').length + ' Active'} icon={<ClipboardList size={20} />} />
             </div>
-            <div className={styles.tableContainer}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Task No</th>
-                    <th>Assigned</th>
-                    <th>Status</th>
-                    <th>Priority</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tasks.filter(t => t.status !== 'COMPLETED').slice(0, 5).map(task => (
-                    <tr key={task.id}>
-                      <td style={{ fontWeight: 600, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.taskNo}</td>
-                      <td>{getUserName(task.assignedToId)}</td>
-                      <td><span className={`${styles.badge} ${statusBadge(task.status)}`}>{task.status.replace(/_/g, ' ')}</span></td>
-                      <td><span className={`${styles.priority} ${priorityBadge(task.priority)}`}>{task.priority}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {tasks.filter(t => t.status !== 'COMPLETED').length === 0 && (
-                <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }}><CheckSquare size={40} /></div>
-                  <p>All tasks completed!</p>
-                </div>
-              )}
-            </div>
-          </section>
 
-          {/* Recent Leads */}
-          {!isEmployee && (
+            <div className={styles.grid2Col}>
+              {/* Left Column: My Tasks & Reminders */}
+              <div className={styles.stack}>
+                <section className="glass-card">
+                  <div className={styles.sectionHeader}>
+                    <h2>My Active Tasks</h2>
+                    <a href="/tasks" className={styles.viewAll}>View Board →</a>
+                  </div>
+                  <div className={styles.taskSummaryList}>
+                    {tasks.filter(t => t.assignedToId === currentUser?.id && t.status !== 'COMPLETED').slice(0, 4).map(t => (
+                      <div key={t.id} className={styles.taskSummaryItem}>
+                        <div className={styles.taskInfo}>
+                          <p className={styles.taskTitle}>{t.taskNo}</p>
+                          <p className={styles.taskMeta}>{t.priority} • Due: {t.completionDate ? new Date(t.completionDate).toLocaleDateString() : 'No date'}</p>
+                        </div>
+                        <span className={`${styles.badge} ${statusBadge(t.status)}`}>{t.status.replace(/_/g, ' ')}</span>
+                      </div>
+                    ))}
+                    {tasks.filter(t => t.assignedToId === currentUser?.id && t.status !== 'COMPLETED').length === 0 && (
+                      <p className={styles.emptyText}>You're all caught up!</p>
+                    )}
+                  </div>
+                </section>
+
+                <section className="glass-card">
+                  <div className={styles.sectionHeader}>
+                    <h2>Reminders & Notes</h2>
+                    <button 
+                      onClick={() => addNote({ title: 'New Reminder', content: 'Enter your note here...', color: Math.random() > 0.5 ? 'blue' : 'yellow' })}
+                      className={styles.addNoteBtn}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                  <div className={styles.notesGrid}>
+                    {notes.slice(0, 2).map(note => (
+                      <div key={note.id} className={`${styles.noteCard} ${note.color === 'yellow' ? styles.noteYellow : styles.noteBlue}`}>
+                        <div className={styles.noteHeader}>
+                           <p className={styles.noteTitle}>{note.title || 'Note'}</p>
+                           <button onClick={() => deleteNote(note.id)} className={styles.deleteNoteBtn}>×</button>
+                        </div>
+                        <p className={styles.noteContent}>{note.content}</p>
+                      </div>
+                    ))}
+                    {notes.length === 0 && (
+                      <div className={`${styles.noteCard} ${styles.noteBlue}`} style={{ gridColumn: 'span 2', cursor: 'pointer' }} onClick={() => addNote({ title: 'Welcome', content: 'Click the + to add your first note!', color: 'blue' })}>
+                        <p className={styles.noteTitle}>Personal Note</p>
+                        <p className={styles.noteContent}>You don't have any notes yet. Click here to add one!</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+
+              {/* Right Column: Dynamic Feed (Optional) */}
+              <div className={styles.stack}>
+                {/* Space for future connected components */}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tables Row (Only for Admins/Managers) */}
+        {!isEmployee && (
+          <div className={styles.grid2Col}>
+            {/* Active Tasks */}
+            <section className="glass-card">
+              <div className={styles.sectionHeader}>
+                <h2>Active Tasks</h2>
+                <a href="/tasks" className={styles.viewAll}>See all →</a>
+              </div>
+              <div className={styles.tableContainer}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Task No</th>
+                      <th>Assigned</th>
+                      <th>Status</th>
+                      <th>Priority</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tasks.filter(t => t.status !== 'COMPLETED').slice(0, 5).map(task => (
+                      <tr key={task.id}>
+                        <td style={{ fontWeight: 600, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.taskNo}</td>
+                        <td>{getUserName(task.assignedToId)}</td>
+                        <td><span className={`${styles.badge} ${statusBadge(task.status)}`}>{task.status.replace(/_/g, ' ')}</span></td>
+                        <td><span className={`${styles.priority} ${priorityBadge(task.priority)}`}>{task.priority}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {tasks.filter(t => t.status !== 'COMPLETED').length === 0 && (
+                  <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }}><CheckSquare size={40} /></div>
+                    <p>All tasks completed!</p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Recent Leads */}
             <section className="glass-card">
               <div className={styles.sectionHeader}>
                 <h2>Recent Leads</h2>
@@ -131,8 +204,8 @@ export default function Dashboard() {
                 )}
               </div>
             </section>
-          )}
-        </div>
+          </div>
+        )}
 
       </main>
     </div>

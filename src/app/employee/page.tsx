@@ -10,9 +10,9 @@ export default function EmployeeDashboard() {
   const { tasks, updateTaskStep } = useApp();
   
   // Simulation: Filter tasks for the logged-in employee "Rahul S."
-  const myTasks = tasks.filter(t => t.assignedTo === 'Rahul S.');
-  const pendingTasks = myTasks.filter(t => t.status !== 'Completed');
-  const completedTasksCount = myTasks.filter(t => t.status === 'Completed').length;
+  const myTasks = tasks.filter(t => t.assignedTo?.name === 'Rahul S.');
+  const pendingTasks = myTasks.filter(t => t.status !== 'COMPLETED');
+  const completedTasksCount = myTasks.filter(t => t.status === 'COMPLETED').length;
 
   return (
     <div className={styles.wrapper}>
@@ -47,13 +47,13 @@ export default function EmployeeDashboard() {
           {pendingTasks.map(task => (
             <section key={task.id} className="glass-card" style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{task.name}</h3>
-                <span className={`${styles.badge} ${task.status.replace(/\s+/g, '').toLowerCase()}`}>{task.status}</span>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{task.taskNo}</h3>
+                <span className={`${styles.badge} ${task.status.toLowerCase()}`}>{task.status.replace(/_/g, ' ')}</span>
               </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Client: <strong>{task.clientName}</strong></p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Client: <strong>{task.lead?.leadName || 'Unknown'}</strong></p>
               
               <SOPList 
-                steps={task.steps} 
+                steps={task.sopSteps || []} 
                 onToggle={(stepId, completed) => updateTaskStep(task.id, stepId, completed)} 
               />
             </section>
