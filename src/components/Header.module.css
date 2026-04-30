@@ -83,13 +83,21 @@
 
 .notifDot {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 8px;
-  height: 8px;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
   background: var(--accent-red);
-  border-radius: 50%;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 2px solid var(--surface);
+  padding: 0 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .avatarBtn {
@@ -168,14 +176,31 @@
 }
 
 .notifItem {
-  padding: 1rem 1.25rem;
+  padding: 1.25rem;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .notifItem:hover {
   background: var(--surface-hover);
+}
+
+.unread {
+  background: var(--primary-light);
+  border-left: 3px solid var(--primary);
+}
+
+.emptyNotif {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .notifText {
@@ -286,4 +311,54 @@
 .logout:hover {
   background: rgba(239, 68, 68, 0.1);
   color: var(--accent-red);
+}
+
+/* ── Title row (hamburger + title) ── */
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ── Hamburger — always visible ── */
+.hamburger {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.hamburger:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .searchBox {
+    display: none;
+  }
+
+  .actions {
+    gap: 0.5rem;
+  }
+
+  .dropdown {
+    width: 280px;
+    right: -60px;
+  }
+
+  .profileDropdown {
+    width: 240px;
+    right: 0;
+  }
 }

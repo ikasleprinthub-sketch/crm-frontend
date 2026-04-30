@@ -11,6 +11,45 @@
   min-width: 0;
 }
 
+/* ── Mobile layout ── */
+@media (max-width: 768px) {
+  .main {
+    padding: 0 1rem 1rem 1rem;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid2Col {
+    grid-template-columns: 1fr;
+  }
+
+  .grid3Col {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pageTitleRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btnRow {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid3Col {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Stats Grid ── */
 .statsGrid {
   display: grid;
@@ -736,4 +775,183 @@
   align-items: center!important;
   justify-content: center!important;
   gap: 0.75rem!important;
-}
+}
+
+/* ── Employee Dashboard Layout ── */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.taskSummaryList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.taskSummaryItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  background: var(--surface-hover);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+
+.taskSummaryItem:hover {
+  transform: translateX(4px);
+  border-color: var(--primary-light);
+}
+
+.taskInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.taskTitle {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.taskMeta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ── Activity Feed ── */
+.activityFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.activityFeed::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 5px;
+  bottom: 5px;
+  width: 2px;
+  background: var(--border);
+  opacity: 0.5;
+}
+
+.activityItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.activityDot {
+  position: absolute;
+  left: -13px;
+  top: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.activityMessage {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.activityTime {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ── Notes Grid ── */
+.notesGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.noteCard {
+  padding: 1rem;
+  border-radius: 12px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.noteBlue { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
+.noteYellow { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); }
+
+.noteTitle {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+
+.noteContent {
+  font-size: 0.825rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ── Performance Board ── */
+.perfStats {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.perfItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.perfLabel {
+  width: 80px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.perfBar {
+  flex: 1;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.perfFill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+.perfVal {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--primary);
+  width: 40px;
+  text-align: right;
+}
+
+.emptyText {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 1.5rem 0;
+}

@@ -2,8 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
-import { useRouter } from 'next/navigation';
-import { Bell, Search, Moon, Sun, User, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { Bell, Search, Moon, Sun, User, Settings, LogOut, ChevronRight, Menu } from 'lucide-react';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -11,16 +10,11 @@ interface HeaderProps {
   subtitle?: string;
 }
 
-const mockNotifications = [
-  { id: '1', text: 'New lead assigned: John Doe', time: '5m ago', type: 'lead' },
-  { id: '2', text: 'Task "Client Follow-up" completed', time: '1h ago', type: 'task' },
-  { id: '3', text: 'Monthly sales report is ready', time: '2h ago', type: 'report' },
-];
+// Mock data removed in favor of AppContext notifications
 
 export default function Header({ title, subtitle }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const { currentUser, logout } = useApp();
-  const router = useRouter();
+  const { currentUser, logout, notifications, unreadCount, markAsRead, markAllAsRead, toggleSidebar } = useApp();
   const [showNotif, setShowNotif] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   
@@ -42,9 +36,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
   return (
     <header className={styles.header}>
-      <div>
-        <h1 className={styles.title}>{title}</h1>
-        {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+      <div className={styles.titleRow}>
+        <button className={styles.hamburger} onClick={toggleSidebar} aria-label="Toggle sidebar">
+          <Menu size={20} />
+        </button>
+        <div>
+          <h1 className={styles.title}>{title}</h1>
+          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+        </div>
       </div>
 
       <div className={styles.actions}>
@@ -66,24 +65,41 @@ export default function Header({ title, subtitle }: HeaderProps) {
             onClick={() => { setShowNotif(!showNotif); setShowProfile(false); }}
           >
             <Bell size={18} />
-            <span className={styles.notifDot}></span>
+            {unreadCount > 0 && <span className={styles.notifDot}>{unreadCount}</span>}
           </button>
           
           {showNotif && (
             <div className={styles.dropdown}>
               <div className={styles.dropdownHeader}>
                 Notifications
-                <span className={styles.count}>3 New</span>
+                {unreadCount > 0 && <span className={styles.count}>{unreadCount} New</span>}
               </div>
               <div className={styles.dropdownList}>
-                {mockNotifications.map(n => (
-                  <div key={n.id} className={styles.notifItem}>
-                    <p className={styles.notifText}>{n.text}</p>
-                    <span className={styles.notifTime}>{n.time}</span>
-                  </div>
-                ))}
+                {notifications.length === 0 ? (
+                  <div className={styles.emptyNotif}>No notifications</div>
+                ) : (
+                  notifications.map(n => (
+                    <div 
+                      key={n.id} 
+                      className={`${styles.notifItem} ${!n.isRead ? styles.unread : ''}`}
+                      onClick={() => {
+                        if (!n.isRead) markAsRead(n.id);
+                        if (n.link) window.location.href = n.link;
+                      }}
+                    >
+                      <p className={styles.notifText}>{n.message}</p>
+                      <span className={styles.notifTime}>
+                        {new Date(n.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
-              <button className={styles.viewAll}>View all notifications</button>
+              {notifications.length > 0 && (
+                <button className={styles.viewAll} onClick={markAllAsRead}>
+                  Mark all as read
+                </button>
+              )}
             </div>
           )}
         </div>

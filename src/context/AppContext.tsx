@@ -1,6 +1,8 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { Bell, X } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 
 // ─── ENUMS / TYPES ────────────────────────────────────────────────────────────
 
@@ -86,6 +88,19 @@ export interface Task {
   startDate?: string;
   completionDate?: string;
   sopSteps: TaskSOPStep[];
+  assignedTo?: User;
+  lead?: Lead;
+  createdAt: string;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  type?: string;
+  link?: string;
   createdAt: string;
 }
 
@@ -104,6 +119,11 @@ interface AppContextType {
   currentUser: AuthUser | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+
+  // Sidebar
+  sidebarOpen: boolean;
+  toggleSidebar: () => void;
+  closeSidebar: () => void;
 
   // Master Data
   departments: Department[];
@@ -141,11 +161,25 @@ interface AppContextType {
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
   updateTaskStep: (taskId: string, stepId: string, isCompleted: boolean) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
+  // Notifications
+  notifications: Notification[];
+  unreadCount: number;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  
+  // Activity Logs
+  activities: any[];
+  
+  // Notes
+  notes: any[];
+  addNote: (data: any) => Promise<void>;
+  updateNote: (id: string, data: any) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
+
   refreshTasks: () => Promise<void>;
   fetchInitialData: () => Promise<void>;
 }
 
-import { useRouter, usePathname } from 'next/navigation';
 
 // ─── CONTEXT ──────────────────────────────────────────────────────────────────
 
@@ -170,6 +204,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [toast, setToast] = useState<{ message: string; title: string } | null>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [notes, setNotes] = useState<any[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const toggleSidebar = () => setSidebarOpen(prev => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
+
+  // After mount, set sidebar default based on screen width
+  useEffect(() => {
+    setSidebarOpen(window.innerWidth > 768);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -188,17 +235,69 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser]);
 
+  // ─── Notification Polling ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchNotifs = async () => {
+      try {
+        const [notifRes, unreadRes, actRes, notesRes] = await Promise.all([
+          api.get('/notifications'),
+          api.get('/notifications/unread-count'),
+          api.get('/activity/my'),
+          api.get('/notes')
+        ]);
+        
+        if (notifRes.data?.success) {
+          const arr = Array.isArray(notifRes.data.data) ? notifRes.data.data : notifRes.data.data.notifications || [];
+          
+          // Check for new unread notifications to show toast
+          if (arr.length > 0) {
+            const latest = arr[0];
+            if (!latest.isRead) {
+              const alreadyNotified = notifications.some(n => n.id === latest.id);
+              if (!alreadyNotified) {
+                setToast({ title: latest.title || 'New Alert', message: latest.message });
+                setTimeout(() => setToast(null), 5000);
+              }
+            }
+          }
+          setNotifications(arr);
+        }
+        
+        if (unreadRes.data?.success) {
+          setUnreadCount(unreadRes.data.data.count);
+        }
+        
+        if (actRes.data?.success) {
+          setActivities(actRes.data.data);
+        }
+
+        if (notesRes.data?.success) {
+          setNotes(notesRes.data.data);
+        }
+      } catch (e) {
+        console.error('Polling failed', e);
+      }
+    };
+
+    const interval = setInterval(fetchNotifs, 30000); // 30 seconds
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   const fetchInitialData = async () => {
     try {
       const isManagerOrAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER';
 
-      const [depsRes, typesRes, usersRes, leadsRes, tasksRes, sourcesRes] = await Promise.all([
+      const [depsRes, typesRes, usersRes, leadsRes, tasksRes, sourcesRes, notificationsRes, unreadRes] = await Promise.all([
         api.get('/departments'),
         api.get('/task-types'),
         api.get('/users'),
         isManagerOrAdmin ? api.get('/leads') : Promise.resolve({ data: { success: true, data: [] } }),
         api.get('/tasks'),
-        api.get('/sources')
+        api.get('/sources'),
+        api.get('/notifications'),
+        api.get('/notifications/unread-count')
       ]);
 
       const getArr = (payload: any, key: string) => {
@@ -215,6 +314,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (leadsRes.data?.success) setLeads(getArr(leadsRes.data.data, 'leads'));
       if (tasksRes.data?.success) setTasks(getArr(tasksRes.data.data, 'tasks'));
       if (sourcesRes.data?.success) setSources(getArr(sourcesRes.data.data, 'sources'));
+      
+      if (notificationsRes.data?.success) setNotifications(getArr(notificationsRes.data.data, 'notifications'));
+      if (unreadRes.data?.success) setUnreadCount(unreadRes.data.data.count);
     } catch (error) {
       console.error('Failed to fetch initial data', error);
     }
@@ -428,21 +530,114 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) { console.error(e); }
   };
 
+  // Notifications
+  const markAsRead = async (id: string) => {
+    try {
+      const res = await api.patch(`/notifications/${id}/read`);
+      if (res.data?.success) {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const res = await api.patch('/notifications/read-all');
+      if (res.data?.success) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+      }
+    } catch (e) { console.error(e); }
+  };
+  const addNote = async (data: any) => {
+    try {
+      const res = await api.post('/notes', data);
+      if (res.data?.success) {
+        setNotes(prev => [res.data.data, ...prev]);
+      }
+    } catch (e) { console.error(e); }
+  };
+  const updateNote = async (id: string, data: any) => {
+    try {
+      const res = await api.put(`/notes/${id}`, data);
+      if (res.data?.success) {
+        setNotes(prev => prev.map(n => n.id === id ? res.data.data : n));
+      }
+    } catch (e) { console.error(e); }
+  };
+  const deleteNote = async (id: string) => {
+    try {
+      await api.delete(`/notes/${id}`);
+      setNotes(prev => prev.filter(n => n.id !== id));
+    } catch (e) { console.error(e); }
+  };
+
   if (!mounted) return null;
   if (!currentUser && pathname !== '/login') return null;
 
   return (
     <AppContext.Provider value={{
       currentUser, login, logout,
+      sidebarOpen, toggleSidebar, closeSidebar,
       users, addUser, updateUser, deleteUser, approveUser, rejectUser,
       departments, addDepartment, updateDepartment, deleteDepartment,
       taskTypes, addTaskType, updateTaskType, deleteTaskType,
       sources, addSource, updateSource, deleteSource,
       leads, addLead, updateLead, deleteLead,
       tasks, addTask, updateTask, updateTaskStep, deleteTask, refreshTasks,
+      notifications, unreadCount, markAsRead, markAllAsRead,
+      activities,
+      notes, addNote, updateNote, deleteNote,
       fetchInitialData
     }}>
-      {children}
+      <>
+        {children}
+        
+        {/* Toast Notification */}
+        {toast && (
+          <div className="toast-container animate-slide-in" style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 9999,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1rem 1.25rem',
+            boxShadow: 'var(--shadow)',
+            display: 'flex',
+            gap: '0.75rem',
+            alignItems: 'center',
+            maxWidth: '320px',
+            borderLeft: '4px solid var(--primary)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Bell size={18} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{toast.title}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{toast.message}</div>
+            </div>
+            <button 
+              onClick={() => setToast(null)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+      </>
     </AppContext.Provider>
   );
 }

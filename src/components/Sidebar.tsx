@@ -5,13 +5,19 @@ import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { useTheme } from '@/context/ThemeContext';
 import styles from './Sidebar.module.css';
-import { LayoutDashboard, Target, CheckSquare, Users, BarChart2, ClockIcon } from 'lucide-react';
+import { LayoutDashboard, Target, CheckSquare, Users, BarChart2, ClockIcon, StickyNote } from 'lucide-react';
 
 const navGroups = [
   {
     label: 'MAIN',
     items: [
       { label: 'Dashboard', href: '/', icon: <LayoutDashboard size={18} /> },
+    ],
+  },
+  {
+    label: 'WORKSPACE',
+    items: [
+      { label: 'My Notes', href: '/notes', icon: <StickyNote size={18} /> },
     ],
   },
   {
@@ -28,7 +34,7 @@ const navGroups = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { currentUser, logout } = useApp();
+  const { currentUser, sidebarOpen, closeSidebar } = useApp();
   const { theme } = useTheme();
 
   const getFilteredGroups = () => {
@@ -49,40 +55,44 @@ export default function Sidebar() {
   const filteredGroups = getFilteredGroups();
 
   return (
-    <aside className={styles.sidebar}>
-      {/* Logo Section */}
-      <div className={styles.logoSection}>
-        <div className={styles.logoWrapper}>
-          <Image 
-            src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'} 
-            alt="Capnero Logo" 
-            width={200} 
-            height={55} 
-            priority
-            className={styles.logoImage}
-          />
-        </div>
-      </div>
-
-      {/* Nav Groups */}
-      <nav className={styles.nav}>
-        {filteredGroups.map((group) => (
-          <div key={group.label} className={styles.navGroup}>
-            <span className={styles.groupLabel}>{group.label}</span>
-            {group.items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${styles.navLink} ${pathname === item.href ? styles.active : ''}`}
-              >
-                <span className={styles.icon}>{item.icon}</span>
-                <span className={styles.label}>{item.label}</span>
-                {pathname === item.href && <span className={styles.activeDot}></span>}
-              </Link>
-            ))}
+    <>
+      {sidebarOpen && <div className={styles.overlay} onClick={closeSidebar} />}
+      <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : ''}`}>
+        {/* Logo Section */}
+        <div className={styles.logoSection}>
+          <div className={styles.logoWrapper}>
+            <Image
+              src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
+              alt="Capnero Logo"
+              width={200}
+              height={55}
+              priority
+              className={styles.logoImage}
+              style={{ height: 'auto' }}
+            />
           </div>
-        ))}
-      </nav>
-    </aside>
+        </div>
+
+        {/* Nav Groups */}
+        <nav className={styles.nav}>
+          {filteredGroups.map((group) => (
+            <div key={group.label} className={styles.navGroup}>
+              <span className={styles.groupLabel}>{group.label}</span>
+              {group.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`${styles.navLink} ${pathname === item.href ? styles.active : ''}`}
+                >
+                  <span className={styles.icon}>{item.icon}</span>
+                  <span className={styles.label}>{item.label}</span>
+                  {pathname === item.href && <span className={styles.activeDot}></span>}
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
+      </aside>
+    </>
   );
 }

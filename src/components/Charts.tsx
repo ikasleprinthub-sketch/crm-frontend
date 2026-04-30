@@ -29,8 +29,8 @@ export default function Charts({ leads, tasks }: ChartProps) {
       <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Analytics Overview</h2>
       </div>
-      <div style={{ padding: '1.5rem', height: 320, minWidth: 300 }}>
-        <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+      <div style={{ padding: '1.5rem', height: 320, minWidth: '0px', width: '100%' }}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={0}>
           <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
