@@ -745,7 +745,7 @@ function SuperAdminMonitor() {
 // ─── Regular Attendance Page (Admin / Manager / Employee) ────────────────────
 
 function RegularAttendancePage() {
-  const { currentUser } = useApp();
+  const { currentUser, showToast } = useApp();
   const role      = currentUser?.role;
   const isManager = role === 'MANAGER';
   const isAdmin   = role === 'ADMIN';
@@ -851,6 +851,7 @@ function RegularAttendancePage() {
       await api.post('/attendance/permission/apply', { permissionType: permType, reason: permReason, date: permDate || undefined });
       setShowPermModal(false); setPermReason(''); setPermDate('');
       await loadToday();
+      showToast('Request Submitted', 'Your leave request has been sent for approval.');
     } catch (e: any) { alert(e.response?.data?.message ?? 'Failed to apply permission'); }
     finally { setSubmitting(false); }
   };

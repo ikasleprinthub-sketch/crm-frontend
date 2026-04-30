@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Bell, X } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
+import { io, Socket } from 'socket.io-client';
 
 // ─── ENUMS / TYPES ────────────────────────────────────────────────────────────
 
@@ -178,6 +179,7 @@ interface AppContextType {
 
   refreshTasks: () => Promise<void>;
   fetchInitialData: () => Promise<void>;
+  showToast: (title: string, message: string) => void;
 }
 
 
@@ -210,6 +212,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activities, setActivities] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -235,53 +238,77 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser]);
 
-  // ─── Notification Polling ──────────────────────────────────────────────────
+  // ─── WebSocket Real-time Notifications ─────────────────────────────────────
+  useEffect(() => {
+    if (!currentUser) {
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
+      return;
+    }
+
+    // Initialize socket connection
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const newSocket = io(socketUrl, {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    });
+
+    newSocket.on('connect', () => {
+      console.log('🔌 Connected to WebSocket server');
+      // Join targeted room
+      newSocket.emit('join', currentUser.id);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('🔌 WebSocket connection error:', err.message);
+    });
+
+    newSocket.on('notification', (notif: Notification) => {
+      console.log('🔔 Real-time notification received:', notif);
+      
+      // Update notifications state
+      setNotifications(prev => [notif, ...prev]);
+      setUnreadCount(prev => prev + 1);
+      
+      // Show toast
+      setToast({ title: notif.title || 'New Alert', message: notif.message });
+      setTimeout(() => setToast(null), 5000);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('🔌 Disconnected from WebSocket server');
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [currentUser]);
+
+  // Fallback polling (less frequent, every 2 mins) just to keep data synced
   useEffect(() => {
     if (!currentUser) return;
 
-    const fetchNotifs = async () => {
+    const fetchSync = async () => {
       try {
-        const [notifRes, unreadRes, actRes, notesRes] = await Promise.all([
-          api.get('/notifications'),
+        const [unreadRes, actRes, notesRes] = await Promise.all([
           api.get('/notifications/unread-count'),
           api.get('/activity/my'),
           api.get('/notes')
         ]);
         
-        if (notifRes.data?.success) {
-          const arr = Array.isArray(notifRes.data.data) ? notifRes.data.data : notifRes.data.data.notifications || [];
-          
-          // Check for new unread notifications to show toast
-          if (arr.length > 0) {
-            const latest = arr[0];
-            if (!latest.isRead) {
-              const alreadyNotified = notifications.some(n => n.id === latest.id);
-              if (!alreadyNotified) {
-                setToast({ title: latest.title || 'New Alert', message: latest.message });
-                setTimeout(() => setToast(null), 5000);
-              }
-            }
-          }
-          setNotifications(arr);
-        }
-        
-        if (unreadRes.data?.success) {
-          setUnreadCount(unreadRes.data.data.count);
-        }
-        
-        if (actRes.data?.success) {
-          setActivities(actRes.data.data);
-        }
-
-        if (notesRes.data?.success) {
-          setNotes(notesRes.data.data);
-        }
+        if (unreadRes.data?.success) setUnreadCount(unreadRes.data.data.count);
+        if (actRes.data?.success) setActivities(actRes.data.data);
+        if (notesRes.data?.success) setNotes(notesRes.data.data);
       } catch (e) {
-        console.error('Polling failed', e);
+        console.error('Sync failed', e);
       }
     };
 
-    const interval = setInterval(fetchNotifs, 30000); // 30 seconds
+    const interval = setInterval(fetchSync, 120000); 
     return () => clearInterval(interval);
   }, [currentUser]);
 
@@ -573,6 +600,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) { console.error(e); }
   };
 
+  const showToast = (title: string, message: string) => {
+    setToast({ title, message });
+    setTimeout(() => setToast(null), 5000);
+  };
+
   if (!mounted) return null;
   if (!currentUser && pathname !== '/login') return null;
 
@@ -589,7 +621,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       notifications, unreadCount, markAsRead, markAllAsRead,
       activities,
       notes, addNote, updateNote, deleteNote,
-      fetchInitialData
+      fetchInitialData,
+      showToast
     }}>
       <>
         {children}
