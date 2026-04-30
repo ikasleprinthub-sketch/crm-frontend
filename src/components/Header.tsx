@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
 import { Bell, Search, Moon, Sun, User, Settings, LogOut, ChevronRight, Menu } from 'lucide-react';
@@ -13,6 +14,7 @@ interface HeaderProps {
 // Mock data removed in favor of AppContext notifications
 
 export default function Header({ title, subtitle }: HeaderProps) {
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { currentUser, logout, notifications, unreadCount, markAsRead, markAllAsRead, toggleSidebar } = useApp();
   const [showNotif, setShowNotif] = useState(false);

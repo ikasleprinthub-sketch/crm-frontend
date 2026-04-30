@@ -167,6 +167,10 @@
   color: var(--text-primary);
 }
 
+.emptyState p {
+  margin-bottom: 2rem;
+}
+
 /* ── Modal ── */
 .modalOverlay {
   position: fixed;
@@ -250,7 +254,8 @@
 
 .inputGroup input:focus, .inputGroup textarea:focus {
   border-color: var(--primary);
-  background: white;
+  background: var(--surface);
+  box-shadow: 0 0 0 4px var(--primary-glow);
 }
 
 .colorPicker {

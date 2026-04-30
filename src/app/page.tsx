@@ -3,12 +3,17 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import StatCard from '@/components/StatCard';
 import { useApp } from '@/context/AppContext';
-import { Target, CheckSquare, Users, FolderOpen, Trophy, ClipboardList, Bell } from 'lucide-react';
+import { Target, CheckSquare, Users, FolderOpen, Trophy, ClipboardList, Bell, Plus, X, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Charts from '@/components/Charts';
 import styles from './page.module.css';
 
 export default function Dashboard() {
+  const router = useRouter();
   const { currentUser, leads, tasks, users, departments, sources, unreadCount, activities, notes, addNote, deleteNote } = useApp();
+  const [isAddingQuick, setIsAddingQuick] = useState(false);
+  const [quickNote, setQuickNote] = useState('');
   const isEmployee = currentUser?.role === 'EMPLOYEE';
 
   const totalLeads = leads.length;
@@ -95,25 +100,69 @@ export default function Dashboard() {
                 <section className="glass-card">
                   <div className={styles.sectionHeader}>
                     <h2>Reminders & Notes</h2>
-                    <button 
-                      onClick={() => addNote({ title: 'New Reminder', content: 'Enter your note here...', color: Math.random() > 0.5 ? 'blue' : 'yellow' })}
-                      className={styles.addNoteBtn}
-                    >
-                      + Add
-                    </button>
+                    <div className={styles.btnRow}>
+                      <button 
+                        onClick={() => router.push('/notes')}
+                        className={styles.viewAll}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                      >
+                        Go to Notes →
+                      </button>
+                      <button 
+                        onClick={() => setIsAddingQuick(!isAddingQuick)}
+                        className={styles.addNoteBtn}
+                      >
+                        {isAddingQuick ? <X size={14} /> : <Plus size={14} />}
+                        {isAddingQuick ? 'Cancel' : 'Add'}
+                      </button>
+                    </div>
                   </div>
+
+                  {isAddingQuick && (
+                    <div className={styles.quickAddRow} style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
+                      <input 
+                        type="text" 
+                        placeholder="What's on your mind?"
+                        className={styles.input}
+                        style={{ padding: '0.5rem 1rem' }}
+                        value={quickNote}
+                        onChange={(e) => setQuickNote(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && quickNote.trim()) {
+                            addNote({ title: 'Reminder', content: quickNote, color: 'blue' });
+                            setQuickNote('');
+                            setIsAddingQuick(false);
+                          }
+                        }}
+                      />
+                      <button 
+                        className={styles.primaryBtn} 
+                        style={{ padding: '0.5rem 1rem' }}
+                        onClick={() => {
+                          if (quickNote.trim()) {
+                            addNote({ title: 'Reminder', content: quickNote, color: 'blue' });
+                            setQuickNote('');
+                            setIsAddingQuick(false);
+                          }
+                        }}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+
                   <div className={styles.notesGrid}>
                     {notes.slice(0, 2).map(note => (
                       <div key={note.id} className={`${styles.noteCard} ${note.color === 'yellow' ? styles.noteYellow : styles.noteBlue}`}>
                         <div className={styles.noteHeader}>
                            <p className={styles.noteTitle}>{note.title || 'Note'}</p>
-                           <button onClick={() => deleteNote(note.id)} className={styles.deleteNoteBtn}>×</button>
+                           <button onClick={() => deleteNote(note.id)} className={styles.deleteNoteBtn}><Trash2 size={12} /></button>
                         </div>
                         <p className={styles.noteContent}>{note.content}</p>
                       </div>
                     ))}
-                    {notes.length === 0 && (
-                      <div className={`${styles.noteCard} ${styles.noteBlue}`} style={{ gridColumn: 'span 2', cursor: 'pointer' }} onClick={() => addNote({ title: 'Welcome', content: 'Click the + to add your first note!', color: 'blue' })}>
+                    {notes.length === 0 && !isAddingQuick && (
+                      <div className={`${styles.noteCard} ${styles.noteBlue}`} style={{ gridColumn: 'span 2', cursor: 'pointer' }} onClick={() => setIsAddingQuick(true)}>
                         <p className={styles.noteTitle}>Personal Note</p>
                         <p className={styles.noteContent}>You don't have any notes yet. Click here to add one!</p>
                       </div>
