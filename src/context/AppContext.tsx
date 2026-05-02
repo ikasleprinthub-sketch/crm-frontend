@@ -5,7 +5,7 @@ import { Bell, X } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 
-// ─── ENUMS / TYPES ────────────────────────────────────────────────────────────
+// ─── ENUMS / TYPES ──────────────────────────────────────────────────────────── //hi
 
 export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
 export type UserStatus = 'ACTIVE' | 'PENDING' | 'REJECTED';
@@ -167,10 +167,10 @@ interface AppContextType {
   unreadCount: number;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
-  
+
   // Activity Logs
   activities: any[];
-  
+
   // Notes
   notes: any[];
   addNote: (data: any) => Promise<void>;
@@ -180,7 +180,7 @@ interface AppContextType {
   refreshTasks: () => Promise<void>;
   fetchInitialData: () => Promise<void>;
   showToast: (title: string, message: string) => void;
-  
+
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -306,7 +306,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           api.get('/activity/my'),
           api.get('/notes')
         ]);
-        
+
         if (unreadRes.data?.success) setUnreadCount(unreadRes.data.data.count);
         if (actRes.data?.success) setActivities(actRes.data.data);
         if (notesRes.data?.success) setNotes(notesRes.data.data);
@@ -315,7 +315,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const interval = setInterval(fetchSync, 120000); 
+    const interval = setInterval(fetchSync, 120000);
     return () => clearInterval(interval);
   }, [currentUser]);
 
@@ -348,7 +348,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (leadsRes.data?.success) setLeads(getArr(leadsRes.data.data, 'leads'));
       if (tasksRes.data?.success) setTasks(getArr(tasksRes.data.data, 'tasks'));
       if (sourcesRes.data?.success) setSources(getArr(sourcesRes.data.data, 'sources'));
-      
+
       if (notificationsRes.data?.success) setNotifications(getArr(notificationsRes.data.data, 'notifications'));
       if (unreadRes.data?.success) setUnreadCount(unreadRes.data.data.count);
     } catch (error) {
@@ -455,7 +455,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const res = await api.post('/auth/register', userData);
       if (res.data?.success) {
         // We fetch instead of just adding to state to get the full relations and status
-        await fetchInitialData(); 
+        await fetchInitialData();
       }
     } catch (e: any) {
       const msg = e.response?.data?.message || 'Failed to create user';
@@ -492,8 +492,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (res.data?.success) {
         setUsers(prev => prev.map(u => u.id === id ? res.data.data : u));
       }
-    } catch (e: any) { 
-      console.error('❌ [Approve Error]', e.response?.data || e.message); 
+    } catch (e: any) {
+      console.error('❌ [Approve Error]', e.response?.data || e.message);
     }
   };
 
@@ -503,8 +503,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (res.data?.success) {
         setUsers(prev => prev.map(u => u.id === id ? res.data.data : u));
       }
-    } catch (e: any) { 
-      console.error('❌ [Reject Error]', e.response?.data || e.message); 
+    } catch (e: any) {
+      console.error('❌ [Reject Error]', e.response?.data || e.message);
     }
   };
 
@@ -635,7 +635,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }}>
       <>
         {children}
-        
+
         {/* Toast Notification */}
         {toast && (
           <div className="toast-container animate-slide-in" style={{
@@ -671,7 +671,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{toast.title}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{toast.message}</div>
             </div>
-            <button 
+            <button
               onClick={() => setToast(null)}
               style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}
             >
