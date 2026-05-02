@@ -243,7 +243,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser]);
 
-  // ─── WebSocket Real-time Notifications ─────────────────────────────────────
+  // ─── WebSocket Real-time Notifications (Disabled for Vercel compatibility) ───
+  /*
   useEffect(() => {
     if (!currentUser) {
       if (socket) {
@@ -292,6 +293,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       newSocket.disconnect();
     };
   }, [currentUser]);
+  */
 
   // Fallback polling (less frequent, every 2 mins) just to keep data synced
   useEffect(() => {
