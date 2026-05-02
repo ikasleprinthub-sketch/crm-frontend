@@ -22,7 +22,19 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const message = error.response?.data?.message || error.message;
-    console.error(`❌ [API Error] ${status || 'Network'} ${error.config?.url}: ${message}`);
+    const url = error.config?.url;
+    const method = error.config?.method?.toUpperCase();
+
+    console.error(`❌ [API Error] ${status || 'Network'} ${method} ${url}: ${message}`);
+    
+    if (error.response) {
+      console.error('Data:', error.response.data);
+      console.error('Headers:', error.response.headers);
+    } else if (error.request) {
+      console.error('No response received. The request was made but no response was received from the server.');
+    } else {
+      console.error('Error setting up the request:', error.message);
+    }
 
     if (status === 401) {
       if (typeof window !== 'undefined') {
