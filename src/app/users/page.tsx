@@ -234,7 +234,7 @@ export default function UsersPage() {
                     {user.status === 'PENDING' ? 'Requested' : 'Joined'}
                   </span>
                   <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {new Date(user.createdAt).toLocaleDateString('en-GB')}
                   </span>
                 </div>
 

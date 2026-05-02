@@ -6,7 +6,7 @@ import { useApp, TaskStatus } from '@/context/AppContext';
 import SOPList from '@/components/SOPList';
 import { Modal, AddTaskForm } from '@/components/Modals';
 import styles from '../page.module.css';
-import { Trash2, ClipboardList, Search, Building, User, Calendar, RotateCcw } from 'lucide-react';
+import { Trash2, ClipboardList, Search, Building, User, Users, Calendar, RotateCcw } from 'lucide-react';
 import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -17,6 +17,7 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
   const [userFilter, setUserFilter] = useState<string>('All');
+  const [leadCategory, setLeadCategory] = useState<string>('All');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   
@@ -25,14 +26,21 @@ export default function TasksPage() {
 
   const filtered = tasks.filter(t => {
     const matchesSearch = !searchQuery || 
-      t.taskNo.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (t.taskNo.toLowerCase().includes(searchQuery.toLowerCase())) || 
       (t.contactName?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (t.email?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (t.lead?.leadName.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (leads.find(l => l.id === t.leadId)?.leadName.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
     const matchesDept = deptFilter === 'All' || t.departmentId === deptFilter;
     const matchesUser = userFilter === 'All' || t.assignedToId === userFilter;
+    
+    // Lead Category Filter
+    const lead = leads.find(l => l.id === t.leadId);
+    const matchesCategory = leadCategory === 'All' 
+      ? true 
+      : leadCategory === 'New' ? lead?.status === 'NEW' : lead?.status !== 'NEW';
     
     let matchesDate = true;
     if (startDate || endDate) {
@@ -41,13 +49,13 @@ export default function TasksPage() {
       if (endDate) matchesDate = matchesDate && taskDate <= endDate.getTime();
     }
 
-    return matchesSearch && matchesStatus && matchesDept && matchesUser && matchesDate;
+    return matchesSearch && matchesStatus && matchesDept && matchesUser && matchesDate && matchesCategory;
   });
 
   const getUserName = (id: string) => users.find(u => u.id === id)?.name || '—';
   const getDeptName = (id: string) => departments.find(d => d.id === id)?.name || '—';
   const getTypeName = (id: string) => taskTypes.find(t => t.id === id)?.name || '—';
-  const getLeadName = (id: string) => leads.find(l => l.id === id)?.leadName || 'Unknown';
+  const getLeadName = (task: any) => task.lead?.leadName || leads.find((l: any) => l.id === task.leadId)?.leadName || 'Unknown';
 
   const statusBadge = (status: string) => `badge-${status.replace(/_/g, '').toLowerCase()}`;
   const priorityBadge = (priority: string) => `priority-${priority.toLowerCase()}`;
@@ -58,6 +66,28 @@ export default function TasksPage() {
   }, {} as any);
 
   const getStatusLabel = (s: string) => s.replace(/_/g, ' ');
+
+  const getStatusColor = (s: string) => {
+    switch (s) {
+      case 'NOT_YET_STARTED': return 'var(--text-secondary)';
+      case 'WORK_IN_PROGRESS': return 'var(--accent-blue)';
+      case 'PENDING_FOR_APPROVAL': return 'var(--accent-yellow)';
+      case 'COMPLETED': return 'var(--accent-green)';
+      case 'DATA_NOT_RECEIVED': return 'var(--accent-red)';
+      default: return 'inherit';
+    }
+  };
+
+  const getStatusBgColor = (s: string) => {
+    switch (s) {
+      case 'NOT_YET_STARTED': return 'rgba(148, 163, 184, 0.12)';
+      case 'WORK_IN_PROGRESS': return 'rgba(91, 146, 208, 0.12)';
+      case 'PENDING_FOR_APPROVAL': return 'rgba(245, 158, 11, 0.12)';
+      case 'COMPLETED': return 'rgba(16, 185, 129, 0.12)';
+      case 'DATA_NOT_RECEIVED': return 'rgba(239, 68, 68, 0.12)';
+      default: return 'transparent';
+    }
+  };
 
   return (
     <div className={styles.wrapper}>
@@ -110,6 +140,18 @@ export default function TasksPage() {
                 options={[{ id: 'All', name: 'All Staff' }, ...users.map(u => ({ id: u.id, name: u.name }))]}
               />
             )}
+ 
+            <CustomSelect 
+              label="Lead Category"
+              icon={<Users size={14} />}
+              value={leadCategory}
+              onChange={setLeadCategory}
+              options={[
+                { id: 'All', name: 'All Categories' },
+                { id: 'New', name: 'New Leads' },
+                { id: 'Old', name: 'Old Leads' }
+              ]}
+            />
 
             <CustomDatePicker 
               label="From"
@@ -125,7 +167,7 @@ export default function TasksPage() {
 
             <button 
               className={styles.filterResetBtn} 
-              onClick={() => { setStatusFilter('All'); setDeptFilter('All'); setUserFilter('All'); setStartDate(null); setEndDate(null); }}
+              onClick={() => { setStatusFilter('All'); setDeptFilter('All'); setUserFilter('All'); setLeadCategory('All'); setStartDate(null); setEndDate(null); }}
             >
               <RotateCcw size={14} /> Reset Filters
             </button>
@@ -161,13 +203,13 @@ export default function TasksPage() {
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: 2 }}>{getDeptName(task.departmentId)}</p>
                       </td>
                       <td>
-                         <span style={{ fontWeight: 600 }}>{getLeadName(task.leadId)}</span>
+                         <span style={{ fontWeight: 600 }}>{getLeadName(task)}</span>
                          {task.contactName && <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{task.contactName}</p>}
                       </td>
                       <td style={{ fontSize: '0.8rem' }}>{getTypeName(task.taskTypeId)}</td>
                       <td>{getUserName(task.assignedToId)}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        {task.completionDate ? new Date(task.completionDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+                        {task.completionDate ? new Date(task.completionDate).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
                       </td>
                       <td><span className={`${styles.priority} ${priorityBadge(task.priority)}`}>{task.priority}</span></td>
                       <td>
@@ -175,12 +217,22 @@ export default function TasksPage() {
                           className={`${styles.badge} ${statusBadge(task.status)}`}
                           value={task.status}
                           onChange={e => updateTask(task.id, { status: e.target.value as TaskStatus })}
-                          style={{ border: 'none', cursor: 'pointer', background: 'transparent', fontWeight: 700, fontSize: '0.72rem', padding: '0.25rem 0.5rem' }}
+                          style={{ 
+                            border: 'none', 
+                            cursor: 'pointer', 
+                            background: getStatusBgColor(task.status), 
+                            fontWeight: 700, 
+                            fontSize: '0.68rem', 
+                            padding: '0.3rem 0.6rem',
+                            color: getStatusColor(task.status),
+                            borderRadius: '8px',
+                            transition: 'all 0.3s ease'
+                          }}
                         >
                           {(['NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'COMPLETED', 'DATA_NOT_RECEIVED'] as TaskStatus[])
                             .filter(s => !isEmployee || s !== 'COMPLETED')
                             .map(s => (
-                              <option key={s} value={s}>{getStatusLabel(s)}</option>
+                              <option key={s} value={s} style={{ color: getStatusColor(s), background: 'var(--surface)' }}>{getStatusLabel(s)}</option>
                             ))}
                         </select>
                       </td>
@@ -216,7 +268,7 @@ export default function TasksPage() {
           {tasks.find(t => t.id === selectedTask) && (
             <div style={{ padding: '0.25rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
-                <p style={{ color: 'var(--text-secondary)' }}>Lead: <strong style={{ color: 'var(--text-primary)' }}>{getLeadName(tasks.find(t => t.id === selectedTask)!.leadId)}</strong></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Lead: <strong style={{ color: 'var(--text-primary)' }}>{getLeadName(tasks.find(t => t.id === selectedTask)!)}</strong></p>
                 <p style={{ color: 'var(--text-secondary)' }}>Assigned: <strong style={{ color: 'var(--text-primary)' }}>{getUserName(tasks.find(t => t.id === selectedTask)!.assignedToId)}</strong></p>
                 <p style={{ color: 'var(--text-secondary)' }}>Type: <strong style={{ color: 'var(--text-primary)' }}>{getTypeName(tasks.find(t => t.id === selectedTask)!.taskTypeId)}</strong></p>
                 <p style={{ color: 'var(--text-secondary)' }}>Priority: <strong style={{ color: tasks.find(t => t.id === selectedTask)!.priority === 'URGENT' ? 'var(--accent-red)' : 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.priority}</strong></p>

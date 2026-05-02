@@ -98,8 +98,8 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
           />
           {errors.leadName && <p className={styles.errorText}>{errors.leadName}</p>}
         </FormField>
-        <FormField label="Contact Name">
-          <input className={styles.input} value={form.contactName} onChange={e => setForm({ ...form, contactName: e.target.value })} placeholder="Contact Person" />
+        <FormField label="Contact Person *">
+          <input className={styles.input} required value={form.contactName} onChange={e => setForm({ ...form, contactName: e.target.value })} placeholder="Contact Person Name" />
         </FormField>
       </div>
       <div className={styles.formRow}>
@@ -154,8 +154,8 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
           onChange={val => setForm({ ...form, taskTypeId: val })}
         />
       </div>
-      <FormField label="Remarks">
-        <textarea className={styles.textarea} value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Additional remarks..." rows={3} />
+      <FormField label="Remarks *">
+        <textarea className={styles.textarea} required value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Additional remarks..." rows={3} />
       </FormField>
       <div className={styles.formActions}>
         <button type="submit" className={styles.submitBtn}>Create Lead</button>
@@ -244,6 +244,11 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       return;
     }
 
+    if (!form.remarks.trim()) {
+      alert("Remarks are required for the task.");
+      return;
+    }
+
     onSubmit(form);
   };
 
@@ -302,7 +307,7 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
                 const time = getTimeFromDate(form.startDate);
                 setForm({ ...form, startDate: combineDateAndTime(date, time) });
               }}
-              dateFormat="MMM d, yyyy"
+              dateFormat="dd/MM/yyyy"
               className={styles.input}
               placeholderText="Select start date"
               required
@@ -329,7 +334,7 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
                 const time = getTimeFromDate(form.completionDate || new Date());
                 setForm({ ...form, completionDate: combineDateAndTime(date, time) });
               }}
-              dateFormat="MMM d, yyyy"
+              dateFormat="dd/MM/yyyy"
               className={styles.input}
               placeholderText="Select completion date"
               required
@@ -345,8 +350,8 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
           onChange={time => setForm({ ...form, completionDate: combineDateAndTime(form.completionDate || new Date(), time) })}
         />
       </div>
-      <FormField label="Remarks">
-        <textarea className={styles.textarea} value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Any specific instructions..." rows={3} />
+      <FormField label="Remarks *">
+        <textarea className={styles.textarea} required value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Any specific instructions..." rows={3} />
       </FormField>
       <div className={styles.formActions}>
         <button type="submit" className={styles.submitBtn}>Create Task</button>
@@ -389,7 +394,9 @@ export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!form.name) newErrors.name = 'Name is required';
-    if (!form.email || !/\S+@\S+\.\S+/.test(form.email)) newErrors.email = 'Valid email is required';
+    if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = 'Valid email is required';
+    }
     if (!form.password || form.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -510,6 +517,12 @@ export function EditUserForm({ user, onSubmit }: { user: User; onSubmit: (data: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      alert("Valid email is required");
+      return;
+    }
+
     const submissionData: any = { ...form };
     if (!submissionData.password) delete submissionData.password;
     submissionData.managerId = submissionData.managerId === "" ? null : submissionData.managerId;

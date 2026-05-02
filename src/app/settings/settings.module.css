@@ -1,0 +1,314 @@
+/* ── My Account Section ───────────────────────────────────────────────────── */
+.accountSection {
+  margin-bottom: 2.5rem;
+}
+
+.configSection {
+  margin-bottom: 2.5rem;
+}
+
+/* ── Section Heading ─────────────────────────────────────────────────────── */
+.sectionHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.sectionHeadingIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 6px 20px rgba(102,126,234,0.3);
+}
+
+.sectionHeading h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+  margin: 0 0 2px;
+}
+
+.sectionHeading p {
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ── Account Grid (5 cards) ──────────────────────────────────────────────── */
+.accountGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+/* ── Account Card ────────────────────────────────────────────────────────── */
+.accountCard {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.35rem 1.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.accountCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: var(--card-glow, rgba(67,24,255,0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.accountCard:hover {
+  transform: translateY(-4px);
+  border-color: transparent;
+  box-shadow: 0 20px 40px -10px var(--card-glow, rgba(67,24,255,0.25));
+}
+
+.accountCard:hover::before {
+  opacity: 1;
+}
+
+.accountCard:active {
+  transform: translateY(-2px);
+}
+
+/* ── Card Icon ───────────────────────────────────────────────────────────── */
+.cardIconWrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.accountCard:hover .cardIconWrap {
+  transform: scale(1.08) rotate(-3deg);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+}
+
+/* ── Card Body ───────────────────────────────────────────────────────────── */
+.cardBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.cardDesc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ── Card Arrow ──────────────────────────────────────────────────────────── */
+.cardArrow {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: transform 0.3s ease, color 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.accountCard:hover .cardArrow {
+  transform: translateX(4px);
+  color: var(--primary);
+}
+
+/* ── Success Toast ───────────────────────────────────────────────────────── */
+.successToast {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: linear-gradient(135deg, #11998e, #38ef7d);
+  color: white;
+  padding: 0.875rem 1.5rem;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  z-index: 9999;
+  box-shadow: 0 15px 35px rgba(17,153,142,0.35);
+  animation: slideInToast 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideInToast {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Avatar Upload Area ──────────────────────────────────────────────────── */
+.avatarUploadArea {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 2.5px dashed var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.avatarUploadArea:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 6px rgba(67,24,255,0.08);
+}
+
+.avatarPreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 1rem;
+}
+
+.avatarPlaceholder span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.avatarPlaceholder small {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* ── Notification Rows ───────────────────────────────────────────────────── */
+.notifRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: background 0.2s ease;
+}
+
+.notifRow:hover {
+  background: var(--surface-hover);
+}
+
+.notifRowIcon {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.notifRowInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notifRowLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.notifRowDesc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ── Toggle Switch ───────────────────────────────────────────────────────── */
+.toggleBtn {
+  width: 48px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--border);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.3s ease;
+}
+
+.toggleBtn.toggleOn {
+  background: var(--primary);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.toggleBtn.toggleOn .toggleThumb {
+  transform: translateX(22px);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .accountGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .avatarUploadArea {
+    width: 160px;
+    height: 160px;
+  }
+}

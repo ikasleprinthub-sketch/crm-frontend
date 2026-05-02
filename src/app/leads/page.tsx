@@ -15,6 +15,7 @@ export default function LeadsPage() {
   const [filter, setFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
   const [sourceFilter, setSourceFilter] = useState<string>('All');
+  const [leadCategory, setLeadCategory] = useState<string>('All');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   
@@ -30,6 +31,9 @@ export default function LeadsPage() {
     const matchesStatus = filter === 'All' || l.status === filter;
     const matchesDept = deptFilter === 'All' || l.departmentId === deptFilter;
     const matchesSource = sourceFilter === 'All' || l.sourceId === sourceFilter;
+    const matchesCategory = leadCategory === 'All' 
+      ? true 
+      : leadCategory === 'New' ? l.status === 'NEW' : l.status !== 'NEW';
     
     // Date Filtering
     let matchesDate = true;
@@ -39,15 +43,47 @@ export default function LeadsPage() {
       if (endDate) matchesDate = matchesDate && leadDate <= endDate.getTime();
     }
 
-    return matchesSearch && matchesStatus && matchesDept && matchesSource && matchesDate;
+    return matchesSearch && matchesStatus && matchesDept && matchesSource && matchesDate && matchesCategory;
   });
 
   const getDeptName = (id: string) => departments.find(d => d.id === id)?.name || '—';
   const getUserName = (id: string) => users.find(u => u.id === id)?.name || 'Unassigned';
   const getSourceName = (id: string) => sources.find(s => s.id === id)?.name || '—';
 
+  const getLeadStatusColor = (status: string) => {
+    switch (status) {
+      case 'NEW': return 'var(--accent-blue)';
+      case 'CONVERTED': return 'var(--accent-green)';
+      case 'HOLD_BY_LEAD': return 'var(--accent-yellow)';
+      case 'NOT_RESPONDED': return 'var(--accent-red)';
+      case 'DROPPED': return 'var(--text-secondary)';
+      case 'AWAITING_CONFIRMATION': return 'var(--accent-yellow)';
+      case 'MEETING_SCHEDULED': return 'var(--accent-purple)';
+      default: return 'inherit';
+    }
+  };
+
+  const getLeadStatusBgColor = (status: string) => {
+    switch (status) {
+      case 'NEW': return 'rgba(91, 146, 208, 0.12)';
+      case 'CONVERTED': return 'rgba(16, 185, 129, 0.12)';
+      case 'HOLD_BY_LEAD': return 'rgba(245, 158, 11, 0.12)';
+      case 'NOT_RESPONDED': return 'rgba(239, 68, 68, 0.12)';
+      case 'DROPPED': return 'rgba(148, 163, 184, 0.12)';
+      case 'AWAITING_CONFIRMATION': return 'rgba(245, 158, 11, 0.12)';
+      case 'MEETING_SCHEDULED': return 'rgba(167, 139, 250, 0.12)';
+      default: return 'transparent';
+    }
+  };
+
   const statusBadge = (status: string) => {
-    return status === 'CONVERTED' ? 'badge-converted' : 'badge-new';
+    switch (status) {
+      case 'CONVERTED': return 'badge-converted';
+      case 'NEW': return 'badge-new';
+      case 'DROPPED': return 'badge-dropped';
+      case 'NOT_RESPONDED': return 'badge-notresponded';
+      default: return 'badge-new';
+    }
   };
 
   const statusCounts = filters.reduce((acc, curr) => {
@@ -110,6 +146,18 @@ export default function LeadsPage() {
             />
 
             <CustomSelect 
+              label="Lead Category"
+              icon={<Users size={14} />}
+              value={leadCategory}
+              onChange={setLeadCategory}
+              options={[
+                { id: 'All', name: 'All Categories' },
+                { id: 'New', name: 'New Leads (NEW Status)' },
+                { id: 'Old', name: 'Old Leads (Other Status)' }
+              ]}
+            />
+ 
+            <CustomSelect 
               label="Lead Source"
               icon={<Globe size={14} />}
               value={sourceFilter}
@@ -131,7 +179,7 @@ export default function LeadsPage() {
 
             <button 
               className={styles.filterResetBtn} 
-              onClick={() => { setFilter('All'); setDeptFilter('All'); setSourceFilter('All'); setStartDate(null); setEndDate(null); }}
+              onClick={() => { setFilter('All'); setDeptFilter('All'); setSourceFilter('All'); setLeadCategory('All'); setStartDate(null); setEndDate(null); }}
             >
               <RotateCcw size={14} /> Reset Filters
             </button>
@@ -170,17 +218,27 @@ export default function LeadsPage() {
                     <td>{getSourceName(lead.sourceId)}</td>
                     <td>{getDeptName(lead.departmentId)}</td>
                     <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {lead.date ? new Date(lead.date).toLocaleDateString() : '—'}
+                      {lead.date ? new Date(lead.date).toLocaleDateString('en-GB') : '—'}
                     </td>
                     <td>
                       <select 
                         className={`${styles.badge} ${statusBadge(lead.status)}`}
                         value={lead.status}
                         onChange={e => updateLead(lead.id, { status: e.target.value as LeadStatus })}
-                        style={{ border: 'none', cursor: 'pointer', background: 'transparent', fontWeight: 700, fontSize: '0.65rem', padding: '0.25rem 0.5rem' }}
+                        style={{ 
+                          border: 'none', 
+                          cursor: 'pointer', 
+                          background: getLeadStatusBgColor(lead.status), 
+                          fontWeight: 700, 
+                          fontSize: '0.65rem', 
+                          padding: '0.3rem 0.6rem',
+                          color: getLeadStatusColor(lead.status),
+                          borderRadius: '8px',
+                          transition: 'all 0.3s ease'
+                        }}
                       >
                         {filters.filter(f => f !== 'All').map(s => (
-                          <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                          <option key={s} value={s} style={{ color: getLeadStatusColor(s), background: 'var(--surface)' }}>{s.replace(/_/g, ' ')}</option>
                         ))}
                       </select>
                     </td>
