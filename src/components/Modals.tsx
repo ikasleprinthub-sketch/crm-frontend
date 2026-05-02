@@ -518,6 +518,11 @@ export function EditUserForm({ user, onSubmit }: { user: User; onSubmit: (data: 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (form.password && form.password.length < 6) {
+      alert("Password must be at least 6 characters long");
+      return;
+    }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       alert("Valid email is required");
       return;

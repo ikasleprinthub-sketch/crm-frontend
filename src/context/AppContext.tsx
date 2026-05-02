@@ -167,6 +167,7 @@ interface AppContextType {
   unreadCount: number;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  updateProfile: (data: any) => Promise<void>;
 
   // Activity Logs
   activities: any[];
@@ -323,7 +324,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const isManagerOrAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER';
 
-      const [depsRes, typesRes, usersRes, leadsRes, tasksRes, sourcesRes, notificationsRes, unreadRes] = await Promise.all([
+      const [profileRes, depsRes, typesRes, usersRes, leadsRes, tasksRes, sourcesRes, notificationsRes, unreadRes] = await Promise.all([
+        api.get('/auth/me'),
         api.get('/departments'),
         api.get('/task-types'),
         api.get('/users'),
@@ -333,6 +335,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         api.get('/notifications'),
         api.get('/notifications/unread-count')
       ]);
+
+      if (profileRes.data?.success) {
+        const profile = profileRes.data.data;
+        const updatedUser = { ...currentUser, ...profile };
+        // Only update if something changed to avoid infinite loop
+        if (JSON.stringify(updatedUser) !== JSON.stringify(currentUser)) {
+          setCurrentUser(updatedUser);
+          localStorage.setItem('crm_user', JSON.stringify(updatedUser));
+        }
+      }
 
       const getArr = (payload: any, key: string) => {
         if (!payload) return [];
@@ -447,6 +459,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(null);
     localStorage.removeItem('crm_user');
     router.push('/login');
+  };
+
+  const updateProfile = async (data: any) => {
+    if (!currentUser) return;
+    try {
+      const res = await api.put(`/users/${currentUser.id}`, data);
+      if (res.data?.success) {
+        const updatedUser = { ...currentUser, ...res.data.data };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('crm_user', JSON.stringify(updatedUser));
+      }
+    } catch (e) {
+      throw e;
+    }
   };
 
   // Users
@@ -617,7 +643,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      currentUser, login, logout,
+      currentUser, login, logout, updateProfile,
       sidebarOpen, toggleSidebar, closeSidebar,
       users, addUser, updateUser, deleteUser, approveUser, rejectUser,
       departments, addDepartment, updateDepartment, deleteDepartment,

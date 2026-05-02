@@ -216,28 +216,45 @@ export default function TasksPage() {
                       </td>
                       <td><span className={`${styles.priority} ${priorityBadge(task.priority)}`}>{task.priority}</span></td>
                       <td>
-                        <select
-                          className={`${styles.badge} ${statusBadge(task.status)}`}
-                          value={task.status}
-                          onChange={e => updateTask(task.id, { status: e.target.value as TaskStatus })}
-                          style={{
-                            border: 'none',
-                            cursor: 'pointer',
-                            background: getStatusBgColor(task.status),
-                            fontWeight: 700,
-                            fontSize: '0.68rem',
-                            padding: '0.3rem 0.6rem',
-                            color: getStatusColor(task.status),
-                            borderRadius: '8px',
-                            transition: 'all 0.3s ease'
-                          }}
-                        >
-                          {(['NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'COMPLETED', 'DATA_NOT_RECEIVED'] as TaskStatus[])
-                            .filter(s => !isEmployee || s !== 'COMPLETED')
-                            .map(s => (
-                              <option key={s} value={s} style={{ color: getStatusColor(s), background: 'var(--surface)' }}>{getStatusLabel(s)}</option>
-                            ))}
-                        </select>
+                        {isEmployee && task.status === 'COMPLETED' ? (
+                          <span 
+                            className={`${styles.badge} ${statusBadge(task.status)}`}
+                            style={{
+                              background: getStatusBgColor(task.status),
+                              color: getStatusColor(task.status),
+                              fontWeight: 700,
+                              fontSize: '0.68rem',
+                              padding: '0.3rem 0.6rem',
+                              borderRadius: '8px',
+                              display: 'inline-block'
+                            }}
+                          >
+                            {getStatusLabel(task.status)}
+                          </span>
+                        ) : (
+                          <select
+                            className={`${styles.badge} ${statusBadge(task.status)}`}
+                            value={task.status}
+                            onChange={e => updateTask(task.id, { status: e.target.value as TaskStatus })}
+                            style={{
+                              border: 'none',
+                              cursor: 'pointer',
+                              background: getStatusBgColor(task.status),
+                              fontWeight: 700,
+                              fontSize: '0.68rem',
+                              padding: '0.3rem 0.6rem',
+                              color: getStatusColor(task.status),
+                              borderRadius: '8px',
+                              transition: 'all 0.3s ease'
+                            }}
+                          >
+                            {(['NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'COMPLETED', 'DATA_NOT_RECEIVED'] as TaskStatus[])
+                              .filter(s => !isEmployee || s !== 'COMPLETED' || task.status === 'COMPLETED')
+                              .map(s => (
+                                <option key={s} value={s} style={{ color: getStatusColor(s), background: 'var(--surface)' }}>{getStatusLabel(s)}</option>
+                              ))}
+                          </select>
+                        )}
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setSelectedTask(task.id)}>

@@ -15,7 +15,7 @@ import {
 type AccountSection = 'name' | 'email' | 'avatar' | 'password' | 'notifications' | null;
 
 export default function SettingsPage() {
-  const { currentUser } = useApp();
+  const { currentUser, updateProfile } = useApp();
 
   // ── Account Settings State ─────────────────────────────────────────────────
   const [activeModal, setActiveModal] = useState<AccountSection>(null);
@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /*
   const [notifications, setNotifications] = useState({
     emailAlerts: true,
     taskReminders: true,
@@ -35,6 +36,7 @@ export default function SettingsPage() {
     weeklyReport: true,
     systemAnnouncements: true,
   });
+  */
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -49,7 +51,7 @@ export default function SettingsPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.put(`/users/${currentUser?.id}`, { name: nameForm.name });
+      await updateProfile({ name: nameForm.name });
       showSuccess('Name updated successfully!');
       setActiveModal(null);
     } catch (err: any) {
@@ -65,7 +67,7 @@ export default function SettingsPage() {
     }
     setLoading(true);
     try {
-      await api.put(`/users/${currentUser?.id}`, { email: emailForm.email });
+      await updateProfile({ email: emailForm.email });
       showSuccess('Email updated successfully!');
       setActiveModal(null);
     } catch (err: any) {
@@ -97,7 +99,7 @@ export default function SettingsPage() {
     if (passwordForm.newPass.length < 6) { alert('Password must be at least 6 characters.'); return; }
     setLoading(true);
     try {
-      await api.put(`/users/${currentUser?.id}`, {
+      await updateProfile({
         currentPassword: passwordForm.current,
         newPassword: passwordForm.newPass,
       });
@@ -109,6 +111,7 @@ export default function SettingsPage() {
     } finally { setLoading(false); }
   };
 
+  /*
   const handleNotificationSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -117,6 +120,7 @@ export default function SettingsPage() {
       setActiveModal(null);
     } finally { setLoading(false); }
   };
+  */
 
   // ── Cards definition ────────────────────────────────────────────────────────
   const accountCards = [
@@ -152,6 +156,7 @@ export default function SettingsPage() {
       gradient: 'linear-gradient(135deg, #ee5d50, #f9a825)',
       glow: 'rgba(238,93,80,0.35)',
     },
+    /*
     {
       id: 'notifications' as AccountSection,
       icon: <Bell size={28} />,
@@ -160,6 +165,7 @@ export default function SettingsPage() {
       gradient: 'linear-gradient(135deg, #4318ff, #9c27b0)',
       glow: 'rgba(67,24,255,0.35)',
     },
+    */
   ];
 
   return (
@@ -321,6 +327,7 @@ export default function SettingsPage() {
         </Modal>
 
         {/* Notification Settings */}
+        {/* 
         <Modal isOpen={activeModal === 'notifications'} onClose={() => setActiveModal(null)} title="Notification Settings">
           <form onSubmit={handleNotificationSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {([
@@ -353,6 +360,7 @@ export default function SettingsPage() {
             </div>
           </form>
         </Modal>
+        */}
 
       </main>
     </div>

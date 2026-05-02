@@ -601,7 +601,13 @@ function SuperAdminMonitor() {
                     <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_', ' ')}</span></td>
                     <td>{formatTime(r.checkIn)}</td>
                     <td>{formatTime(r.checkOut)}</td>
-                    <td>{r.totalHours != null ? `${r.totalHours}h` : '—'}</td>
+                    <td>
+                      {r.checkIn && !r.checkOut ? (
+                        <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{calculateLiveDiff(r.checkIn)} (Active)</span>
+                      ) : (
+                        formatDuration(r.totalHours)
+                      )}
+                    </td>
                     <td>
                       {r.permission !== 'NONE'
                         ? <span className={permBadgeClass(r.permission)}>{r.permission}</span>
@@ -689,7 +695,7 @@ function SuperAdminMonitor() {
               {[
                 { label: 'Check In',    val: formatTime(viewEmpRecord.checkIn) },
                 { label: 'Check Out',   val: formatTime(viewEmpRecord.checkOut) },
-                { label: 'Total Hours', val: viewEmpRecord.totalHours != null ? `${viewEmpRecord.totalHours}h` : '—' },
+                { label: 'Total Hours', val: viewEmpRecord.checkIn && !viewEmpRecord.checkOut ? calculateLiveDiff(viewEmpRecord.checkIn) : formatDuration(viewEmpRecord.totalHours) },
               ].map(({ label, val }) => (
                 <div key={label}>
                   <div className={styles.timeLabel}>{label}</div>
@@ -725,7 +731,7 @@ function SuperAdminMonitor() {
                           <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_', ' ')}</span></td>
                           <td>{formatTime(r.checkIn)}</td>
                           <td>{formatTime(r.checkOut)}</td>
-                          <td>{r.totalHours != null ? `${r.totalHours}h` : '—'}</td>
+                          <td>{formatDuration(r.totalHours)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1201,7 +1207,13 @@ function RegularAttendancePage() {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Date (leave blank for today)</label>
-              <input type="date" className={styles.formInput} value={permDate} onChange={e => setPermDate(e.target.value)} />
+              <input 
+                type="date" 
+                className={styles.formInput} 
+                value={permDate} 
+                onChange={e => setPermDate(e.target.value)} 
+                min={new Date().toISOString().split('T')[0]}
+              />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Reason *</label>
