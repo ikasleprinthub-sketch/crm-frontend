@@ -141,9 +141,9 @@ export default function Header({ title, subtitle }: HeaderProps) {
                 <button className={styles.profileLink} onClick={() => { setShowProfile(false); router.push('/settings'); }}>
                   <User size={16} /> My Profile <ChevronRight size={14} className={styles.chevron} />
                 </button>
-                <button className={styles.profileLink} onClick={() => { setShowProfile(false); router.push('/settings'); }}>
+                {/* <button className={styles.profileLink} onClick={() => { setShowProfile(false); router.push('/settings'); }}>
                   <Settings size={16} /> Settings <ChevronRight size={14} className={styles.chevron} />
-                </button>
+                </button> */}
                 <div className={styles.dropdownDivider} />
                 <button className={`${styles.profileLink} ${styles.logout}`} onClick={logout}>
                   <LogOut size={16} /> Logout
