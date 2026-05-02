@@ -14,7 +14,11 @@ interface HeaderProps {
 
 export default function Header({ title, subtitle }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const { currentUser, logout, notifications, unreadCount, markAsRead, markAllAsRead, toggleSidebar } = useApp();
+  const { 
+    currentUser, logout, notifications, unreadCount, 
+    markAsRead, markAllAsRead, toggleSidebar,
+    searchQuery, setSearchQuery 
+  } = useApp();
   const [showNotif, setShowNotif] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   
@@ -50,7 +54,13 @@ export default function Header({ title, subtitle }: HeaderProps) {
         {/* Search */}
         <div className={styles.searchBox}>
           <Search size={16} className={styles.searchIcon} />
-          <input type="text" placeholder="Search anything..." className={styles.searchInput} />
+          <input 
+            type="text" 
+            placeholder="Search anything..." 
+            className={styles.searchInput} 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         {/* Theme Toggle */}

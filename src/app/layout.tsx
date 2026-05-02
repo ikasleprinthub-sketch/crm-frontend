@@ -6,6 +6,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Capnero | Flow Smarter, Grow Stronger",
   description: "Modern Business Management & CRM System",
+  icons: {
+    icon: "/favi.ico",
+  },
 };
 
 export default function RootLayout({

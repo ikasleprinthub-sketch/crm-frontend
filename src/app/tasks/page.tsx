@@ -11,7 +11,11 @@ import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
 export default function TasksPage() {
-  const { currentUser, tasks, leads, addTask, updateTask, updateTaskStep, deleteTask, users, departments, taskTypes } = useApp();
+  const { 
+    currentUser, tasks, leads, addTask, updateTask, 
+    updateTaskStep, deleteTask, users, departments, 
+    taskTypes, searchQuery 
+  } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('All');
@@ -28,6 +32,16 @@ export default function TasksPage() {
     const matchesDept = deptFilter === 'All' || t.departmentId === deptFilter;
     const matchesUser = userFilter === 'All' || t.assignedToId === userFilter;
     
+    let matchesSearch = true;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      matchesSearch = 
+        t.taskNo.toLowerCase().includes(q) ||
+        (t.contactName?.toLowerCase().includes(q) || false) ||
+        (t.remarks?.toLowerCase().includes(q) || false) ||
+        (t.lead?.leadName?.toLowerCase().includes(q) || false);
+    }
+
     let matchesDate = true;
     if (startDate || endDate) {
       const taskDate = new Date(t.createdAt).getTime();
@@ -35,7 +49,7 @@ export default function TasksPage() {
       if (endDate) matchesDate = matchesDate && taskDate <= endDate.getTime();
     }
 
-    return matchesStatus && matchesDept && matchesUser && matchesDate;
+    return matchesStatus && matchesDept && matchesUser && matchesDate && matchesSearch;
   });
 
   const getUserName = (id: string) => users.find(u => u.id === id)?.name || '—';
@@ -155,7 +169,7 @@ export default function TasksPage() {
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: 2 }}>{getDeptName(task.departmentId)}</p>
                       </td>
                       <td>
-                         <span style={{ fontWeight: 600 }}>{getLeadName(task.leadId)}</span>
+                         <span style={{ fontWeight: 600 }}>{task.lead?.leadName || getLeadName(task.leadId)}</span>
                          {task.contactName && <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{task.contactName}</p>}
                       </td>
                       <td style={{ fontSize: '0.8rem' }}>{getTypeName(task.taskTypeId)}</td>
@@ -210,7 +224,7 @@ export default function TasksPage() {
           {tasks.find(t => t.id === selectedTask) && (
             <div style={{ padding: '0.25rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
-                <p style={{ color: 'var(--text-secondary)' }}>Lead: <strong style={{ color: 'var(--text-primary)' }}>{getLeadName(tasks.find(t => t.id === selectedTask)!.leadId)}</strong></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Lead: <strong style={{ color: 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)?.lead?.leadName || getLeadName(tasks.find(t => t.id === selectedTask)!.leadId)}</strong></p>
                 <p style={{ color: 'var(--text-secondary)' }}>Assigned: <strong style={{ color: 'var(--text-primary)' }}>{getUserName(tasks.find(t => t.id === selectedTask)!.assignedToId)}</strong></p>
                 <p style={{ color: 'var(--text-secondary)' }}>Type: <strong style={{ color: 'var(--text-primary)' }}>{getTypeName(tasks.find(t => t.id === selectedTask)!.taskTypeId)}</strong></p>
                 <p style={{ color: 'var(--text-secondary)' }}>Priority: <strong style={{ color: tasks.find(t => t.id === selectedTask)!.priority === 'URGENT' ? 'var(--accent-red)' : 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.priority}</strong></p>

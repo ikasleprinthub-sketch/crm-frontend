@@ -954,3 +954,27 @@
   text-align: center;
   padding: 1.5rem 0;
 }
+
+/* ── Task Details ── */
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}

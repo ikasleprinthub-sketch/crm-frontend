@@ -180,6 +180,10 @@ interface AppContextType {
   refreshTasks: () => Promise<void>;
   fetchInitialData: () => Promise<void>;
   showToast: (title: string, message: string) => void;
+  
+  // Search
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 
@@ -213,6 +217,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [notes, setNotes] = useState<any[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -622,7 +627,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       activities,
       notes, addNote, updateNote, deleteNote,
       fetchInitialData,
-      showToast
+      showToast,
+      searchQuery,
+      setSearchQuery
     }}>
       <>
         {children}
