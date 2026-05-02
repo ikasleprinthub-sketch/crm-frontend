@@ -10,7 +10,7 @@ import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
 export default function LeadsPage() {
-  const { currentUser, leads, addLead, updateLead, deleteLead, departments, users, sources, taskTypes } = useApp();
+  const { currentUser, leads, addLead, updateLead, deleteLead, departments, users, sources, taskTypes, searchQuery } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filter, setFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
@@ -21,6 +21,12 @@ export default function LeadsPage() {
   const filters: string[] = ['All', 'NEW', 'CONVERTED', 'HOLD_BY_LEAD', 'NOT_RESPONDED', 'DROPPED', 'AWAITING_CONFIRMATION', 'MEETING_SCHEDULED'];
 
   const filtered = leads.filter(l => {
+    const matchesSearch = !searchQuery || 
+      l.leadName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      l.leadNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.contactNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.email?.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesStatus = filter === 'All' || l.status === filter;
     const matchesDept = deptFilter === 'All' || l.departmentId === deptFilter;
     const matchesSource = sourceFilter === 'All' || l.sourceId === sourceFilter;
@@ -33,7 +39,7 @@ export default function LeadsPage() {
       if (endDate) matchesDate = matchesDate && leadDate <= endDate.getTime();
     }
 
-    return matchesStatus && matchesDept && matchesSource && matchesDate;
+    return matchesSearch && matchesStatus && matchesDept && matchesSource && matchesDate;
   });
 
   const getDeptName = (id: string) => departments.find(d => d.id === id)?.name || '—';

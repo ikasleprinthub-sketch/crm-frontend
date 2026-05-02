@@ -8,7 +8,7 @@ import Charts from '@/components/Charts';
 import styles from './page.module.css';
 
 export default function Dashboard() {
-  const { currentUser, leads, tasks, users, departments, sources, unreadCount, activities, notes, addNote, deleteNote } = useApp();
+  const { currentUser, leads, tasks, users, departments, sources, unreadCount, activities, notes, addNote, deleteNote, searchQuery } = useApp();
   const isEmployee = currentUser?.role === 'EMPLOYEE';
 
   const totalLeads = leads.length;
@@ -17,6 +17,19 @@ export default function Dashboard() {
   const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
   const totalEmployees = users.filter(u => u.role === 'EMPLOYEE').length;
   const urgentTasks = tasks.filter(t => t.priority === 'URGENT' && t.status !== 'COMPLETED').length;
+  
+  // Filtering logic
+  const filteredTasks = tasks.filter(t => 
+    t.taskNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.assignedTo?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.status.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredLeads = leads.filter(l => 
+    l.leadName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    l.leadNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    l.status.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const statusBadge = (status: string) => {
     const key = status.replace(/_/g, '').toLowerCase();
@@ -150,7 +163,7 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {tasks.filter(t => t.status !== 'COMPLETED').slice(0, 5).map(task => (
+                    {filteredTasks.filter(t => t.status !== 'COMPLETED').slice(0, 5).map(task => (
                       <tr key={task.id}>
                         <td style={{ fontWeight: 600, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.taskNo}</td>
                         <td>{getUserName(task.assignedToId)}</td>
@@ -160,7 +173,7 @@ export default function Dashboard() {
                     ))}
                   </tbody>
                 </table>
-                {tasks.filter(t => t.status !== 'COMPLETED').length === 0 && (
+                {filteredTasks.filter(t => t.status !== 'COMPLETED').length === 0 && (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }}><CheckSquare size={40} /></div>
                     <p>All tasks completed!</p>
@@ -186,7 +199,7 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {leads.slice(0, 5).map(lead => (
+                    {filteredLeads.slice(0, 5).map(lead => (
                       <tr key={lead.id}>
                         <td style={{ fontWeight: 600 }}>{lead.leadName}</td>
                         <td>{getSourceName(lead.sourceId)}</td>
@@ -196,7 +209,7 @@ export default function Dashboard() {
                     ))}
                   </tbody>
                 </table>
-                {leads.length === 0 && (
+                {filteredLeads.length === 0 && (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }}><Target size={40} /></div>
                     <p>No recent leads.</p>
