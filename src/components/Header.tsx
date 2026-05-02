@@ -96,15 +96,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                       className={`${styles.notifItem} ${!n.isRead ? styles.unread : ''}`}
                       onClick={() => {
                         if (!n.isRead) markAsRead(n.id);
-                        if (n.link) {
-                          // Map detail links to list pages since detail routes don't exist
-                          let targetLink = n.link;
-                          if (targetLink.startsWith('/leads/')) targetLink = '/leads';
-                          if (targetLink.startsWith('/tasks/')) targetLink = '/tasks';
-                          
-                          setShowNotif(false);
-                          router.push(targetLink);
-                        }
+                        // Navigation removed as requested - just stay on page
                       }}
                     >
                       <p className={styles.notifText}>{n.message}</p>

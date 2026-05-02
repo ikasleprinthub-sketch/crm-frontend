@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useApp } from '@/context/AppContext';
@@ -57,6 +58,25 @@ function formatTime(iso: string | null): string {
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatDuration(hours: number | null): string {
+  if (hours === null) return '—';
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h}h ${m}m`;
+}
+
+function calculateLiveDiff(checkInIso: string | null): string {
+  if (!checkInIso) return '—';
+  const start = new Date(checkInIso).getTime();
+  const now = new Date().getTime();
+  const diffMs = now - start;
+  if (diffMs < 0) return '0h 0m';
+  const h = Math.floor(diffMs / 3600000);
+  const m = Math.floor((diffMs % 3600000) / 60000);
+  return `${h}h ${m}m`;
 }
 
 function statusBadgeClass(s: AttendanceStatus): string {
@@ -154,7 +174,13 @@ function TeamRow({ team }: { team: TeamData }) {
                   <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_', ' ')}</span></td>
                   <td>{formatTime(r.checkIn)}</td>
                   <td>{formatTime(r.checkOut)}</td>
-                  <td>{r.totalHours != null ? `${r.totalHours}h` : '—'}</td>
+                  <td>
+                    {r.checkIn && !r.checkOut ? (
+                      <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{calculateLiveDiff(r.checkIn)} (Active)</span>
+                    ) : (
+                      formatDuration(r.totalHours)
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -176,8 +202,19 @@ function SuperAdminMonitor() {
   const [allToday,           setAllToday]           = useState<AttendanceRecord[]>([]);
   const [monthlyData,        setMonthlyData]        = useState<AttendanceRecord[]>([]);
   const [pendingPermissions, setPendingPermissions] = useState<AttendanceRecord[]>([]);
+  const [tick,               setTick]               = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const [activeTab,   setActiveTab]   = useState<'roles' | 'teams' | 'records' | 'permissions'>('roles');
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'permissions') setActiveTab('permissions');
+  }, [searchParams]);
   const [chartView,   setChartView]   = useState<'weekly' | 'monthly'>('weekly');
   const [histMonth,   setHistMonth]   = useState(now.getMonth() + 1);
   const [histYear,    setHistYear]    = useState(now.getFullYear());
@@ -765,6 +802,11 @@ function RegularAttendancePage() {
   const [pendingPermissions,  setPendingPermissions]  = useState<AttendanceRecord[]>([]);
   const [allAttendance,       setAllAttendance]       = useState<AttendanceRecord[]>([]);
   const [activeTab,           setActiveTab]           = useState<'team' | 'permissions' | 'all'>('team');
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'permissions') setActiveTab('permissions');
+  }, [searchParams]);
   const [showPermModal,       setShowPermModal]       = useState(false);
   const [permType,            setPermType]            = useState<PermissionType>('LATE_PERMISSION');
   const [permReason,          setPermReason]          = useState('');
@@ -774,6 +816,12 @@ function RegularAttendancePage() {
   const [overrideCheckIn,     setOverrideCheckIn]     = useState('');
   const [overrideCheckOut,    setOverrideCheckOut]    = useState('');
   const [overrideRemarks,     setOverrideRemarks]     = useState('');
+  const [tick,                setTick]                = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadToday = useCallback(async () => {
     try {
@@ -927,7 +975,13 @@ function RegularAttendancePage() {
           </div>
           <div className={styles.timeItem}>
             <span className={styles.timeLabel}>Total Hours</span>
-            <span className={styles.timeValue}>{today?.totalHours != null ? `${today.totalHours}h` : '—'}</span>
+            <span className={styles.timeValue}>
+              {today?.checkIn && !today?.checkOut ? (
+                <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{calculateLiveDiff(today.checkIn)} (Active)</span>
+              ) : (
+                formatDuration(today?.totalHours ?? null)
+              )}
+            </span>
           </div>
           {today?.permission && today.permission !== 'NONE' && (
             <div className={styles.timeItem}>
@@ -1014,7 +1068,7 @@ function RegularAttendancePage() {
                     <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_',' ')}</span></td>
                     <td>{formatTime(r.checkIn)}</td>
                     <td>{formatTime(r.checkOut)}</td>
-                    <td>{r.totalHours != null ? `${r.totalHours}h` : '—'}</td>
+                    <td>{formatDuration(r.totalHours)}</td>
                     <td>{r.permission !== 'NONE' ? <span className={permBadgeClass(r.permission)}>{r.permission}</span> : '—'}</td>
                   </tr>
                 ))}
@@ -1056,7 +1110,13 @@ function RegularAttendancePage() {
                           <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_',' ')}</span></td>
                           <td>{formatTime(r.checkIn)}</td>
                           <td>{formatTime(r.checkOut)}</td>
-                          <td>{r.totalHours != null ? `${r.totalHours}h` : '—'}</td>
+                          <td>
+                            {r.checkIn && !r.checkOut ? (
+                              <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{calculateLiveDiff(r.checkIn)} (Active)</span>
+                            ) : (
+                              formatDuration(r.totalHours)
+                            )}
+                          </td>
                           <td>{r.permission !== 'NONE' ? <span className={permBadgeClass(r.permission)}>{r.permission}</span> : '—'}</td>
                         </tr>
                       ))}
@@ -1108,7 +1168,13 @@ function RegularAttendancePage() {
                           <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_',' ')}</span></td>
                           <td>{formatTime(r.checkIn)}</td>
                           <td>{formatTime(r.checkOut)}</td>
-                          <td>{r.totalHours != null ? `${r.totalHours}h` : '—'}</td>
+                          <td>
+                            {r.checkIn && !r.checkOut ? (
+                              <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{calculateLiveDiff(r.checkIn)} (Active)</span>
+                            ) : (
+                              formatDuration(r.totalHours)
+                            )}
+                          </td>
                           <td>{r.permission !== 'NONE' ? <span className={permBadgeClass(r.permission)}>{r.permission}</span> : '—'}</td>
                           <td><button className={styles.overrideBtn} onClick={() => openOverride(r)}>Override</button></td>
                         </tr>

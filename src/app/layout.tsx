@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Capnero | Flow Smarter, Grow Stronger",
   description: "Modern Business Management & CRM System",
   icons: {
-    icon: "/favi.ico",
+    icon: "/favicon.ico",
   },
 };
 
