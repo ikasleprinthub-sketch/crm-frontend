@@ -11,7 +11,7 @@ import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
 export default function TasksPage() {
-  const { currentUser, tasks, leads, addTask, updateTask, updateTaskStep, deleteTask, users, departments, taskTypes } = useApp();
+  const { currentUser, tasks, leads, addTask, updateTask, updateTaskStep, deleteTask, users, departments, taskTypes, searchQuery } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('All');
@@ -24,6 +24,12 @@ export default function TasksPage() {
   const filters = ['All', 'NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'COMPLETED', 'DATA_NOT_RECEIVED'];
 
   const filtered = tasks.filter(t => {
+    const matchesSearch = !searchQuery || 
+      t.taskNo.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (t.contactName?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (t.email?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (leads.find(l => l.id === t.leadId)?.leadName.toLowerCase().includes(searchQuery.toLowerCase()));
+
     const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
     const matchesDept = deptFilter === 'All' || t.departmentId === deptFilter;
     const matchesUser = userFilter === 'All' || t.assignedToId === userFilter;
@@ -35,7 +41,7 @@ export default function TasksPage() {
       if (endDate) matchesDate = matchesDate && taskDate <= endDate.getTime();
     }
 
-    return matchesStatus && matchesDept && matchesUser && matchesDate;
+    return matchesSearch && matchesStatus && matchesDept && matchesUser && matchesDate;
   });
 
   const getUserName = (id: string) => users.find(u => u.id === id)?.name || '—';

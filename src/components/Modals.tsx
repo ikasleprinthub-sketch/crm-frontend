@@ -44,24 +44,59 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 
 /* ── Add Lead Form ── */
 export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
-  const { departments, sources, taskTypes } = useApp();
+  const { departments, sources, taskTypes, showToast } = useApp();
   const [form, setForm] = useState({
     leadName: '', contactName: '', email: '', contactNumber: '', sourceId: sources[0]?.id || '',
     departmentId: departments[0]?.id || '', taskTypeId: taskTypes[0]?.id || '', status: 'NEW' as LeadStatus, remarks: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const filteredTypes = taskTypes.filter(t => t.departmentId === form.departmentId);
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!form.leadName) {
+      newErrors.leadName = 'Lead name is required';
+      showToast('Validation Error', 'Lead/Business name is required');
+    }
+    
+    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
+      newErrors.email = 'Invalid email format';
+      showToast('Validation Error', 'Please enter a valid email address');
+    }
+    
+    if (form.contactNumber) {
+      const digits = form.contactNumber.replace(/\D/g, '');
+      if (digits.length !== 10) {
+        newErrors.contactNumber = 'Phone number must be exactly 10 digits';
+        showToast('Validation Error', 'Phone number must be exactly 10 digits');
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    if (validate()) {
+      onSubmit(form);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
       <div className={styles.formRow}>
         <FormField label="Lead/Business Name *">
-          <input className={styles.input} required value={form.leadName} onChange={e => setForm({ ...form, leadName: e.target.value })} placeholder="Enter lead name" />
+          <input 
+            className={`${styles.input} ${errors.leadName ? styles.inputError : ''}`} 
+            required 
+            value={form.leadName} 
+            onChange={e => setForm({ ...form, leadName: e.target.value })} 
+            placeholder="Enter lead name" 
+          />
+          {errors.leadName && <p className={styles.errorText}>{errors.leadName}</p>}
         </FormField>
         <FormField label="Contact Name">
           <input className={styles.input} value={form.contactName} onChange={e => setForm({ ...form, contactName: e.target.value })} placeholder="Contact Person" />
@@ -69,10 +104,26 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       </div>
       <div className={styles.formRow}>
         <FormField label="Phone">
-          <input className={styles.input} value={form.contactNumber} onChange={e => setForm({ ...form, contactNumber: e.target.value })} placeholder="Phone number" />
+          <input 
+            className={`${styles.input} ${errors.contactNumber ? styles.inputError : ''}`} 
+            value={form.contactNumber} 
+            onChange={e => {
+              const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+              setForm({ ...form, contactNumber: val });
+            }} 
+            placeholder="10-digit number" 
+          />
+          {errors.contactNumber && <p className={styles.errorText}>{errors.contactNumber}</p>}
         </FormField>
         <FormField label="Email">
-          <input className={styles.input} type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email address" />
+          <input 
+            className={`${styles.input} ${errors.email ? styles.inputError : ''}`} 
+            type="email" 
+            value={form.email} 
+            onChange={e => setForm({ ...form, email: e.target.value })} 
+            placeholder="Email address" 
+          />
+          {errors.email && <p className={styles.errorText}>{errors.email}</p>}
         </FormField>
       </div>
       <div className={styles.formRow}>
