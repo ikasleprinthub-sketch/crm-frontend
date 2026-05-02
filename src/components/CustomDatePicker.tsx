@@ -11,7 +11,7 @@ interface CustomDatePickerProps {
   placeholder?: string;
 }
 
-export default function CustomDatePicker({ label, selected, onChange, placeholder = 'mm/dd/yyyy' }: CustomDatePickerProps) {
+export default function CustomDatePicker({ label, selected, onChange, placeholder = 'dd/mm/yyyy' }: CustomDatePickerProps) {
   return (
     <div className={styles.customSelectContainer}>
       <label className={styles.filterLabel}>{label}</label>
@@ -22,7 +22,7 @@ export default function CustomDatePicker({ label, selected, onChange, placeholde
           onChange={onChange}
           placeholderText={placeholder}
           className={styles.filterInput}
-          dateFormat="MM/dd/yyyy"
+          dateFormat="dd/MM/yyyy"
           isClearable
           showPopperArrow={false}
           popperPlacement="bottom-start"

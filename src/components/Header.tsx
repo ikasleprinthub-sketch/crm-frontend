@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
 import { Bell, Search, Moon, Sun, User, Settings, LogOut, ChevronRight, Menu } from 'lucide-react';
@@ -13,6 +14,7 @@ interface HeaderProps {
 // Mock data removed in favor of AppContext notifications
 
 export default function Header({ title, subtitle }: HeaderProps) {
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { 
     currentUser, logout, notifications, unreadCount, 
@@ -94,7 +96,15 @@ export default function Header({ title, subtitle }: HeaderProps) {
                       className={`${styles.notifItem} ${!n.isRead ? styles.unread : ''}`}
                       onClick={() => {
                         if (!n.isRead) markAsRead(n.id);
-                        if (n.link) window.location.href = n.link;
+                        if (n.link) {
+                          // Map detail links to list pages since detail routes don't exist
+                          let targetLink = n.link;
+                          if (targetLink.startsWith('/leads/')) targetLink = '/leads';
+                          if (targetLink.startsWith('/tasks/')) targetLink = '/tasks';
+                          
+                          setShowNotif(false);
+                          router.push(targetLink);
+                        }
                       }}
                     >
                       <p className={styles.notifText}>{n.message}</p>
@@ -136,10 +146,10 @@ export default function Header({ title, subtitle }: HeaderProps) {
               </div>
               <div className={styles.dropdownDivider} />
               <div className={styles.profileLinks}>
-                <button className={styles.profileLink}>
+                <button className={styles.profileLink} onClick={() => { setShowProfile(false); router.push('/settings'); }}>
                   <User size={16} /> My Profile <ChevronRight size={14} className={styles.chevron} />
                 </button>
-                <button className={styles.profileLink}>
+                <button className={styles.profileLink} onClick={() => { setShowProfile(false); router.push('/settings'); }}>
                   <Settings size={16} /> Settings <ChevronRight size={14} className={styles.chevron} />
                 </button>
                 <div className={styles.dropdownDivider} />

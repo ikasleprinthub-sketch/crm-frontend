@@ -113,7 +113,7 @@
 
 .input:focus, .select:focus, .textarea:focus {
   border-color: var(--primary);
-  background: white;
+  background: var(--surface-hover);
   box-shadow: 0 0 0 4px var(--primary-light);
 }
 
@@ -214,5 +214,25 @@
 
 .datePickerWrapper .input {
   padding-left: 2.5rem;
+}
+
+.inputError {
+  border-color: var(--accent-red) !important;
+  background-color: rgba(239, 68, 68, 0.05) !important;
+}
+
+.errorText {
+  color: var(--accent-red);
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-top: 2px;
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 

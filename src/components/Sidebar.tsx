@@ -27,7 +27,7 @@ const navGroups = [
       { label: 'Tasks',          href: '/tasks',      icon: <CheckSquare size={18} /> },
       { label: 'Attendance',     href: '/attendance', icon: <ClockIcon size={18} /> },
       { label: 'Users',          href: '/users',      icon: <Users size={18} /> },
-      { label: 'Configurations', href: '/settings',   icon: <BarChart2 size={18} /> },
+      { label: 'Configurations', href: '/configurations', icon: <BarChart2 size={18} /> },
     ],
   },
 ];
