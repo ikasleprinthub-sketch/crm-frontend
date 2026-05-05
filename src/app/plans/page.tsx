@@ -26,7 +26,7 @@ export default function PlansPage() {
 
   const fetchPlans = useCallback(async () => {
     try {
-      const res = await api.get('/attendance/my-history');
+      const res = await api.get('/attendance/my');
       if (res.data?.success) {
         setPlans(res.data.data || []);
       }

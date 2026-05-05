@@ -89,7 +89,9 @@ export default function Sidebar() {
                     if (pathname !== item.href) {
                       setIsPageLoading(true);
                     }
-                    closeSidebar();
+                    if (window.innerWidth <= 768) {
+                      closeSidebar();
+                    }
                   }}
                 >
                   <span className={styles.icon}>{item.icon}</span>

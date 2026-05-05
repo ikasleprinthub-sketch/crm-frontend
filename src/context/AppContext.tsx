@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
 import { Bell, X, CheckCircle, AlertCircle, Info, HelpCircle } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -218,7 +218,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Whenever pathname changes, the navigation is complete
     setIsPageLoading(false);
-    setSidebarOpen(false); // Also close sidebar on mobile
+    if (window.innerWidth <= 768) {
+      setSidebarOpen(false); // Also close sidebar on mobile
+    }
   }, [pathname]);
 
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
@@ -262,15 +264,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser, pathname, router]);
 
+  const initialFetchDone = useRef(false);
+
   // Configure axios auth header
   useEffect(() => {
     if (currentUser?.token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${currentUser.token}`;
-      fetchInitialData();
+      
+      // Only fetch initial data once per session/login
+      if (!initialFetchDone.current) {
+        fetchInitialData();
+        initialFetchDone.current = true;
+      }
     } else {
       delete api.defaults.headers.common['Authorization'];
+      initialFetchDone.current = false;
     }
-  }, [currentUser]);
+  }, [currentUser?.token]); // Only re-run if token changes
 
   // ─── WebSocket Real-time Notifications (Disabled for Vercel compatibility) ───
   /*
