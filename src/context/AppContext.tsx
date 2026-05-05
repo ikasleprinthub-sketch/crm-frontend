@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 
@@ -180,7 +180,7 @@ interface AppContextType {
 
   refreshTasks: () => Promise<void>;
   fetchInitialData: () => Promise<void>;
-  showToast: (title: string, message: string) => void;
+  showToast: (title: string, message: string, type?: 'success' | 'error' | 'info') => void;
 
   // Search
   searchQuery: string;
@@ -213,7 +213,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [toast, setToast] = useState<{ message: string; title: string } | null>(null);
+  const [toast, setToast] = useState<{ message: string; title: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -485,7 +485,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e: any) {
       const msg = e.response?.data?.message || 'Failed to create user';
-      console.error('❌ [Register Error]', e.response?.data || e.message);
       throw new Error(msg);
     }
   };
@@ -497,7 +496,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUsers(prev => prev.map(u => u.id === id ? { ...u, ...res.data.data } : u));
       }
     } catch (e: any) {
-      console.error('❌ [Update User Error]', e.response?.data || e.message);
+      // API interceptor handles logging
     }
   };
 
@@ -507,7 +506,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUsers(prev => prev.filter(u => u.id !== id));
     } catch (e: any) {
       const msg = e.response?.data?.message || 'Failed to delete user';
-      console.error('❌ [Delete User Error]', e.response?.data || e.message);
       throw new Error(msg);
     }
   };
@@ -519,7 +517,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUsers(prev => prev.map(u => u.id === id ? res.data.data : u));
       }
     } catch (e: any) {
-      console.error('❌ [Approve Error]', e.response?.data || e.message);
+      // API interceptor handles logging
     }
   };
 
@@ -530,7 +528,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUsers(prev => prev.map(u => u.id === id ? res.data.data : u));
       }
     } catch (e: any) {
-      console.error('❌ [Reject Error]', e.response?.data || e.message);
+      // API interceptor handles logging
     }
   };
 
@@ -633,8 +631,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) { console.error(e); }
   };
 
-  const showToast = (title: string, message: string) => {
-    setToast({ title, message });
+  const showToast = (title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ title, message, type });
     setTimeout(() => setToast(null), 5000);
   };
 
@@ -666,42 +664,67 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         {toast && (
           <div className="toast-container animate-slide-in" style={{
             position: 'fixed',
-            top: '20px',
-            right: '20px',
+            top: '24px',
+            right: '24px',
             zIndex: 9999,
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-lg)',
-            padding: '1rem 1.25rem',
+            padding: '1.25rem',
             boxShadow: 'var(--shadow)',
             display: 'flex',
-            gap: '0.75rem',
-            alignItems: 'center',
-            maxWidth: '320px',
-            borderLeft: '4px solid var(--primary)',
-            backdropFilter: 'blur(10px)'
+            gap: '1rem',
+            alignItems: 'flex-start',
+            maxWidth: '380px',
+            minWidth: '300px',
+            borderLeft: `4px solid ${
+              toast.type === 'success' ? 'var(--accent-green)' :
+              toast.type === 'error' ? 'var(--accent-red)' :
+              'var(--primary)'
+            }`,
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
           }}>
             <div style={{
-              background: 'var(--primary-light)',
-              color: 'var(--primary)',
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
+              background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.1)' :
+                          toast.type === 'error' ? 'rgba(239, 68, 68, 0.1)' :
+                          'var(--primary-light)',
+              color: toast.type === 'success' ? 'var(--accent-green)' :
+                     toast.type === 'error' ? 'var(--accent-red)' :
+                     'var(--primary)',
+              width: '40px',
+              height: '40px',
+              borderRadius: '12px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              flexShrink: 0
             }}>
-              <Bell size={18} />
+              {toast.type === 'success' && <CheckCircle size={22} />}
+              {toast.type === 'error' && <AlertCircle size={22} />}
+              {toast.type === 'info' && <Bell size={22} />}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{toast.title}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{toast.message}</div>
+            <div style={{ flex: 1, paddingTop: '2px' }}>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>{toast.title}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.4', fontWeight: 500 }}>{toast.message}</div>
             </div>
             <button
               onClick={() => setToast(null)}
-              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                padding: '4px',
+                marginTop: '-4px',
+                marginRight: '-4px',
+                opacity: 0.6,
+                transition: 'opacity 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
             >
-              <X size={14} />
+              <X size={18} />
             </button>
           </div>
         )}

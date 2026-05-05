@@ -18,7 +18,7 @@ export default function TasksPage() {
   } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<string>('NOT_YET_STARTED');
   const [deptFilter, setDeptFilter] = useState<string>('All');
   const [userFilter, setUserFilter] = useState<string>('All');
   const [leadCategory, setLeadCategory] = useState<string>('All');
@@ -232,28 +232,14 @@ export default function TasksPage() {
                             {getStatusLabel(task.status)}
                           </span>
                         ) : (
-                          <select
-                            className={`${styles.badge} ${statusBadge(task.status)}`}
-                            value={task.status}
-                            onChange={e => updateTask(task.id, { status: e.target.value as TaskStatus })}
-                            style={{
-                              border: 'none',
-                              cursor: 'pointer',
-                              background: getStatusBgColor(task.status),
-                              fontWeight: 700,
-                              fontSize: '0.68rem',
-                              padding: '0.3rem 0.6rem',
-                              color: getStatusColor(task.status),
-                              borderRadius: '8px',
-                              transition: 'all 0.3s ease'
-                            }}
-                          >
-                            {(['NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'COMPLETED', 'DATA_NOT_RECEIVED'] as TaskStatus[])
+                          <CustomSelect
+                            size="sm"
+                            options={(['NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'COMPLETED', 'DATA_NOT_RECEIVED'] as TaskStatus[])
                               .filter(s => !isEmployee || s !== 'COMPLETED' || task.status === 'COMPLETED')
-                              .map(s => (
-                                <option key={s} value={s} style={{ color: getStatusColor(s), background: 'var(--surface)' }}>{getStatusLabel(s)}</option>
-                              ))}
-                          </select>
+                              .map(s => ({ id: s, name: getStatusLabel(s) }))}
+                            value={task.status}
+                            onChange={val => updateTask(task.id, { status: val as TaskStatus })}
+                          />
                         )}
                       </td>
                       <td>

@@ -236,3 +236,50 @@
   40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
+/* ── Premium Time Input ── */
+.timeInputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.timeInput {
+  width: 100%;
+  padding: 0.8rem 1.1rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.5px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  cursor: pointer;
+}
+
+.timeInput:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.timeInput:focus {
+  border-color: var(--primary);
+  background: var(--surface-hover);
+  box-shadow: 0 0 0 4px var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.timeInput::-webkit-calendar-picker-indicator {
+  filter: invert(0.4) sepia(1) saturate(3) hue-rotate(195deg);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  width: 18px;
+  height: 18px;
+}
+
+.timeInput::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}

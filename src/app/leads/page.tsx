@@ -226,26 +226,12 @@ export default function LeadsPage() {
                       {lead.date ? new Date(lead.date).toLocaleDateString('en-GB') : '—'}
                     </td>
                     <td>
-                      <select 
-                        className={`${styles.badge} ${statusBadge(lead.status)}`}
+                      <CustomSelect
+                        size="sm"
+                        options={filters.filter(f => f !== 'All').map(s => ({ id: s, name: s.replace(/_/g, ' ') }))}
                         value={lead.status}
-                        onChange={e => updateLead(lead.id, { status: e.target.value as LeadStatus })}
-                        style={{ 
-                          border: 'none', 
-                          cursor: 'pointer', 
-                          background: getLeadStatusBgColor(lead.status), 
-                          fontWeight: 700, 
-                          fontSize: '0.65rem', 
-                          padding: '0.3rem 0.6rem',
-                          color: getLeadStatusColor(lead.status),
-                          borderRadius: '8px',
-                          transition: 'all 0.3s ease'
-                        }}
-                      >
-                        {filters.filter(f => f !== 'All').map(s => (
-                          <option key={s} value={s} style={{ color: getLeadStatusColor(s), background: 'var(--surface)' }}>{s.replace(/_/g, ' ')}</option>
-                        ))}
-                      </select>
+                        onChange={val => updateLead(lead.id, { status: val as LeadStatus })}
+                      />
                     </td>
                     <td>
                       <button className={styles.iconBtn} onClick={() => deleteLead(lead.id)} title="Delete">

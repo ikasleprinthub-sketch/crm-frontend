@@ -15,7 +15,7 @@ import {
 type AccountSection = 'name' | 'email' | 'avatar' | 'password' | 'notifications' | null;
 
 export default function SettingsPage() {
-  const { currentUser, updateProfile } = useApp();
+  const { currentUser, updateProfile, showToast } = useApp();
 
   // ── Account Settings State ─────────────────────────────────────────────────
   const [activeModal, setActiveModal] = useState<AccountSection>(null);
@@ -38,40 +38,34 @@ export default function SettingsPage() {
   });
   */
   const [loading, setLoading] = useState(false);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // ─────────────────────────────────────────────────────────────────────────────
-
-  const showSuccess = (msg: string) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(null), 3000);
-  };
 
   const handleNameSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await updateProfile({ name: nameForm.name });
-      showSuccess('Name updated successfully!');
+      showToast('Profile Updated', 'Name updated successfully!', 'success');
       setActiveModal(null);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to update name');
+      showToast('Update Failed', err.response?.data?.message || 'Failed to update name', 'error');
     } finally { setLoading(false); }
   };
 
   const handleEmailSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.email)) {
-      alert("Please enter a valid email address.");
+      showToast('Invalid Email', 'Please enter a valid email address.', 'error');
       return;
     }
     setLoading(true);
     try {
       await updateProfile({ email: emailForm.email });
-      showSuccess('Email updated successfully!');
+      showToast('Email Updated', 'Email updated successfully!', 'success');
       setActiveModal(null);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to update email');
+      showToast('Update Failed', err.response?.data?.message || 'Failed to update email', 'error');
     } finally { setLoading(false); }
   };
 
@@ -88,26 +82,32 @@ export default function SettingsPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      showSuccess('Profile picture updated!');
+      showToast('Avatar Updated', 'Profile picture updated!', 'success');
       setActiveModal(null);
     } finally { setLoading(false); }
   };
 
   const handlePasswordSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordForm.newPass !== passwordForm.confirm) { alert('New passwords do not match!'); return; }
-    if (passwordForm.newPass.length < 6) { alert('Password must be at least 6 characters.'); return; }
+    if (passwordForm.newPass !== passwordForm.confirm) {
+      showToast('Match Error', 'New passwords do not match!', 'error');
+      return;
+    }
+    if (passwordForm.newPass.length < 6) {
+      showToast('Weak Password', 'Password must be at least 6 characters.', 'error');
+      return;
+    }
     setLoading(true);
     try {
       await updateProfile({
         currentPassword: passwordForm.current,
         newPassword: passwordForm.newPass,
       });
-      showSuccess('Password changed successfully!');
+      showToast('Password Changed', 'Password changed successfully!', 'success');
       setPasswordForm({ current: '', newPass: '', confirm: '' });
       setActiveModal(null);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to change password');
+      showToast('Update Failed', err.response?.data?.message || 'Failed to change password', 'error');
     } finally { setLoading(false); }
   };
 
@@ -174,13 +174,6 @@ export default function SettingsPage() {
       <main className={styles.main}>
         <Header title="Settings" subtitle="Manage your personal account and preferences" />
 
-        {/* ── Success Toast ─────────────────────────────────────────────── */}
-        {successMsg && (
-          <div className={settingsStyles.successToast}>
-            <Check size={16} />
-            {successMsg}
-          </div>
-        )}
 
         {/* ── My Account Grid ───────────────────────────────────────────── */}
         <section className={settingsStyles.accountSection}>
