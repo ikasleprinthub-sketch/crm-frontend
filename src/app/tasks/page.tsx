@@ -3,10 +3,10 @@ import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useApp, TaskStatus } from '@/context/AppContext';
-import SOPList from '@/components/SOPList';
+import SOPChecklist from '@/components/SOPChecklist';
 import { Modal, AddTaskForm } from '@/components/Modals';
 import styles from '../page.module.css';
-import { Trash2, ClipboardList, Search, Building, User, Users, Calendar, RotateCcw } from 'lucide-react';
+import { Trash2, ClipboardList, Search, Building, User, Users, Calendar, RotateCcw, AlertCircle } from 'lucide-react';
 import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -243,9 +243,42 @@ export default function TasksPage() {
                         )}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setSelectedTask(task.id)}>
-                          <div className={styles.miniBar}><div className={styles.miniFill} style={{ width: `${pct}%` }}></div></div>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 700 }}>{completed}/{total}</span>
+                        <div style={{ cursor: 'pointer' }} onClick={() => setSelectedTask(task.id)}>
+                          {total === 0 ? (
+                            <span style={{ 
+                              color: 'var(--accent-red)', 
+                              fontSize: '0.65rem', 
+                              fontWeight: 800, 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 4,
+                              background: 'rgba(239, 68, 68, 0.08)',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              width: 'fit-content'
+                            }}>
+                              <AlertCircle size={10} /> NO SOP
+                            </span>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div className={styles.miniBar}>
+                                <div 
+                                  className={styles.miniFill} 
+                                  style={{ 
+                                    width: `${pct}%`,
+                                    background: pct === 100 ? 'var(--accent-green)' : pct > 0 ? 'var(--accent-yellow)' : 'var(--text-secondary)'
+                                  }}
+                                />
+                              </div>
+                              <span style={{ 
+                                fontSize: '0.72rem', 
+                                fontWeight: 700,
+                                color: pct === 100 ? 'var(--accent-green)' : pct > 0 ? 'var(--accent-yellow)' : 'var(--text-secondary)'
+                              }}>
+                                {completed}/{total}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -281,7 +314,7 @@ export default function TasksPage() {
                 {tasks.find(t => t.id === selectedTask)!.remarks && <p style={{ color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Remarks: <strong style={{ color: 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.remarks}</strong></p>}
               </div>
               <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>SOP CHECKLIST</h3>
-              <SOPList steps={tasks.find(t => t.id === selectedTask)!.sopSteps || []} onToggle={(stepId, completed) => updateTaskStep(selectedTask!, stepId, completed)} />
+              <SOPChecklist steps={tasks.find(t => t.id === selectedTask)!.sopSteps || []} taskId={selectedTask!} onToggle={(stepId, completed) => updateTaskStep(selectedTask!, stepId, completed)} />
             </div>
           )}
         </Modal>

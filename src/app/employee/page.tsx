@@ -3,7 +3,7 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import StatCard from '@/components/StatCard';
 import { useApp } from '@/context/AppContext';
-import SOPList from '@/components/SOPList';
+import SOPChecklist from '@/components/SOPChecklist';
 import styles from '../page.module.css';
 
 export default function EmployeeDashboard() {
@@ -52,8 +52,9 @@ export default function EmployeeDashboard() {
               </div>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Client: <strong>{task.lead?.leadName || 'Unknown'}</strong></p>
               
-              <SOPList 
+              <SOPChecklist 
                 steps={task.sopSteps || []} 
+                taskId={task.id}
                 onToggle={(stepId, completed) => updateTaskStep(task.id, stepId, completed)} 
               />
             </section>

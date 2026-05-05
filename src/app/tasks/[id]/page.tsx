@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useApp } from '@/context/AppContext';
-import SOPList from '@/components/SOPList';
+import SOPChecklist from '@/components/SOPChecklist';
 import styles from '../../page.module.css';
 import { ArrowLeft, Calendar, User, Building, ClipboardList } from 'lucide-react';
 
@@ -72,8 +72,9 @@ export default function TaskDetailPage() {
 
           <div style={{ maxWidth: '800px' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>SOP PROGRESS</h3>
-            <SOPList 
+            <SOPChecklist 
               steps={task.sopSteps || []} 
+              taskId={task.id}
               onToggle={(stepId, completed) => updateTaskStep(task.id, stepId, completed)} 
             />
           </div>
