@@ -7,8 +7,9 @@ import { Modal } from '@/components/Modals';
 import api from '@/lib/api';
 import styles from '../page.module.css';
 import {
-  Plus, Edit2, Trash2, Layers, Tag, Globe, Settings, Clock,
+  Plus, Edit2, Trash2, Layers, Tag, Globe, ClipboardList, Settings, Clock,
 } from 'lucide-react';
+import SOPBuilder from '@/components/admin/SOPBuilder';
 
 export default function ConfigurationsPage() {
   const { currentUser, departments, taskTypes, sources, fetchInitialData, showToast } = useApp();
@@ -17,6 +18,8 @@ export default function ConfigurationsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [targetId, setTargetId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', departmentId: '' });
+  const [isSOPModalOpen, setIsSOPModalOpen] = useState(false);
+  const [selectedTaskType, setSelectedTaskType] = useState<{ id: string; name: string } | null>(null);
   const [configs, setConfigs] = useState<any[]>([]);
 
   useEffect(() => {
@@ -179,7 +182,20 @@ export default function ConfigurationsPage() {
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                            <button className={styles.iconBtn} onClick={() => openEdit(item)} title="Edit" style={{ width: 36, height: 36 }}>
+                            {activeTab === 'types' && (
+                          <button 
+                            className={styles.iconBtn} 
+                            onClick={() => {
+                              setSelectedTaskType({ id: item.id, name: item.name });
+                              setIsSOPModalOpen(true);
+                            }} 
+                            title="SOP Workflow" 
+                            style={{ width: 36, height: 36, color: 'var(--primary)' }}
+                          >
+                            <ClipboardList size={16} />
+                          </button>
+                        )}
+                        <button className={styles.iconBtn} onClick={() => openEdit(item)} title="Edit" style={{ width: 36, height: 36 }}>
                               <Edit2 size={16} />
                             </button>
                             <button className={styles.iconBtn} onClick={() => handleDelete(item.id)} title="Delete" style={{ color: 'var(--accent-red)', width: 36, height: 36 }}>
@@ -313,6 +329,25 @@ export default function ConfigurationsPage() {
               </button>
             </div>
           </form>
+        </Modal>
+
+        {/* SOP Builder Modal */}
+        <Modal
+          isOpen={isSOPModalOpen}
+          onClose={() => setIsSOPModalOpen(false)}
+          title="SOP Workflow Manager"
+          size="md"
+        >
+          {selectedTaskType && (
+            <SOPBuilder 
+              taskTypeId={selectedTaskType.id} 
+              taskTypeName={selectedTaskType.name}
+              onSave={() => {
+                showToast('Success', 'SOP Workflow updated successfully', 'success');
+                setIsSOPModalOpen(false);
+              }}
+            />
+          )}
         </Modal>
       </main>
     </div>

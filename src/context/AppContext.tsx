@@ -19,6 +19,8 @@ export interface SOPStep {
   id: string;
   title: string;
   order: number;
+  assignedRole: Role;
+  deadlineHours: number;
 }
 
 export interface Department {
@@ -72,6 +74,9 @@ export interface TaskSOPStep {
   title: string;
   order: number;
   isCompleted: boolean;
+  assignedRole: Role;
+  deadlineHours: number;
+  dueAt?: string;
 }
 
 export interface Task {
