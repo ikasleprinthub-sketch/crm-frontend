@@ -368,6 +368,19 @@
   box-shadow: none !important;
 }
 
+.transparentInput {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.transparentInput:focus,
+.transparentInput:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 
 .filterInput:focus,
 .filterSelect:focus,

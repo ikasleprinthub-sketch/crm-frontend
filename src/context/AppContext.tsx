@@ -1,9 +1,10 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Bell, X, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { Bell, X, CheckCircle, AlertCircle, Info, HelpCircle } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
+import PageLoader from '@/components/PageLoader';
 
 // ─── ENUMS / TYPES ──────────────────────────────────────────────────────────── //hi
 
@@ -40,6 +41,7 @@ export interface User {
   email: string;
   role: Role;
   status: UserStatus;
+  departmentId?: string;
   managerId?: string;
   manager?: { id: string; name: string; email: string; role: string };
   requestedBy?: { id: string; name: string };
@@ -116,6 +118,7 @@ export interface AuthUser {
   name: string;
   email: string;
   role: Role;
+  departmentId?: string;
   managerId?: string;
   manager?: { id: string; name: string; email: string; role: string };
   token?: string;
@@ -188,11 +191,15 @@ interface AppContextType {
 
   refreshTasks: () => Promise<void>;
   fetchInitialData: () => Promise<void>;
-  showToast: (title: string, message: string, type?: 'success' | 'error' | 'info') => void;
+  showToast: (title: string, message: string, type?: 'success' | 'error' | 'info' | 'confirm', onConfirm?: () => void, onCancel?: () => void) => void;
 
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+
+  // Page Loading (for transitions)
+  isPageLoading: boolean;
+  setIsPageLoading: (val: boolean) => void;
 }
 
 
@@ -204,6 +211,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    // Whenever pathname changes, the navigation is complete
+    setIsPageLoading(false);
+    setSidebarOpen(false); // Also close sidebar on mobile
+  }, [pathname]);
 
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     if (typeof window !== 'undefined') {
@@ -221,13 +237,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [toast, setToast] = useState<{ message: string; title: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [toast, setToast] = useState<{ 
+    message: string; 
+    title: string; 
+    type: 'success' | 'error' | 'info' | 'confirm'; 
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  } | null>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const toggleSidebar = () => setSidebarOpen(prev => !prev);
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
   // After mount, set sidebar default based on screen width
@@ -504,16 +524,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUsers(prev => prev.map(u => u.id === id ? { ...u, ...res.data.data } : u));
       }
     } catch (e: any) {
-      // API interceptor handles logging
+      const msg = e.response?.data?.message || 'Failed to update user';
+      throw new Error(msg);
     }
   };
 
   const deleteUser = async (id: string) => {
+    console.log(`🗑️ [AppContext] Deleting user: ${id}`);
     try {
-      await api.delete(`/users/${id}`);
+      const res = await api.delete(`/users/${id}`);
+      console.log('✅ [AppContext] User deleted successfully:', res.data);
       setUsers(prev => prev.filter(u => u.id !== id));
+      return res.data;
     } catch (e: any) {
-      const msg = e.response?.data?.message || 'Failed to delete user';
+      console.error('❌ [AppContext] Delete user failed:', e);
+      const msg = e.response?.data?.message || e.message || 'Failed to delete user';
       throw new Error(msg);
     }
   };
@@ -525,7 +550,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUsers(prev => prev.map(u => u.id === id ? res.data.data : u));
       }
     } catch (e: any) {
-      // API interceptor handles logging
+      const msg = e.response?.data?.message || 'Failed to approve user';
+      throw new Error(msg);
     }
   };
 
@@ -536,7 +562,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUsers(prev => prev.map(u => u.id === id ? res.data.data : u));
       }
     } catch (e: any) {
-      // API interceptor handles logging
+      const msg = e.response?.data?.message || 'Failed to reject user';
+      throw new Error(msg);
     }
   };
 
@@ -639,10 +666,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) { console.error(e); }
   };
 
-  const showToast = (title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setToast({ title, message, type });
-    setTimeout(() => setToast(null), 5000);
-  };
+  const showToast = React.useCallback((
+    title: string, 
+    message: string, 
+    type: 'success' | 'error' | 'info' | 'confirm' = 'info',
+    onConfirm?: () => void,
+    onCancel?: () => void
+  ) => {
+    setToast({ title, message, type, onConfirm, onCancel });
+    if (type !== 'confirm') {
+      setTimeout(() => setToast(curr => curr?.message === message ? null : curr), 5000);
+    }
+  }, []);
 
   if (!mounted) return null;
   if (!currentUser && pathname !== '/login') return null;
@@ -663,9 +698,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       fetchInitialData,
       showToast,
       searchQuery,
-      setSearchQuery
+      setSearchQuery,
+      isPageLoading, setIsPageLoading
     }}>
       <>
+        {isPageLoading && <PageLoader />}
         {children}
 
         {/* Toast Notification */}
@@ -685,21 +722,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             alignItems: 'flex-start',
             maxWidth: '380px',
             minWidth: '300px',
-            borderLeft: `4px solid ${
-              toast.type === 'success' ? 'var(--accent-green)' :
+            borderLeft: `4px solid ${toast.type === 'success' ? 'var(--accent-green)' :
               toast.type === 'error' ? 'var(--accent-red)' :
-              'var(--primary)'
-            }`,
+                'var(--primary)'
+              }`,
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
           }}>
             <div style={{
               background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.1)' :
-                          toast.type === 'error' ? 'rgba(239, 68, 68, 0.1)' :
-                          'var(--primary-light)',
+                toast.type === 'error' ? 'rgba(239, 68, 68, 0.1)' :
+                  'var(--primary-light)',
               color: toast.type === 'success' ? 'var(--accent-green)' :
-                     toast.type === 'error' ? 'var(--accent-red)' :
-                     'var(--primary)',
+                toast.type === 'error' ? 'var(--accent-red)' :
+                  'var(--primary)',
               width: '40px',
               height: '40px',
               borderRadius: '12px',
@@ -711,13 +747,61 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               {toast.type === 'success' && <CheckCircle size={22} />}
               {toast.type === 'error' && <AlertCircle size={22} />}
               {toast.type === 'info' && <Bell size={22} />}
+              {toast.type === 'confirm' && <HelpCircle size={22} />}
             </div>
             <div style={{ flex: 1, paddingTop: '2px' }}>
               <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>{toast.title}</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.4', fontWeight: 500 }}>{toast.message}</div>
+              
+              {toast.type === 'confirm' && (
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+                  <button 
+                    onClick={async () => { 
+                      console.log('🔘 [Toast] Continue clicked');
+                      const action = toast.onConfirm;
+                      setToast(null); // Clear the confirmation toast first
+                      if (action) {
+                        try {
+                          await action(); 
+                        } catch (err) {
+                          console.error('❌ [Toast Action Error]:', err);
+                        }
+                      }
+                    }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: 'var(--primary)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(67, 24, 255, 0.2)'
+                    }}
+                  >
+                    Continue
+                  </button>
+                  <button 
+                    onClick={() => { toast.onCancel?.(); setToast(null); }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: 'rgba(0,0,0,0.05)',
+                      color: 'var(--text-secondary)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
             <button
-              onClick={() => setToast(null)}
+              onClick={() => { toast.onCancel?.(); setToast(null); }}
               style={{
                 background: 'none',
                 border: 'none',
