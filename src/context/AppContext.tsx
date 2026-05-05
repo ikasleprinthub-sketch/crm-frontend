@@ -218,7 +218,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Whenever pathname changes, the navigation is complete
     setIsPageLoading(false);
-    setSidebarOpen(false); // Also close sidebar on mobile
+    if (window.innerWidth <= 768) {
+      setSidebarOpen(false); // Also close sidebar on mobile
+    }
   }, [pathname]);
 
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
