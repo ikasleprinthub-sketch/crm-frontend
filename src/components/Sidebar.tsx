@@ -5,7 +5,7 @@ import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { useTheme } from '@/context/ThemeContext';
 import styles from './Sidebar.module.css';
-import { LayoutDashboard, Target, CheckSquare, Users, BarChart2, ClockIcon, StickyNote, FileText } from 'lucide-react';
+import { LayoutDashboard, Target, CheckSquare, Users, BarChart2, ClockIcon, StickyNote, FileText, ListTodo } from 'lucide-react';
 
 const navGroups = [
   {
@@ -18,6 +18,7 @@ const navGroups = [
     label: 'WORKSPACE',
     items: [
       { label: 'My Notes', href: '/notes', icon: <StickyNote size={18} /> },
+      { label: 'My Plans', href: '/plans', icon: <ListTodo size={18} /> },
     ],
   },
   {
@@ -35,7 +36,7 @@ const navGroups = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { currentUser, sidebarOpen, closeSidebar } = useApp();
+  const { currentUser, sidebarOpen, closeSidebar, setIsPageLoading } = useApp();
   const { theme } = useTheme();
 
   const getFilteredGroups = () => {
@@ -84,6 +85,12 @@ export default function Sidebar() {
                   key={item.href}
                   href={item.href}
                   className={`${styles.navLink} ${pathname === item.href ? styles.active : ''}`}
+                  onClick={() => {
+                    if (pathname !== item.href) {
+                      setIsPageLoading(true);
+                    }
+                    closeSidebar();
+                  }}
                 >
                   <span className={styles.icon}>{item.icon}</span>
                   <span className={styles.label}>{item.label}</span>

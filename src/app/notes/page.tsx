@@ -7,7 +7,7 @@ import { Plus, Trash2, Edit3, Save, X, StickyNote } from 'lucide-react';
 import styles from './notes.module.css';
 
 export default function NotesPage() {
-  const { notes, addNote, updateNote, deleteNote } = useApp();
+  const { currentUser, notes, addNote, updateNote, deleteNote } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '', color: 'blue' });
@@ -33,7 +33,10 @@ export default function NotesPage() {
     <div className={styles.wrapper}>
       <Sidebar />
       <main className={styles.main}>
-        <Header title="My Notes" subtitle="Capture your thoughts and daily reminders." />
+        <Header 
+          title={currentUser?.role === 'EMPLOYEE' ? 'My Notes' : 'Communication & Notes'} 
+          subtitle={currentUser?.role === 'EMPLOYEE' ? 'Capture your thoughts and daily reminders.' : 'View team updates and personal reminders.'} 
+        />
 
         <div className={styles.container}>
           <div className={styles.pageHeader}>
@@ -53,15 +56,25 @@ export default function NotesPage() {
             {notes.map(note => (
               <div key={note.id} className={`${styles.noteCard} ${note.color === 'yellow' ? styles.noteYellow : styles.noteBlue}`}>
                 <div className={styles.noteHeader}>
-                  <h3 className={styles.noteTitle}>{note.title || 'Untitled'}</h3>
-                  <div className={styles.actions}>
-                    <button onClick={() => startEdit(note)} className={styles.actionBtn}><Edit3 size={16} /></button>
-                    <button onClick={() => deleteNote(note.id)} className={styles.actionBtn}><Trash2 size={16} /></button>
+                  <div style={{ flex: 1 }}>
+                    <h3 className={styles.noteTitle}>{note.title || 'Untitled'}</h3>
+                    {note.userId !== currentUser?.id && note.user?.name && (
+                      <span style={{ fontSize: '0.65rem', display: 'block', opacity: 0.8, color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', marginTop: '2px' }}>
+                        From {note.user.name}
+                      </span>
+                    )}
                   </div>
+                  {note.userId === currentUser?.id && (
+                    <div className={styles.actions}>
+                      <button onClick={() => startEdit(note)} className={styles.actionBtn}><Edit3 size={16} /></button>
+                      <button onClick={() => deleteNote(note.id)} className={styles.actionBtn}><Trash2 size={16} /></button>
+                    </div>
+                  )}
                 </div>
                 <p className={styles.noteContent}>{note.content}</p>
                 <div className={styles.noteFooter}>
                    {new Date(note.createdAt).toLocaleDateString()}
+                   {note.userId !== currentUser?.id && <span style={{ marginLeft: 'auto', fontSize: '0.65rem', fontWeight: 700 }}>TEAM NOTE</span>}
                 </div>
               </div>
             ))}

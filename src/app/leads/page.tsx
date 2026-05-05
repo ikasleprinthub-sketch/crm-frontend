@@ -13,7 +13,7 @@ export default function LeadsPage() {
   const { 
     currentUser, leads, addLead, updateLead, 
     deleteLead, departments, users, sources, 
-    taskTypes, searchQuery 
+    taskTypes, searchQuery, showToast 
   } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filter, setFilter] = useState<string>('All');
@@ -230,11 +230,32 @@ export default function LeadsPage() {
                         size="sm"
                         options={filters.filter(f => f !== 'All').map(s => ({ id: s, name: s.replace(/_/g, ' ') }))}
                         value={lead.status}
-                        onChange={val => updateLead(lead.id, { status: val as LeadStatus })}
+                        onChange={async (val) => {
+                          try {
+                            await updateLead(lead.id, { status: val as LeadStatus });
+                            showToast('Status Updated', `Lead ${lead.leadNo} status changed to ${val}`, 'success');
+                          } catch (e: any) {
+                            showToast('Update Failed', e.response?.data?.message || e.message, 'error');
+                          }
+                        }}
                       />
                     </td>
                     <td>
-                      <button className={styles.iconBtn} onClick={() => deleteLead(lead.id)} title="Delete">
+                      <button className={styles.iconBtn} onClick={() => {
+                        showToast(
+                          'Delete Lead?',
+                          'Are you sure you want to remove this lead from the pipeline?',
+                          'confirm',
+                          async () => {
+                            try {
+                              await deleteLead(lead.id);
+                              showToast('Lead Deleted', 'The lead has been removed.', 'success');
+                            } catch (e: any) {
+                              showToast('Delete Failed', e.response?.data?.message || e.message, 'error');
+                            }
+                          }
+                        );
+                      }} title="Delete">
                         <Trash2 size={16} />
                       </button>
                     </td>
@@ -254,7 +275,15 @@ export default function LeadsPage() {
         </section>
 
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Lead" size="lg">
-          <AddLeadForm onSubmit={(data) => { addLead(data); setIsModalOpen(false); }} />
+          <AddLeadForm onSubmit={async (data) => { 
+            try {
+              await addLead(data); 
+              setIsModalOpen(false); 
+              showToast('Lead Added', 'New lead has been successfully recorded.', 'success');
+            } catch (e: any) {
+              showToast('Action Failed', e.response?.data?.message || e.message, 'error');
+            }
+          }} />
         </Modal>
       </main>
     </div>

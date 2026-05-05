@@ -13,7 +13,7 @@ export default function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const filters = ['All', 'SUPER_ADMIN', 'ADMIN', 'TEAM_LEADER', 'EMPLOYEE'];
+  const filters = ['All', 'ADMIN', 'TEAM_LEADER', 'EMPLOYEE'];
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PENDING'>('ACTIVE');
 
   const filtered = users.filter(u => {
@@ -26,26 +26,36 @@ export default function UsersPage() {
   const pendingCount = users.filter(u => u.status === 'PENDING').length;
   const activeCount = users.filter(u => u.status === 'ACTIVE').length;
 
-  const handleApprove = async (id: string) => {
-    if (confirm('Approve this user account?')) {
-      try {
-        await approveUser(id);
-        showToast('Approved', 'User account has been approved.', 'success');
-      } catch (e: any) {
-        showToast('Approval Failed', e.message, 'error');
+  const handleApprove = (id: string) => {
+    showToast(
+      'Approve User?',
+      'Are you sure you want to approve this user account?',
+      'confirm',
+      async () => {
+        try {
+          await approveUser(id);
+          showToast('Approved', 'User account has been approved.', 'success');
+        } catch (e: any) {
+          showToast('Approval Failed', e.response?.data?.message || e.message, 'error');
+        }
       }
-    }
+    );
   };
 
-  const handleReject = async (id: string) => {
-    if (confirm('Reject and delete this request?')) {
-      try {
-        await rejectUser(id);
-        showToast('Rejected', 'User request has been rejected.', 'success');
-      } catch (e: any) {
-        showToast('Rejection Failed', e.message, 'error');
+  const handleReject = (id: string) => {
+    showToast(
+      'Reject Request?',
+      'Are you sure you want to reject and delete this user request?',
+      'confirm',
+      async () => {
+        try {
+          await rejectUser(id);
+          showToast('Rejected', 'User request has been rejected.', 'success');
+        } catch (e: any) {
+          showToast('Rejection Failed', e.response?.data?.message || e.message, 'error');
+        }
       }
-    }
+    );
   };
 
   const handleCreateUser = async (data: any) => {
@@ -55,7 +65,7 @@ export default function UsersPage() {
       fetchInitialData();
       showToast('Member Added', 'The new team member has been successfully created.', 'success');
     } catch (e: any) {
-      showToast('Action Failed', e.message || 'Failed to create account. Please check all fields.', 'error');
+      showToast('Action Failed', e.response?.data?.message || e.message || 'Failed to create account. Please check all fields.', 'error');
     }
   };
 
@@ -67,19 +77,29 @@ export default function UsersPage() {
       fetchInitialData();
       showToast('User Updated', 'The user account has been successfully updated.', 'success');
     } catch (e: any) {
-      showToast('Update Failed', e.message || 'Failed to update account', 'error');
+      showToast('Update Failed', e.response?.data?.message || e.message || 'Failed to update account', 'error');
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      try {
-        await deleteUser(id);
-        showToast('User Deleted', 'The user account has been removed.', 'success');
-      } catch (e: any) {
-        showToast('Delete Failed', e.message, 'error');
+  const handleDeleteUser = (id: string) => {
+    console.log(`[UsersPage] Opening delete confirmation for: ${id}`);
+    showToast(
+      'Delete Member?',
+      'Are you sure you want to permanently remove this team member? This action cannot be undone.',
+      'confirm',
+      async () => {
+        try {
+          console.log(`[UsersPage] Confirmation confirmed for: ${id}`);
+          await deleteUser(id);
+          showToast('User Deleted', 'The user account has been removed.', 'success');
+        } catch (e: any) {
+          console.error('[UsersPage] Deletion handler error:', e);
+          const errorMsg = e.message || 'An unexpected error occurred';
+          
+          showToast('Action Blocked', errorMsg, 'error');
+        }
       }
-    }
+    );
   };
 
   const roleBadge = (role: string) => {
@@ -141,7 +161,7 @@ export default function UsersPage() {
           <div className={styles.filterRow} style={{ marginBottom: 0 }}>
             {filters.map(f => (
               <button key={f} className={`${styles.filterBtn} ${roleFilter === f ? styles.active : ''}`} onClick={() => setRoleFilter(f)}>
-                {f === 'TEAM_LEADER' ? 'Team Leader' : f}
+                {f === 'TEAM_LEADER' ? 'Team Leader' : f.charAt(0).toUpperCase() + f.slice(1).toLowerCase().replace('_', ' ')}
               </button>
             ))}
           </div>
@@ -192,7 +212,7 @@ export default function UsersPage() {
                   
                   <div style={{ marginTop: '0.875rem' }}>
                     <span className={`${styles.badge} ${roleBadge(user.role)}`}>
-                      {user.role === 'MANAGER' ? 'Team Leader' : user.role.replace('_', ' ')}
+                      {user.role === 'MANAGER' ? 'Team Leader' : user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase().replace('_', ' ')}
                     </span>
                   </div>
 
