@@ -19,6 +19,8 @@ export interface SOPStep {
   id: string;
   title: string;
   order: number;
+  assignedRole: Role;
+  deadlineHours: number;
 }
 
 export interface Department {
@@ -39,6 +41,7 @@ export interface User {
   role: Role;
   status: UserStatus;
   managerId?: string;
+  manager?: { id: string; name: string; email: string; role: string };
   requestedBy?: { id: string; name: string };
   createdAt: string;
 }
@@ -71,6 +74,9 @@ export interface TaskSOPStep {
   title: string;
   order: number;
   isCompleted: boolean;
+  assignedRole: Role;
+  deadlineHours: number;
+  dueAt?: string;
 }
 
 export interface Task {
@@ -110,6 +116,8 @@ export interface AuthUser {
   name: string;
   email: string;
   role: Role;
+  managerId?: string;
+  manager?: { id: string; name: string; email: string; role: string };
   token?: string;
 }
 

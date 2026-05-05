@@ -28,13 +28,23 @@ export default function UsersPage() {
 
   const handleApprove = async (id: string) => {
     if (confirm('Approve this user account?')) {
-      await approveUser(id);
+      try {
+        await approveUser(id);
+        showToast('Approved', 'User account has been approved.', 'success');
+      } catch (e: any) {
+        showToast('Approval Failed', e.message, 'error');
+      }
     }
   };
 
   const handleReject = async (id: string) => {
     if (confirm('Reject and delete this request?')) {
-      await rejectUser(id);
+      try {
+        await rejectUser(id);
+        showToast('Rejected', 'User request has been rejected.', 'success');
+      } catch (e: any) {
+        showToast('Rejection Failed', e.message, 'error');
+      }
     }
   };
 
@@ -43,6 +53,7 @@ export default function UsersPage() {
       await addUser(data);
       setIsModalOpen(false);
       fetchInitialData();
+      showToast('Member Added', 'The new team member has been successfully created.', 'success');
     } catch (e: any) {
       showToast('Action Failed', e.message || 'Failed to create account. Please check all fields.', 'error');
     }
@@ -54,6 +65,7 @@ export default function UsersPage() {
       await updateUser(editingUser.id, data);
       setEditingUser(null);
       fetchInitialData();
+      showToast('User Updated', 'The user account has been successfully updated.', 'success');
     } catch (e: any) {
       showToast('Update Failed', e.message || 'Failed to update account', 'error');
     }
@@ -63,6 +75,7 @@ export default function UsersPage() {
     if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       try {
         await deleteUser(id);
+        showToast('User Deleted', 'The user account has been removed.', 'success');
       } catch (e: any) {
         showToast('Delete Failed', e.message, 'error');
       }

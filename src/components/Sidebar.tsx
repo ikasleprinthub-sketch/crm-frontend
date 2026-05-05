@@ -5,7 +5,7 @@ import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { useTheme } from '@/context/ThemeContext';
 import styles from './Sidebar.module.css';
-import { LayoutDashboard, Target, CheckSquare, Users, BarChart2, ClockIcon, StickyNote } from 'lucide-react';
+import { LayoutDashboard, Target, CheckSquare, Users, BarChart2, ClockIcon, StickyNote, FileText } from 'lucide-react';
 
 const navGroups = [
   {
@@ -26,6 +26,7 @@ const navGroups = [
       { label: 'Leads',          href: '/leads',      icon: <Target size={18} /> },
       { label: 'Tasks',          href: '/tasks',      icon: <CheckSquare size={18} /> },
       { label: 'Attendance',     href: '/attendance', icon: <ClockIcon size={18} /> },
+      { label: 'Permissions',    href: '/permissions', icon: <FileText size={18} /> },
       { label: 'Users',          href: '/users',      icon: <Users size={18} /> },
       { label: 'Configurations', href: '/configurations', icon: <BarChart2 size={18} /> },
     ],
@@ -42,8 +43,8 @@ export default function Sidebar() {
       if (group.label === 'MANAGEMENT') {
         const items = group.items.filter(item => {
           if (currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN') return true;
-          if (currentUser?.role === 'EMPLOYEE') return item.label === 'Tasks' || item.label === 'Attendance';
-          if (currentUser?.role === 'MANAGER') return item.label === 'Leads' || item.label === 'Tasks' || item.label === 'Attendance';
+          if (currentUser?.role === 'EMPLOYEE') return item.label === 'Tasks' || item.label === 'Attendance' || item.label === 'Permissions';
+          if (currentUser?.role === 'MANAGER') return item.label === 'Leads' || item.label === 'Tasks' || item.label === 'Attendance' || item.label === 'Permissions';
           return false;
         });
         return { ...group, items };

@@ -34,7 +34,9 @@ api.interceptors.response.use(
       console.error('Response:', error.response.data);
     } else if (error.request) {
       // Network errors — no response at all
-      console.error(`❌ [Network Error] ${method} ${url}: No response received`);
+      const fullUrl = `${error.config?.baseURL || ''}${url}`;
+      console.error(`❌ [Network Error] ${method} ${fullUrl}: No response received. Check if backend is running and reachable.`);
+      console.error('Request Details:', error.request);
     } else {
       console.error('❌ [Request Setup Error]:', error.message);
     }
