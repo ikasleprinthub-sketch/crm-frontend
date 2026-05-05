@@ -15,14 +15,13 @@ export default function CustomDatePicker({ label, selected, onChange, placeholde
   return (
     <div className={styles.customSelectContainer}>
       <label className={styles.filterLabel}>{label}</label>
-      <div className={styles.filterInputWrapper} style={{ background: 'var(--surface)', borderRadius: '14px', border: '1.5px solid var(--border)', transition: 'all 0.3s ease' }}>
-        <CalendarIcon size={16} className={styles.filterInputIcon} style={{ color: 'var(--primary)' }} />
+      <div className={styles.filterInputWrapper}>
+        <CalendarIcon size={16} className={styles.filterInputIcon} />
         <DatePicker
           selected={selected}
           onChange={onChange}
           placeholderText={placeholder}
           className={styles.filterInput}
-          style={{ width: '100%', background: 'transparent', border: 'none', paddingLeft: '2.8rem' }}
           dateFormat="dd/MM/yyyy"
           isClearable
           showPopperArrow={false}
