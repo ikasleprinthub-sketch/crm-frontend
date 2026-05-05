@@ -22,7 +22,6 @@ interface CustomSelectProps {
 export default function CustomSelect({ label, options, value, onChange, icon, placeholder = 'Select...', size = 'md', disabled = false }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find(o => o.id === value);
@@ -32,14 +31,6 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
 
   const toggleDropdown = () => {
     if (disabled) return;
-    if (!isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width
-      });
-    }
     setIsOpen(!isOpen);
   };
 
@@ -74,16 +65,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
       </div>
 
       {isOpen && (
-        <div 
-          className={styles.customSelectMenu}
-          style={{
-            position: 'fixed',
-            top: coords.top - window.scrollY,
-            left: coords.left - window.scrollX,
-            width: coords.width,
-            marginTop: '4px'
-          }}
-        >
+        <div className={styles.customSelectMenu}>
           {options.length > 8 && (
             <div className={styles.selectSearchWrapper}>
               <Search size={14} />

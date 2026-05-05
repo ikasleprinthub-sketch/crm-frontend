@@ -23,7 +23,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 
 type AttendanceStatus = 'NOT_MARKED' | 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'LEAVE' | 'SUNDAY';
 type PermissionStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
-type PermissionType   = 'HALF_DAY' | 'LEAVE' | 'LATE_PERMISSION';
+type PermissionType = 'HALF_DAY' | 'LEAVE' | 'LATE_PERMISSION';
 
 interface AttendanceRecord {
   id: string;
@@ -33,15 +33,15 @@ interface AttendanceRecord {
   checkIn: string | null;
   checkOut: string | null;
   totalHours: number | null;
-  morningPlan            : string | null;
-  afternoonPlan          : string | null;
-  eveningPlan            : string | null;
-  nightPlan              : string | null;
-  dayCompletion          : string | null;
-  permission             : PermissionStatus;
-  permissionType         : PermissionType | null;
-  permissionReason       : string | null;
-  user?                  : { id: string; name: string; email: string; role: string };
+  morningPlan: string | null;
+  afternoonPlan: string | null;
+  eveningPlan: string | null;
+  nightPlan: string | null;
+  dayCompletion: string | null;
+  permission: PermissionStatus;
+  permissionType: PermissionType | null;
+  permissionReason: string | null;
+  user?: { id: string; name: string; email: string; role: string };
 }
 
 interface DashboardStats {
@@ -61,7 +61,14 @@ function formatTime(iso: string | null): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC'
+  });
 }
 
 function formatDuration(hours: number | null): string {
@@ -93,12 +100,12 @@ function formatConfigTime(time24: string): string {
 
 function statusBadgeClass(s: AttendanceStatus): string {
   const map: Record<AttendanceStatus, string> = {
-    PRESENT:    styles.badgePresent,
-    LATE:       styles.badgeLate,
-    ABSENT:     styles.badgeAbsent,
-    HALF_DAY:   styles.badgeHalfDay,
-    LEAVE:      styles.badgeLeave,
-    SUNDAY:     styles.badgeSunday,
+    PRESENT: styles.badgePresent,
+    LATE: styles.badgeLate,
+    ABSENT: styles.badgeAbsent,
+    HALF_DAY: styles.badgeHalfDay,
+    LEAVE: styles.badgeLeave,
+    SUNDAY: styles.badgeSunday,
     NOT_MARKED: styles.badgeNotMarked,
   };
   return `${styles.badge} ${map[s] ?? styles.badgeNotMarked}`;
@@ -106,8 +113,8 @@ function statusBadgeClass(s: AttendanceStatus): string {
 
 function permBadgeClass(p: PermissionStatus): string {
   const map: Record<PermissionStatus, string> = {
-    NONE:     styles.permBadgeNone,
-    PENDING:  styles.permBadgePending,
+    NONE: styles.permBadgeNone,
+    PENDING: styles.permBadgePending,
     APPROVED: styles.permBadgeApproved,
     REJECTED: styles.permBadgeRejected,
   };
@@ -116,25 +123,25 @@ function permBadgeClass(p: PermissionStatus): string {
 
 function roleLabel(role: string | undefined): string {
   if (role === 'SUPER_ADMIN') return 'Super Admin';
-  if (role === 'ADMIN')       return 'Admin';
-  if (role === 'MANAGER')     return 'Team Leader';
-  if (role === 'EMPLOYEE')    return 'Employee';
+  if (role === 'ADMIN') return 'Admin';
+  if (role === 'MANAGER') return 'Team Leader';
+  if (role === 'EMPLOYEE') return 'Employee';
   return role ?? '—';
 }
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const PERMISSION_TYPES: { value: PermissionType; label: string }[] = [
   { value: 'LATE_PERMISSION', label: 'Late Permission' },
-  { value: 'HALF_DAY',        label: 'Half Day' },
-  { value: 'LEAVE',           label: 'Full Leave' },
+  { value: 'HALF_DAY', label: 'Half Day' },
+  { value: 'LEAVE', label: 'Full Leave' },
 ];
 const PIE_COLORS: Record<AttendanceStatus, string> = {
-  PRESENT:    '#22c55e',
-  LATE:       '#f97316',
-  ABSENT:     '#ef4444',
-  HALF_DAY:   '#eab308',
-  LEAVE:      '#6366f1',
-  SUNDAY:     '#9ca3af',
+  PRESENT: '#22c55e',
+  LATE: '#f97316',
+  ABSENT: '#ef4444',
+  HALF_DAY: '#eab308',
+  LEAVE: '#6366f1',
+  SUNDAY: '#9ca3af',
   NOT_MARKED: '#d1d5db',
 };
 
@@ -222,46 +229,47 @@ function TeamRow({ team }: { team: TeamData }) {
 // ─── SuperAdminMonitor ───────────────────────────────────────────────────────
 
 function SuperAdminMonitor() {
-  const { users, showToast } = useApp();
+  const { users, departments, showToast } = useApp();
   const now = new Date();
 
-  const [loading,            setLoading]            = useState(true);
-  const [stats,              setStats]              = useState<DashboardStats | null>(null);
-  const [allToday,           setAllToday]           = useState<AttendanceRecord[]>([]);
-  const [monthlyData,        setMonthlyData]        = useState<AttendanceRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [allToday, setAllToday] = useState<AttendanceRecord[]>([]);
+  const [monthlyData, setMonthlyData] = useState<AttendanceRecord[]>([]);
   const [pendingPermissions, setPendingPermissions] = useState<AttendanceRecord[]>([]);
-  const [tick,               setTick]               = useState(0);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60000);
     return () => clearInterval(interval);
   }, []);
 
-  const [activeTab,   setActiveTab]   = useState<'roles' | 'teams' | 'records' | 'permissions'>('roles');
+  const [activeTab, setActiveTab] = useState<'roles' | 'teams' | 'records' | 'permissions'>('roles');
   const searchParams = useSearchParams();
 
   useEffect(() => {
     if (searchParams.get('tab') === 'permissions') setActiveTab('permissions');
   }, [searchParams]);
-  const [chartView,   setChartView]   = useState<'weekly' | 'monthly'>('weekly');
-  const [histMonth,   setHistMonth]   = useState(now.getMonth() + 1);
-  const [histYear,    setHistYear]    = useState(now.getFullYear());
-  const [search,      setSearch]      = useState('');
-  const [filterRole,  setFilterRole]  = useState('ALL');
-  const [filterStatus,setFilterStatus]= useState('ALL');
+  const [chartView, setChartView] = useState<'weekly' | 'monthly'>('weekly');
+  const [histMonth, setHistMonth] = useState(now.getMonth() + 1);
+  const [histYear, setHistYear] = useState(now.getFullYear());
+  const [search, setSearch] = useState('');
+  const [filterRole, setFilterRole] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterDept, setFilterDept] = useState('ALL');
 
-  const [overrideRecord,   setOverrideRecord]   = useState<AttendanceRecord | null>(null);
-  const [overrideStatus,   setOverrideStatus]   = useState<AttendanceStatus>('PRESENT');
-  const [overrideCheckIn,  setOverrideCheckIn]  = useState('');
+  const [overrideRecord, setOverrideRecord] = useState<AttendanceRecord | null>(null);
+  const [overrideStatus, setOverrideStatus] = useState<AttendanceStatus>('PRESENT');
+  const [overrideCheckIn, setOverrideCheckIn] = useState('');
   const [overrideCheckOut, setOverrideCheckOut] = useState('');
-  const [overrideRemarks,  setOverrideRemarks]  = useState('');
-  const [submitting,       setSubmitting]        = useState(false);
+  const [overrideRemarks, setOverrideRemarks] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const [viewEmpRecord,    setViewEmpRecord]    = useState<AttendanceRecord | null>(null);
-  const [empHistory,       setEmpHistory]       = useState<AttendanceRecord[]>([]);
-  const [empHistLoading,   setEmpHistLoading]   = useState(false);
-  const [empHistMonth,     setEmpHistMonth]     = useState(now.getMonth() + 1);
-  const [empHistYear,      setEmpHistYear]      = useState(now.getFullYear());
+  const [viewEmpRecord, setViewEmpRecord] = useState<AttendanceRecord | null>(null);
+  const [empHistory, setEmpHistory] = useState<AttendanceRecord[]>([]);
+  const [empHistLoading, setEmpHistLoading] = useState(false);
+  const [empHistMonth, setEmpHistMonth] = useState(now.getMonth() + 1);
+  const [empHistYear, setEmpHistYear] = useState(now.getFullYear());
 
   const loadEmpHistory = useCallback(async (userId: string, month: number, year: number) => {
     setEmpHistLoading(true);
@@ -287,8 +295,8 @@ function SuperAdminMonitor() {
         api.get('/attendance/all'),
         api.get('/attendance/permission/team'),
       ]);
-      if (statsRes.data?.success)   setStats(statsRes.data.data);
-      if (todayRes.data?.success)   setAllToday(todayRes.data.data ?? []);
+      if (statsRes.data?.success) setStats(statsRes.data.data);
+      if (todayRes.data?.success) setAllToday(todayRes.data.data ?? []);
       if (pendingRes.data?.success) setPendingPermissions(pendingRes.data.data ?? []);
     } catch { /* silent */ }
     setLoading(false);
@@ -301,7 +309,7 @@ function SuperAdminMonitor() {
     } catch { /* silent */ }
   }, [histMonth, histYear]);
 
-  useEffect(() => { loadData(); },    [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
   useEffect(() => { loadMonthly(); }, [loadMonthly]);
 
   // Pie data — today's status distribution
@@ -319,18 +327,18 @@ function SuperAdminMonitor() {
     monthlyData.forEach(r => {
       const d = r.date.split('T')[0];
       if (!byDate[d]) byDate[d] = { date: d, present: 0, absent: 0, late: 0, halfDay: 0 };
-      if (r.status === 'PRESENT')   byDate[d].present++;
-      else if (r.status === 'ABSENT')   byDate[d].absent++;
-      else if (r.status === 'LATE')     byDate[d].late++;
+      if (r.status === 'PRESENT') byDate[d].present++;
+      else if (r.status === 'ABSENT') byDate[d].absent++;
+      else if (r.status === 'LATE') byDate[d].late++;
       else if (r.status === 'HALF_DAY') byDate[d].halfDay++;
     });
     const sorted = Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
-    const slice  = chartView === 'weekly' ? sorted.slice(-7) : sorted;
+    const slice = chartView === 'weekly' ? sorted.slice(-7) : sorted;
     return slice.map(d => ({
       ...d,
       label: chartView === 'weekly'
-        ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' })
-        : new Date(d.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric' }),
+        ? new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', timeZone: 'UTC' })
+        : new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', timeZone: 'UTC' }),
     }));
   }, [monthlyData, chartView]);
 
@@ -341,11 +349,11 @@ function SuperAdminMonitor() {
       const checked = recs.filter(r => ['PRESENT', 'LATE', 'HALF_DAY'].includes(r.status)).length;
       return {
         role,
-        total:   recs.length,
+        total: recs.length,
         present: recs.filter(r => r.status === 'PRESENT').length,
-        late:    recs.filter(r => r.status === 'LATE').length,
-        absent:  recs.filter(r => r.status === 'ABSENT').length,
-        rate:    recs.length > 0 ? Math.round((checked / recs.length) * 100) : 0,
+        late: recs.filter(r => r.status === 'LATE').length,
+        absent: recs.filter(r => r.status === 'ABSENT').length,
+        rate: recs.length > 0 ? Math.round((checked / recs.length) * 100) : 0,
       };
     })
   ), [allToday]);
@@ -354,7 +362,7 @@ function SuperAdminMonitor() {
   const teamMapping = useMemo<TeamData[]>(() => {
     const map: Record<string, TeamData> = {};
     allToday.forEach(r => {
-      const u         = users.find(u => u.id === r.userId);
+      const u = users.find(u => u.id === r.userId);
       const managerId = u?.managerId ?? 'unassigned';
       if (!map[managerId]) {
         const mgr = users.find(u => u.id === managerId);
@@ -376,16 +384,18 @@ function SuperAdminMonitor() {
   // Filtered all-records
   const filteredRecords = useMemo(() => allToday.filter(r => {
     const q = search.toLowerCase();
-    const matchSearch  = !search || r.user?.name?.toLowerCase().includes(q) || r.user?.email?.toLowerCase().includes(q);
-    const matchRole    = filterRole   === 'ALL' || r.user?.role   === filterRole;
-    const matchStatus  = filterStatus === 'ALL' || r.status       === filterStatus;
-    return matchSearch && matchRole && matchStatus;
-  }), [allToday, search, filterRole, filterStatus]);
+    const matchSearch = !search || r.user?.name?.toLowerCase().includes(q) || r.user?.email?.toLowerCase().includes(q);
+    const matchRole = filterRole === 'ALL' || r.user?.role === filterRole;
+    const matchStatus = filterStatus === 'ALL' || r.status === filterStatus;
+    const userObj = users.find(u => u.id === r.userId);
+    const matchDept = filterDept === 'ALL' || userObj?.departmentId === filterDept;
+    return matchSearch && matchRole && matchStatus && matchDept;
+  }), [allToday, search, filterRole, filterStatus, filterDept, users]);
 
   const openOverride = (rec: AttendanceRecord) => {
     setOverrideRecord(rec);
     setOverrideStatus(rec.status);
-    setOverrideCheckIn(rec.checkIn  ? new Date(rec.checkIn).toISOString().slice(0, 16)  : '');
+    setOverrideCheckIn(rec.checkIn ? new Date(rec.checkIn).toISOString().slice(0, 16) : '');
     setOverrideCheckOut(rec.checkOut ? new Date(rec.checkOut).toISOString().slice(0, 16) : '');
     setOverrideRemarks('');
   };
@@ -395,10 +405,10 @@ function SuperAdminMonitor() {
     setSubmitting(true);
     try {
       await api.patch(`/attendance/${overrideRecord.id}`, {
-        status:   overrideStatus,
-        checkIn:  overrideCheckIn  || null,
+        status: overrideStatus,
+        checkIn: overrideCheckIn || null,
         checkOut: overrideCheckOut || null,
-        remarks:  overrideRemarks,
+        remarks: overrideRemarks,
       });
       setOverrideRecord(null);
       await loadData();
@@ -416,8 +426,8 @@ function SuperAdminMonitor() {
     catch (e: any) { showToast('Error', e.response?.data?.message ?? 'Failed', 'error'); }
   };
 
-  const totalToday    = allToday.length;
-  const presentToday  = allToday.filter(r => ['PRESENT', 'LATE', 'HALF_DAY'].includes(r.status)).length;
+  const totalToday = allToday.length;
+  const presentToday = allToday.filter(r => ['PRESENT', 'LATE', 'HALF_DAY'].includes(r.status)).length;
   const attendanceRate = totalToday > 0 ? Math.round((presentToday / totalToday) * 100) : 0;
 
   if (loading) return <div className={styles.empty}>Loading attendance data…</div>;
@@ -434,12 +444,12 @@ function SuperAdminMonitor() {
       {/* ── 6 Stat Cards ── */}
       <div className={styles.monitorGrid}>
         {[
-          { icon: <Users size={18} />,     color: '#4f46e5', bg: 'rgba(99,102,241,0.1)',  val: totalToday,                label: 'Total Employees' },
-          { icon: <UserCheck size={18} />, color: '#16a34a', bg: 'rgba(34,197,94,0.1)',   val: stats?.present ?? 0,      label: 'Present Today' },
-          { icon: <UserX size={18} />,     color: '#dc2626', bg: 'rgba(239,68,68,0.1)',   val: stats?.absent ?? 0,       label: 'Absent Today' },
-          { icon: <Clock size={18} />,     color: '#ea580c', bg: 'rgba(249,115,22,0.1)',  val: stats?.late ?? 0,         label: 'Late Arrivals' },
-          { icon: <Calendar size={18} />,  color: '#b45309', bg: 'rgba(234,179,8,0.1)',   val: stats?.halfDay ?? 0,      label: 'Half Day' },
-          { icon: <TrendingUp size={18} />,color: '#4f46e5', bg: 'rgba(99,102,241,0.1)',  val: `${attendanceRate}%`,     label: 'Attendance Rate' },
+          { icon: <Users size={18} />, color: '#4f46e5', bg: 'rgba(99,102,241,0.1)', val: totalToday, label: 'Total Employees' },
+          { icon: <UserCheck size={18} />, color: '#16a34a', bg: 'rgba(34,197,94,0.1)', val: stats?.present ?? 0, label: 'Present Today' },
+          { icon: <UserX size={18} />, color: '#dc2626', bg: 'rgba(239,68,68,0.1)', val: stats?.absent ?? 0, label: 'Absent Today' },
+          { icon: <Clock size={18} />, color: '#ea580c', bg: 'rgba(249,115,22,0.1)', val: stats?.late ?? 0, label: 'Late Arrivals' },
+          { icon: <Calendar size={18} />, color: '#b45309', bg: 'rgba(234,179,8,0.1)', val: stats?.halfDay ?? 0, label: 'Half Day' },
+          { icon: <TrendingUp size={18} />, color: '#4f46e5', bg: 'rgba(99,102,241,0.1)', val: `${attendanceRate}%`, label: 'Attendance Rate' },
         ].map(({ icon, color, bg, val, label }) => (
           <div key={label} className={styles.monitorCard}>
             <div className={styles.monitorIcon} style={{ background: bg, color }}>{icon}</div>
@@ -507,10 +517,10 @@ function SuperAdminMonitor() {
                 <YAxis tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} allowDecimals={false} />
                 <Tooltip />
                 <Legend iconType="circle" iconSize={8} />
-                <Bar dataKey="present"  fill="#22c55e" radius={[3,3,0,0]} name="Present"  />
-                <Bar dataKey="late"     fill="#f97316" radius={[3,3,0,0]} name="Late"     />
-                <Bar dataKey="absent"   fill="#ef4444" radius={[3,3,0,0]} name="Absent"   />
-                <Bar dataKey="halfDay"  fill="#eab308" radius={[3,3,0,0]} name="Half Day" />
+                <Bar dataKey="present" fill="#22c55e" radius={[3, 3, 0, 0]} name="Present" />
+                <Bar dataKey="late" fill="#f97316" radius={[3, 3, 0, 0]} name="Late" />
+                <Bar dataKey="absent" fill="#ef4444" radius={[3, 3, 0, 0]} name="Absent" />
+                <Bar dataKey="halfDay" fill="#eab308" radius={[3, 3, 0, 0]} name="Half Day" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -520,9 +530,9 @@ function SuperAdminMonitor() {
       {/* ── Tabs ── */}
       <div className={styles.tabs}>
         {([
-          { key: 'roles',       label: 'Role Performance' },
-          { key: 'teams',       label: 'Team Mapping' },
-          { key: 'records',     label: `All Records (${allToday.length})` },
+          { key: 'roles', label: 'Role Performance' },
+          { key: 'teams', label: 'Team Mapping' },
+          { key: 'records', label: `All Records (${allToday.length})` },
           { key: 'permissions', label: `Requests${pendingPermissions.length > 0 ? ` (${pendingPermissions.length})` : ''}` },
         ] as const).map(t => (
           <button
@@ -540,7 +550,7 @@ function SuperAdminMonitor() {
         <div className={styles.rolesGrid}>
           {roleStats.map(rs => {
             const rateColor = rs.rate >= 80 ? '#16a34a' : rs.rate >= 60 ? '#ea580c' : '#dc2626';
-            const barColor  = rs.rate >= 80 ? '#22c55e' : rs.rate >= 60 ? '#f97316' : '#ef4444';
+            const barColor = rs.rate >= 80 ? '#22c55e' : rs.rate >= 60 ? '#f97316' : '#ef4444';
             return (
               <div key={rs.role} className={styles.roleCard}>
                 <div className={styles.roleCardHeader}>
@@ -550,8 +560,8 @@ function SuperAdminMonitor() {
                 <div className={styles.roleStatsRow}>
                   {[
                     { val: rs.present, lbl: 'Present', color: '#16a34a' },
-                    { val: rs.late,    lbl: 'Late',    color: '#f97316' },
-                    { val: rs.absent,  lbl: 'Absent',  color: '#dc2626' },
+                    { val: rs.late, lbl: 'Late', color: '#f97316' },
+                    { val: rs.absent, lbl: 'Absent', color: '#dc2626' },
                   ].map(({ val, lbl, color }) => (
                     <div key={lbl} className={styles.roleStat}>
                       <div style={{ color, fontWeight: 800, fontSize: '1.3rem' }}>{val}</div>
@@ -593,7 +603,7 @@ function SuperAdminMonitor() {
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
-            <select className={styles.monthSelect} value={filterRole}   onChange={e => setFilterRole(e.target.value)}>
+            <select className={styles.monthSelect} value={filterRole} onChange={e => setFilterRole(e.target.value)}>
               <option value="ALL">All Roles</option>
               <option value="SUPER_ADMIN">Super Admin</option>
               <option value="ADMIN">Admin</option>
@@ -602,16 +612,22 @@ function SuperAdminMonitor() {
             </select>
             <select className={styles.monthSelect} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option value="ALL">All Status</option>
-              {(['PRESENT','ABSENT','LATE','HALF_DAY','LEAVE','NOT_MARKED'] as AttendanceStatus[]).map(s =>
+              {(['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'LEAVE', 'NOT_MARKED'] as AttendanceStatus[]).map(s =>
                 <option key={s} value={s}>{s.replace('_', ' ')}</option>
               )}
+            </select>
+            <select className={styles.monthSelect} value={filterDept} onChange={e => setFilterDept(e.target.value)}>
+              <option value="ALL">All Departments</option>
+              {departments.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
             </select>
           </div>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Employee</th><th>Role</th><th>Status</th>
+                  <th>Employee</th><th>Role</th><th>Dept</th><th>Status</th>
                   <th>Check In</th><th>Check Out</th><th>Hours</th>
                   <th>Permission</th><th>Action</th>
                 </tr>
@@ -626,6 +642,7 @@ function SuperAdminMonitor() {
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{r.user?.email}</div>
                     </td>
                     <td><span className={styles.rolePill}>{roleLabel(r.user?.role)}</span></td>
+                    <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{departments.find(d => d.id === users.find(u => u.id === r.userId)?.departmentId)?.name || '—'}</td>
                     <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_', ' ')}</span></td>
                     <td>{formatTime(r.checkIn)}</td>
                     <td>{formatTime(r.checkOut)}</td>
@@ -721,8 +738,8 @@ function SuperAdminMonitor() {
 
             <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
               {[
-                { label: 'Check In',    val: formatTime(viewEmpRecord.checkIn) },
-                { label: 'Check Out',   val: formatTime(viewEmpRecord.checkOut) },
+                { label: 'Check In', val: formatTime(viewEmpRecord.checkIn) },
+                { label: 'Check Out', val: formatTime(viewEmpRecord.checkOut) },
                 { label: 'Total Hours', val: viewEmpRecord.checkIn && !viewEmpRecord.checkOut ? calculateLiveDiff(viewEmpRecord.checkIn) : formatDuration(viewEmpRecord.totalHours) },
               ].map(({ label, val }) => (
                 <div key={label}>
@@ -783,7 +800,7 @@ function SuperAdminMonitor() {
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Status</label>
               <select className={styles.formSelect} value={overrideStatus} onChange={e => setOverrideStatus(e.target.value as AttendanceStatus)}>
-                {(['PRESENT','ABSENT','LATE','HALF_DAY','LEAVE','SUNDAY','NOT_MARKED'] as AttendanceStatus[]).map(s =>
+                {(['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'LEAVE', 'SUNDAY', 'NOT_MARKED'] as AttendanceStatus[]).map(s =>
                   <option key={s} value={s}>{s.replace('_', ' ')}</option>
                 )}
               </select>
@@ -817,42 +834,42 @@ function SuperAdminMonitor() {
 
 function RegularAttendancePage() {
   const { currentUser, showToast } = useApp();
-  const role      = currentUser?.role;
+  const role = currentUser?.role;
   const isManager = role === 'MANAGER';
-  const isAdmin   = role === 'ADMIN';
+  const isAdmin = role === 'ADMIN';
 
   const now = new Date();
-  const [today,               setToday]               = useState<AttendanceRecord | null>(null);
-  const [stats,               setStats]               = useState<DashboardStats | null>(null);
-  const [loading,             setLoading]             = useState(true);
-  const [morningPlan,         setMorningPlan]         = useState('');
-  const [dayCompletion,       setDayCompletion]       = useState('');
-  const [showCheckOutForm,    setShowCheckOutForm]    = useState(false);
-  const [submitting,          setSubmitting]          = useState(false);
-  const [histMonth,           setHistMonth]           = useState(now.getMonth() + 1);
-  const [histYear,            setHistYear]            = useState(now.getFullYear());
-  const [history,             setHistory]             = useState<AttendanceRecord[]>([]);
-  const [teamAttendance,      setTeamAttendance]      = useState<AttendanceRecord[]>([]);
-  const [pendingPermissions,  setPendingPermissions]  = useState<AttendanceRecord[]>([]);
-  const [allAttendance,       setAllAttendance]       = useState<AttendanceRecord[]>([]);
-  const [activeTab,           setActiveTab]           = useState<'team' | 'permissions' | 'all'>('team');
+  const [today, setToday] = useState<AttendanceRecord | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [morningPlan, setMorningPlan] = useState('');
+  const [dayCompletion, setDayCompletion] = useState('');
+  const [showCheckOutForm, setShowCheckOutForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [histMonth, setHistMonth] = useState(now.getMonth() + 1);
+  const [histYear, setHistYear] = useState(now.getFullYear());
+  const [history, setHistory] = useState<AttendanceRecord[]>([]);
+  const [teamAttendance, setTeamAttendance] = useState<AttendanceRecord[]>([]);
+  const [pendingPermissions, setPendingPermissions] = useState<AttendanceRecord[]>([]);
+  const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
+  const [activeTab, setActiveTab] = useState<'team' | 'permissions' | 'all'>('team');
   const searchParams = useSearchParams();
 
   useEffect(() => {
     if (searchParams.get('tab') === 'permissions') setActiveTab('permissions');
   }, [searchParams]);
-  const [showPermModal,       setShowPermModal]       = useState(false);
-  const [permType,            setPermType]            = useState<PermissionType>('LATE_PERMISSION');
-  const [permReason,          setPermReason]          = useState('');
-  const [permDate,            setPermDate]            = useState<Date | null>(new Date());
-  const [overrideRecord,      setOverrideRecord]      = useState<AttendanceRecord | null>(null);
-  const [overrideStatus,      setOverrideStatus]      = useState<AttendanceStatus>('PRESENT');
-  const [overrideCheckIn,     setOverrideCheckIn]     = useState('');
-  const [overrideCheckOut,    setOverrideCheckOut]    = useState('');
-  const [overrideRemarks,     setOverrideRemarks]     = useState('');
-  const [tick,                setTick]                = useState(0);
-  const [officeStartTime,     setOfficeStartTime]     = useState('10:00');
-  const [officeEndTime,       setOfficeEndTime]       = useState('19:00');
+  const [showPermModal, setShowPermModal] = useState(false);
+  const [permType, setPermType] = useState<PermissionType>('LATE_PERMISSION');
+  const [permReason, setPermReason] = useState('');
+  const [permDate, setPermDate] = useState<Date | null>(new Date());
+  const [overrideRecord, setOverrideRecord] = useState<AttendanceRecord | null>(null);
+  const [overrideStatus, setOverrideStatus] = useState<AttendanceStatus>('PRESENT');
+  const [overrideCheckIn, setOverrideCheckIn] = useState('');
+  const [overrideCheckOut, setOverrideCheckOut] = useState('');
+  const [overrideRemarks, setOverrideRemarks] = useState('');
+  const [tick, setTick] = useState(0);
+  const [officeStartTime, setOfficeStartTime] = useState('10:00');
+  const [officeEndTime, setOfficeEndTime] = useState('19:00');
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 10000); // Check every 10s
@@ -882,19 +899,19 @@ function RegularAttendancePage() {
     } catch { /* silent */ }
   }, []);
 
-  const loadStats   = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     try { const r = await api.get('/attendance/stats'); if (r.data?.success) setStats(r.data.data); } catch { /* silent */ }
   }, []);
   const loadHistory = useCallback(async () => {
     try { const r = await api.get(`/attendance/my?month=${histMonth}&year=${histYear}`); if (r.data?.success) setHistory(r.data.data); } catch { /* silent */ }
   }, [histMonth, histYear]);
-  const loadTeam    = useCallback(async () => {
+  const loadTeam = useCallback(async () => {
     try { const r = await api.get('/attendance/team'); if (r.data?.success) setTeamAttendance(r.data.data); } catch { /* silent */ }
   }, []);
   const loadPending = useCallback(async () => {
     try { const r = await api.get('/attendance/permission/team'); if (r.data?.success) setPendingPermissions(r.data.data); } catch { /* silent */ }
   }, []);
-  const loadAll     = useCallback(async () => {
+  const loadAll = useCallback(async () => {
     try { const r = await api.get('/attendance/all'); if (r.data?.success) setAllAttendance(r.data.data); } catch { /* silent */ }
   }, []);
 
@@ -906,7 +923,7 @@ function RegularAttendancePage() {
       if (isAdmin) await loadAll();
       setLoading(false);
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { loadHistory(); }, [loadHistory]);
@@ -931,32 +948,56 @@ function RegularAttendancePage() {
 
   const handleCheckOut = async () => {
     if (!today?.checkIn) return;
-    
+
     // Check for Half Day (Less than 4 hours)
     const start = new Date(today.checkIn).getTime();
     const diff = (new Date().getTime() - start) / 3600000;
-    
-    if (diff < 4 && today.permission !== 'APPROVED') {
-      if (today.permission === 'PENDING') {
-        showToast('Checkout Blocked', 'Your Half Day permission is still pending approval. Please wait for an admin to approve it.', 'error');
-      } else {
-        showToast('Early Checkout', 'You have worked less than 4 hours. Please apply for Half Day permission first.', 'error');
-        setPermType('HALF_DAY');
-        setPermReason('Early checkout (less than 4 hours worked)');
-        setPermDate(new Date());
-        setShowPermModal(true);
-      }
+
+    if (diff < 4 && today.permission !== 'APPROVED' && today.permission !== 'PENDING') {
+      showToast(
+        'Half Day Required',
+        'You have worked less than 4 hours. An automatic "Half Day" permission request will be submitted for you to proceed with checkout. Do you want to continue?',
+        'confirm',
+        async () => {
+          setSubmitting(true);
+          try {
+            const d = new Date();
+            const dateStr = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+            await api.post('/attendance/permission/apply', {
+              permissionType: 'HALF_DAY',
+              reason: 'Automated request for early checkout (less than 4 hours worked)',
+              date: dateStr
+            });
+            // Proceed to actual checkout after permission is submitted
+            performActualCheckout();
+          } catch (e: any) {
+            showToast('Request Failed', 'Could not apply for Half Day. Please try manually.', 'error');
+            setSubmitting(false);
+          }
+        }
+      );
+      return;
+    } else if (diff < 4 && today.permission === 'PENDING') {
+      showToast('Checkout Blocked', 'Your Half Day permission is still pending approval. Please wait for an admin to approve it.', 'error');
       return;
     }
 
+    performActualCheckout();
+  };
+
+  const performActualCheckout = async () => {
     setSubmitting(true);
     try {
       await api.post('/attendance/check-out', { dayCompletion });
       setShowCheckOutForm(false); setDayCompletion('');
       await loadToday(); await loadStats(); await loadHistory();
       if (isManager || isAdmin) await loadTeam();
-    } catch (e: any) { showToast('Check-out Failed', e.response?.data?.message ?? 'Check-out failed', 'error'); }
-    finally { setSubmitting(false); }
+      showToast('Checked Out', 'Successfully checked out for the day.', 'success');
+    } catch (e: any) {
+      showToast('Check-out Failed', e.response?.data?.message ?? 'Check-out failed', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleApplyPermission = async () => {
@@ -985,8 +1026,8 @@ function RegularAttendancePage() {
   const openOverride = (rec: AttendanceRecord) => {
     setOverrideRecord(rec);
     setOverrideStatus(rec.status);
-    setOverrideCheckIn(rec.checkIn  ? new Date(rec.checkIn).toISOString().slice(0,16)  : '');
-    setOverrideCheckOut(rec.checkOut ? new Date(rec.checkOut).toISOString().slice(0,16) : '');
+    setOverrideCheckIn(rec.checkIn ? new Date(rec.checkIn).toISOString().slice(0, 16) : '');
+    setOverrideCheckOut(rec.checkOut ? new Date(rec.checkOut).toISOString().slice(0, 16) : '');
     setOverrideRemarks('');
   };
   const handleOverride = async () => {
@@ -1000,9 +1041,9 @@ function RegularAttendancePage() {
     finally { setSubmitting(false); }
   };
 
-  const canCheckIn  = today && !today.checkIn  && today.status !== 'SUNDAY';
-  const canCheckOut = today && today.checkIn   && !today.checkOut;
-  const canSavePlan = today && today.checkIn   && !today.checkOut && morningPlan !== (today.morningPlan ?? '');
+  const canCheckIn = today && !today.checkIn && today.status !== 'SUNDAY';
+  const canCheckOut = today && today.checkIn && !today.checkOut;
+  const canSavePlan = today && today.checkIn && !today.checkOut && morningPlan !== (today.morningPlan ?? '');
 
   if (loading) return <div className={styles.empty}>Loading attendance data…</div>;
 
@@ -1012,11 +1053,11 @@ function RegularAttendancePage() {
       {stats && (
         <div className={styles.statsRow}>
           {[
-            { val: stats.present,            lbl: 'Present',      color: '#16a34a' },
-            { val: stats.absent,             lbl: 'Absent',       color: '#dc2626' },
-            { val: stats.late,               lbl: 'Late',         color: '#ea580c' },
-            { val: stats.halfDay,            lbl: 'Half Day',     color: '#b45309' },
-            { val: stats.pendingPermissions, lbl: 'Pending Perms',color: '#b45309' },
+            { val: stats.present, lbl: 'Present', color: '#16a34a' },
+            { val: stats.absent, lbl: 'Absent', color: '#dc2626' },
+            { val: stats.late, lbl: 'Late', color: '#ea580c' },
+            { val: stats.halfDay, lbl: 'Half Day', color: '#b45309' },
+            { val: stats.pendingPermissions, lbl: 'Pending Perms', color: '#b45309' },
           ].map(({ val, lbl, color }) => (
             <div key={lbl} className={styles.statBox}>
               <div className={styles.statNum} style={{ color }}>{val}</div>
@@ -1086,10 +1127,10 @@ function RegularAttendancePage() {
             }
             return null;
           })()}
-          <button className={styles.checkInBtn}   onClick={handleCheckIn}              disabled={!canCheckIn  || submitting}>
+          <button className={styles.checkInBtn} onClick={handleCheckIn} disabled={!canCheckIn || submitting}>
             <LogIn size={16} />{today?.checkIn ? 'Checked In' : 'Check In'}
           </button>
-          <button className={styles.checkOutBtn}  onClick={() => setShowCheckOutForm(true)} disabled={!canCheckOut || submitting}>
+          <button className={styles.checkOutBtn} onClick={() => setShowCheckOutForm(true)} disabled={!canCheckOut || submitting}>
             <LogOut size={16} />{today?.checkOut ? 'Checked Out' : 'Check Out'}
           </button>
           <button className={styles.permissionBtn} onClick={() => setShowPermModal(true)}>
@@ -1104,11 +1145,11 @@ function RegularAttendancePage() {
           <div className={styles.planTitle}>
             <FileText size={15} /> {getDynamicGreeting()} — {getGreetingPrefix()}, what will you do today?
           </div>
-          <textarea 
-            className={styles.textarea} 
-            value={morningPlan} 
-            onChange={e => setMorningPlan(e.target.value)} 
-            placeholder={`Describe your ${getDynamicGreeting().toLowerCase()}...`} 
+          <textarea
+            className={styles.textarea}
+            value={morningPlan}
+            onChange={e => setMorningPlan(e.target.value)}
+            placeholder={`Describe your ${getDynamicGreeting().toLowerCase()}...`}
           />
           <div style={{ marginTop: '0.75rem' }}>
             <button className={pageStyles.primaryBtn} onClick={handleSavePlan} disabled={!canSavePlan || submitting} style={{ fontSize: '0.875rem', padding: '0.6rem 1.25rem' }}>
@@ -1189,7 +1230,7 @@ function RegularAttendancePage() {
                 {history.map(r => (
                   <tr key={r.id}>
                     <td>{formatDate(r.date)}</td>
-                    <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_',' ')}</span></td>
+                    <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_', ' ')}</span></td>
                     <td>{formatTime(r.checkIn)}</td>
                     <td>{formatTime(r.checkOut)}</td>
                     <td>{formatDuration(r.totalHours)}</td>
@@ -1227,7 +1268,7 @@ function RegularAttendancePage() {
                       {teamAttendance.map(r => (
                         <tr key={r.id}>
                           <td><div style={{ fontWeight: 600 }}>{r.user?.name ?? '—'}</div><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{roleLabel(r.user?.role)}</div></td>
-                          <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_',' ')}</span></td>
+                          <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_', ' ')}</span></td>
                           <td>{formatTime(r.checkIn)}</td>
                           <td>{formatTime(r.checkOut)}</td>
                           <td>
@@ -1260,7 +1301,7 @@ function RegularAttendancePage() {
                       {allAttendance.map(r => (
                         <tr key={r.id}>
                           <td><div style={{ fontWeight: 600 }}>{r.user?.name ?? '—'}</div><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{roleLabel(r.user?.role)}</div></td>
-                          <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_',' ')}</span></td>
+                          <td><span className={statusBadgeClass(r.status)}>{r.status.replace('_', ' ')}</span></td>
                           <td>{formatTime(r.checkIn)}</td>
                           <td>{formatTime(r.checkOut)}</td>
                           <td>
@@ -1295,7 +1336,7 @@ function RegularAttendancePage() {
               </select>
             </div>
             <div className={styles.formGroup}>
-              <CustomDatePicker 
+              <CustomDatePicker
                 label="Date"
                 selected={permDate}
                 onChange={setPermDate}
@@ -1323,7 +1364,7 @@ function RegularAttendancePage() {
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Status</label>
               <select className={styles.formSelect} value={overrideStatus} onChange={e => setOverrideStatus(e.target.value as AttendanceStatus)}>
-                {(['PRESENT','ABSENT','LATE','HALF_DAY','LEAVE','SUNDAY','NOT_MARKED'] as AttendanceStatus[]).map(s =>
+                {(['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'LEAVE', 'SUNDAY', 'NOT_MARKED'] as AttendanceStatus[]).map(s =>
                   <option key={s} value={s}>{s.replace('_', ' ')}</option>
                 )}
               </select>

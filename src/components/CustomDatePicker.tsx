@@ -21,8 +21,7 @@ export default function CustomDatePicker({ label, selected, onChange, placeholde
           selected={selected}
           onChange={onChange}
           placeholderText={placeholder}
-          className={styles.filterInput}
-          style={{ width: '100%', background: 'transparent', border: 'none', paddingLeft: '2.8rem' }}
+          className={`${styles.filterInput} ${styles.transparentInput}`}
           dateFormat="dd/MM/yyyy"
           isClearable
           showPopperArrow={false}

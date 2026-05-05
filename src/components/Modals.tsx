@@ -498,19 +498,19 @@ export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
           >
             {roleOptions.map(r => (
               <option key={r} value={r}>
-                {r === 'MANAGER' ? 'Team Leader' : r.replace('_', ' ')}
+                {r === 'MANAGER' ? 'TEAM LEADER' : r.replace('_', ' ')}
               </option>
             ))}
           </select>
         </FormField>
-        <FormField label="Reporting Team Leader">
+        <FormField label="Reporting Person">
           <select
             className={styles.select}
             value={form.managerId}
             onChange={e => setForm({ ...form, managerId: e.target.value })}
           >
             <option value="">No Team Leader (Direct)</option>
-            {teamLeaderOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role === 'MANAGER' ? 'Team Leader' : m.role})</option>)}
+            {teamLeaderOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role === 'MANAGER' ? 'TEAM LEADER' : m.role.replace('_', ' ')})</option>)}
           </select>
         </FormField>
       </div>
@@ -612,24 +612,97 @@ export function EditUserForm({ user, onSubmit }: { user: User; onSubmit: (data: 
             onChange={e => setForm({ ...form, role: e.target.value as Role })}
           >
             {roleOptions.map(r => (
-              <option key={r} value={r}>{r === 'MANAGER' ? 'Team Leader' : r.replace('_', ' ')}</option>
+              <option key={r} value={r}>
+                {r === 'MANAGER' ? 'TEAM LEADER' : r.replace('_', ' ')}
+              </option>
             ))}
           </select>
         </FormField>
-        <FormField label="Reporting Team Leader">
+        <FormField label="Reporting Person">
           <select
             className={styles.select}
             value={form.managerId}
             onChange={e => setForm({ ...form, managerId: e.target.value })}
           >
             <option value="">No Team Leader (Direct)</option>
-            {teamLeaderOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role === 'MANAGER' ? 'Team Leader' : m.role})</option>)}
+            {teamLeaderOptions.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role === 'MANAGER' ? 'TEAM LEADER' : m.role.replace('_', ' ')})</option>)}
           </select>
         </FormField>
       </div>
 
       <div className={styles.formActions}>
         <button type="submit" className={styles.submitBtn}>Save Changes</button>
+      </div>
+    </form>
+  );
+}
+
+/* ── Edit Task Form ── */
+export function EditTaskForm({ task, onSubmit }: { task: any; onSubmit: (data: any) => void }) {
+  const { departments, taskTypes, users, leads, showToast } = useApp();
+  const [form, setForm] = useState({
+    leadId: task.leadId,
+    assignedToId: task.assignedToId,
+    departmentId: task.departmentId,
+    taskTypeId: task.taskTypeId,
+    priority: task.priority as Priority,
+    status: task.status as TaskStatus,
+    startDate: (task.startDate ? new Date(task.startDate) : new Date()) as Date | null,
+    completionDate: (task.completionDate ? new Date(task.completionDate) : null) as Date | null,
+    remarks: task.remarks || '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const filteredTypes = taskTypes.filter(t => t.departmentId === form.departmentId);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.leadId || !form.assignedToId || !form.departmentId || !form.taskTypeId) {
+      showToast('Selection Required', 'Please ensure all required fields (*) are selected.', 'error');
+      return;
+    }
+    if (!form.remarks.trim()) {
+      showToast('Remarks Required', 'Remarks are required for the task.', 'error');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit(form);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <div className={styles.detailsCard}>
+        <p className={styles.detailsTitle}>Task Details (Read-Only)</p>
+        <div className={styles.detailsGrid}>
+          <p><strong>Task No:</strong> {task.taskNo}</p>
+          <p><strong>Priority:</strong> <span style={{ color: task.priority === 'URGENT' ? 'var(--accent-red)' : 'inherit' }}>{task.priority}</span></p>
+          <p><strong>Type:</strong> {taskTypes.find(t => t.id === task.taskTypeId)?.name || '—'}</p>
+          <p><strong>Deadline:</strong> {task.completionDate ? new Date(task.completionDate).toLocaleDateString() : '—'}</p>
+        </div>
+      </div>
+
+      <div className={styles.formRow}>
+        <CustomSelect
+          label="Reassign To Member *"
+          options={users.map(u => ({ id: u.id, name: `${u.name} (${u.role === 'MANAGER' ? 'TEAM LEADER' : u.role.replace('_', ' ')})` }))}
+          value={form.assignedToId}
+          onChange={val => setForm({ ...form, assignedToId: val })}
+        />
+      </div>
+
+      <FormField label="Reassignment Remarks / Instructions *">
+        <textarea className={styles.textarea} required value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Explain why this task is being reassigned..." rows={3} />
+      </FormField>
+
+      <div className={styles.formActions}>
+        <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+          {isSubmitting ? 'Updating Assignment...' : 'Update Assignment'}
+        </button>
       </div>
     </form>
   );

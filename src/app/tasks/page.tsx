@@ -4,9 +4,9 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useApp, TaskStatus } from '@/context/AppContext';
 import SOPChecklist from '@/components/SOPChecklist';
-import { Modal, AddTaskForm } from '@/components/Modals';
+import { Modal, AddTaskForm, EditTaskForm } from '@/components/Modals';
 import styles from '../page.module.css';
-import { Trash2, ClipboardList, Search, Building, User, Users, Calendar, RotateCcw, AlertCircle } from 'lucide-react';
+import { Trash2, ClipboardList, Search, Building, User, Users, Calendar, RotateCcw, AlertCircle, Edit3 } from 'lucide-react';
 import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -14,7 +14,7 @@ export default function TasksPage() {
   const {
     currentUser, tasks, leads, addTask, updateTask,
     updateTaskStep, deleteTask, users, departments,
-    taskTypes, searchQuery
+    taskTypes, searchQuery, showToast
   } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
@@ -24,8 +24,27 @@ export default function TasksPage() {
   const [leadCategory, setLeadCategory] = useState<string>('All');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<any>(null);
 
   const isEmployee = currentUser?.role === 'EMPLOYEE';
+  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
+  const handleDeleteTask = (id: string) => {
+    showToast(
+      'Delete Task?',
+      'Are you sure you want to permanently remove this task?',
+      'confirm',
+      async () => {
+        try {
+          await deleteTask(id);
+          showToast('Task Deleted', 'The task has been permanently removed.', 'success');
+        } catch (e: any) {
+          showToast('Delete Failed', e.response?.data?.message || e.message || 'Failed to delete the task.', 'error');
+        }
+      }
+    );
+  };
+
   const filters = ['All', 'NOT_YET_STARTED', 'WORK_IN_PROGRESS', 'PENDING_FOR_APPROVAL', 'COMPLETED', 'DATA_NOT_RECEIVED'];
 
   const filtered = tasks.filter(t => {
@@ -238,7 +257,14 @@ export default function TasksPage() {
                               .filter(s => !isEmployee || s !== 'COMPLETED' || task.status === 'COMPLETED')
                               .map(s => ({ id: s, name: getStatusLabel(s) }))}
                             value={task.status}
-                            onChange={val => updateTask(task.id, { status: val as TaskStatus })}
+                            onChange={async (val) => {
+                              try {
+                                await updateTask(task.id, { status: val as TaskStatus });
+                                showToast('Status Updated', `Task ${task.taskNo} is now ${val.replace(/_/g, ' ')}`, 'success');
+                              } catch (e: any) {
+                                showToast('Update Failed', e.response?.data?.message || e.message, 'error');
+                              }
+                            }}
                           />
                         )}
                       </td>
@@ -282,11 +308,23 @@ export default function TasksPage() {
                         </div>
                       </td>
                       <td>
-                        {!isEmployee && (
-                          <button className={styles.iconBtn} onClick={() => deleteTask(task.id)} title="Delete">
-                            <Trash2 size={16} />
-                          </button>
-                        )}
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          {isAdmin && (
+                            <button 
+                              className={styles.iconBtn} 
+                              onClick={() => { setTaskToEdit(task); setIsEditModalOpen(true); }} 
+                              title="Edit"
+                              style={{ color: 'var(--primary)' }}
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                          )}
+                          {!isEmployee && (
+                            <button className={styles.iconBtn} onClick={() => handleDeleteTask(task.id)} title="Delete">
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -314,14 +352,46 @@ export default function TasksPage() {
                 {tasks.find(t => t.id === selectedTask)!.remarks && <p style={{ color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Remarks: <strong style={{ color: 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.remarks}</strong></p>}
               </div>
               <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>SOP CHECKLIST</h3>
-              <SOPChecklist steps={tasks.find(t => t.id === selectedTask)!.sopSteps || []} taskId={selectedTask!} onToggle={(stepId, completed) => updateTaskStep(selectedTask!, stepId, completed)} />
+              <SOPChecklist steps={tasks.find(t => t.id === selectedTask)!.sopSteps || []} taskId={selectedTask!} onToggle={async (stepId, completed) => {
+                try {
+                  await updateTaskStep(selectedTask!, stepId, completed);
+                } catch (e: any) {
+                  showToast('Update Failed', e.response?.data?.message || 'Failed to update step.', 'error');
+                }
+              }} />
             </div>
           )}
         </Modal>
 
         {/* Add Task Modal */}
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Task" size="lg">
-          <AddTaskForm onSubmit={(data) => { addTask(data); setIsModalOpen(false); }} />
+          <AddTaskForm onSubmit={async (data) => { 
+            try {
+              await addTask(data); 
+              setIsModalOpen(false); 
+              showToast('Task Created', 'The new task has been successfully assigned.', 'success');
+            } catch (e: any) {
+              showToast('Creation Failed', e.response?.data?.message || e.message || 'Could not create the task. Please check all fields.', 'error');
+            }
+          }} />
+        </Modal>
+
+        {/* Edit Task Modal */}
+        <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={`Edit Task: ${taskToEdit?.taskNo}`} size="lg">
+          {taskToEdit && (
+            <EditTaskForm 
+              task={taskToEdit} 
+              onSubmit={async (data) => { 
+                try {
+                  await updateTask(taskToEdit.id, data); 
+                  setIsEditModalOpen(false); 
+                  showToast('Task Reassigned', 'The task has been successfully reassigned to the team member.', 'success');
+                } catch (e) {
+                  showToast('Update Failed', 'Failed to update task details.', 'error');
+                }
+              }} 
+            />
+          )}
         </Modal>
       </main>
     </div>
