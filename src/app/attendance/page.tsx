@@ -17,6 +17,7 @@ import {
   XCircle, TrendingUp, Search, RefreshCw, UserCheck, UserX, Calendar,
   ChevronDown, ChevronRight,
 } from 'lucide-react';
+import CustomDatePicker from '@/components/CustomDatePicker';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -32,12 +33,15 @@ interface AttendanceRecord {
   checkIn: string | null;
   checkOut: string | null;
   totalHours: number | null;
-  morningPlan: string | null;
-  dayCompletion: string | null;
-  permission: PermissionStatus;
-  permissionType: PermissionType | null;
-  permissionReason: string | null;
-  user?: { id: string; name: string; email: string; role: string };
+  morningPlan            : string | null;
+  afternoonPlan          : string | null;
+  eveningPlan            : string | null;
+  nightPlan              : string | null;
+  dayCompletion          : string | null;
+  permission             : PermissionStatus;
+  permissionType         : PermissionType | null;
+  permissionReason       : string | null;
+  user?                  : { id: string; name: string; email: string; role: string };
 }
 
 interface DashboardStats {
@@ -77,6 +81,14 @@ function calculateLiveDiff(checkInIso: string | null): string {
   const h = Math.floor(diffMs / 3600000);
   const m = Math.floor((diffMs % 3600000) / 60000);
   return `${h}h ${m}m`;
+}
+
+function formatConfigTime(time24: string): string {
+  if (!time24) return '—';
+  const [h, m] = time24.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
 }
 
 function statusBadgeClass(s: AttendanceStatus): string {
@@ -125,6 +137,22 @@ const PIE_COLORS: Record<AttendanceStatus, string> = {
   SUNDAY:     '#9ca3af',
   NOT_MARKED: '#d1d5db',
 };
+
+function getDynamicGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Morning Plan';
+  if (hour < 17) return 'Afternoon Plan';
+  if (hour < 21) return 'Evening Plan';
+  return 'Night Plan';
+}
+
+function getGreetingPrefix() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  if (hour < 21) return 'Good Evening';
+  return 'Good Night';
+}
 
 // ─── TeamRow ─────────────────────────────────────────────────────────────────
 
@@ -816,17 +844,31 @@ function RegularAttendancePage() {
   const [showPermModal,       setShowPermModal]       = useState(false);
   const [permType,            setPermType]            = useState<PermissionType>('LATE_PERMISSION');
   const [permReason,          setPermReason]          = useState('');
-  const [permDate,            setPermDate]            = useState('');
+  const [permDate,            setPermDate]            = useState<Date | null>(new Date());
   const [overrideRecord,      setOverrideRecord]      = useState<AttendanceRecord | null>(null);
   const [overrideStatus,      setOverrideStatus]      = useState<AttendanceStatus>('PRESENT');
   const [overrideCheckIn,     setOverrideCheckIn]     = useState('');
   const [overrideCheckOut,    setOverrideCheckOut]    = useState('');
   const [overrideRemarks,     setOverrideRemarks]     = useState('');
   const [tick,                setTick]                = useState(0);
+  const [officeStartTime,     setOfficeStartTime]     = useState('10:00');
+  const [officeEndTime,       setOfficeEndTime]       = useState('19:00');
 
   useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    const interval = setInterval(() => setTick(t => t + 1), 10000); // Check every 10s
     return () => clearInterval(interval);
+  }, []);
+
+  const fetchConfig = useCallback(async () => {
+    try {
+      const res = await api.get('/configs');
+      if (res.data?.success) {
+        const start = res.data.data.find((c: any) => c.key === 'officeStartTime')?.value;
+        const end = res.data.data.find((c: any) => c.key === 'officeEndTime')?.value;
+        if (start) setOfficeStartTime(start);
+        if (end) setOfficeEndTime(end);
+      }
+    } catch { /* silent */ }
   }, []);
 
   const loadToday = useCallback(async () => {
@@ -859,7 +901,7 @@ function RegularAttendancePage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      await Promise.all([loadToday(), loadStats(), loadHistory()]);
+      await Promise.all([loadToday(), loadStats(), loadHistory(), fetchConfig()]);
       if (isManager || isAdmin) await Promise.all([loadTeam(), loadPending()]);
       if (isAdmin) await loadAll();
       setLoading(false);
@@ -888,6 +930,25 @@ function RegularAttendancePage() {
   };
 
   const handleCheckOut = async () => {
+    if (!today?.checkIn) return;
+    
+    // Check for Half Day (Less than 4 hours)
+    const start = new Date(today.checkIn).getTime();
+    const diff = (new Date().getTime() - start) / 3600000;
+    
+    if (diff < 4 && today.permission !== 'APPROVED') {
+      if (today.permission === 'PENDING') {
+        showToast('Checkout Blocked', 'Your Half Day permission is still pending approval. Please wait for an admin to approve it.', 'error');
+      } else {
+        showToast('Early Checkout', 'You have worked less than 4 hours. Please apply for Half Day permission first.', 'error');
+        setPermType('HALF_DAY');
+        setPermReason('Early checkout (less than 4 hours worked)');
+        setPermDate(new Date());
+        setShowPermModal(true);
+      }
+      return;
+    }
+
     setSubmitting(true);
     try {
       await api.post('/attendance/check-out', { dayCompletion });
@@ -900,12 +961,14 @@ function RegularAttendancePage() {
 
   const handleApplyPermission = async () => {
     if (!permReason.trim()) { showToast('Missing Reason', 'Please provide a reason', 'error'); return; }
+    if (!permDate) { showToast('Missing Date', 'Please select a date', 'error'); return; }
     setSubmitting(true);
     try {
-      await api.post('/attendance/permission/apply', { permissionType: permType, reason: permReason, date: permDate || undefined });
-      setShowPermModal(false); setPermReason(''); setPermDate('');
+      const dateStr = permDate.toISOString().split('T')[0];
+      await api.post('/attendance/permission/apply', { permissionType: permType, reason: permReason, date: dateStr });
+      setShowPermModal(false); setPermReason(''); setPermDate(new Date());
       await loadToday();
-      showToast('Request Submitted', 'Your leave request has been sent for approval.');
+      showToast('Request Submitted', 'Your leave request has been sent for approval.', 'success');
     } catch (e: any) { showToast('Request Failed', e.response?.data?.message ?? 'Failed to apply permission', 'error'); }
     finally { setSubmitting(false); }
   };
@@ -973,7 +1036,14 @@ function RegularAttendancePage() {
         <div className={styles.timeRow}>
           <div className={styles.timeItem}>
             <span className={styles.timeLabel}>Check In</span>
-            <span className={styles.timeValue}>{formatTime(today?.checkIn ?? null)}</span>
+            <span className={styles.timeValue}>
+              {formatTime(today?.checkIn ?? null)}
+              {today?.status === 'LATE' && (
+                <div style={{ color: '#dc2626', fontSize: '0.65rem', fontWeight: 600, marginTop: '2px' }}>
+                  (Late after {formatConfigTime(officeStartTime)})
+                </div>
+              )}
+            </span>
           </div>
           <div className={styles.timeItem}>
             <span className={styles.timeLabel}>Check Out</span>
@@ -989,6 +1059,12 @@ function RegularAttendancePage() {
               )}
             </span>
           </div>
+          <div className={styles.timeItem}>
+            <span className={styles.timeLabel}>Working Hours</span>
+            <span className={styles.timeValue} style={{ color: 'var(--primary)' }}>
+              {formatConfigTime(officeStartTime)} - {formatConfigTime(officeEndTime)}
+            </span>
+          </div>
           {today?.permission && today.permission !== 'NONE' && (
             <div className={styles.timeItem}>
               <span className={styles.timeLabel}>Permission</span>
@@ -997,6 +1073,19 @@ function RegularAttendancePage() {
           )}
         </div>
         <div className={styles.actionRow}>
+          {canCheckIn && (() => {
+            const [h, m] = officeStartTime.split(':').map(Number);
+            const cutoff = new Date();
+            cutoff.setHours(h, m, 0, 0);
+            if (new Date() > cutoff) {
+              return (
+                <div style={{ width: '100%', color: '#ea580c', background: 'rgba(234, 88, 12, 0.05)', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid rgba(234, 88, 12, 0.1)' }}>
+                  <Clock size={14} /> Note: Checking in now will be marked as LATE (Threshold: {formatConfigTime(officeStartTime)})
+                </div>
+              );
+            }
+            return null;
+          })()}
           <button className={styles.checkInBtn}   onClick={handleCheckIn}              disabled={!canCheckIn  || submitting}>
             <LogIn size={16} />{today?.checkIn ? 'Checked In' : 'Check In'}
           </button>
@@ -1009,11 +1098,18 @@ function RegularAttendancePage() {
         </div>
       </div>
 
-      {/* Morning Plan */}
+      {/* Morning/Afternoon Plan */}
       {today?.checkIn && !today?.checkOut && (
         <div className={styles.planCard}>
-          <div className={styles.planTitle}><FileText size={15} /> Morning Plan — What will you do today?</div>
-          <textarea className={styles.textarea} value={morningPlan} onChange={e => setMorningPlan(e.target.value)} placeholder="Describe your plan for today…" />
+          <div className={styles.planTitle}>
+            <FileText size={15} /> {getDynamicGreeting()} — {getGreetingPrefix()}, what will you do today?
+          </div>
+          <textarea 
+            className={styles.textarea} 
+            value={morningPlan} 
+            onChange={e => setMorningPlan(e.target.value)} 
+            placeholder={`Describe your ${getDynamicGreeting().toLowerCase()}...`} 
+          />
           <div style={{ marginTop: '0.75rem' }}>
             <button className={pageStyles.primaryBtn} onClick={handleSavePlan} disabled={!canSavePlan || submitting} style={{ fontSize: '0.875rem', padding: '0.6rem 1.25rem' }}>
               Save Plan
@@ -1022,11 +1118,33 @@ function RegularAttendancePage() {
         </div>
       )}
 
-      {/* Read-only plan after checkout */}
-      {today?.checkIn && today?.checkOut && today?.morningPlan && (
+      {/* Read-only plans after checkout */}
+      {today?.checkIn && today?.checkOut && (today.morningPlan || today.afternoonPlan || today.eveningPlan) && (
         <div className={styles.planCard}>
-          <div className={styles.planTitle}><FileText size={15} /> Morning Plan</div>
-          <textarea className={styles.textarea} value={today.morningPlan} readOnly />
+          {today.morningPlan && (
+            <>
+              <div className={styles.planTitle}><FileText size={15} /> Morning Plan</div>
+              <textarea className={styles.textarea} value={today.morningPlan} readOnly />
+            </>
+          )}
+          {today.afternoonPlan && (
+            <>
+              <div className={styles.planTitle} style={{ marginTop: '1rem' }}><FileText size={15} /> Afternoon Plan</div>
+              <textarea className={styles.textarea} value={today.afternoonPlan} readOnly />
+            </>
+          )}
+          {today.eveningPlan && (
+            <>
+              <div className={styles.planTitle} style={{ marginTop: '1rem' }}><FileText size={15} /> Evening Plan</div>
+              <textarea className={styles.textarea} value={today.eveningPlan} readOnly />
+            </>
+          )}
+          {today.nightPlan && (
+            <>
+              <div className={styles.planTitle} style={{ marginTop: '1rem' }}><FileText size={15} /> Night Plan</div>
+              <textarea className={styles.textarea} value={today.nightPlan} readOnly />
+            </>
+          )}
           {today.dayCompletion && (
             <>
               <div className={styles.planTitle} style={{ marginTop: '1rem' }}><CheckCircle size={15} /> Day Completion</div>
@@ -1091,10 +1209,6 @@ function RegularAttendancePage() {
             <button className={`${styles.tab} ${activeTab === 'team' ? styles.activeTab : ''}`} onClick={() => setActiveTab('team')}>
               <Users size={13} style={{ display: 'inline', marginRight: 4 }} />Team Today
             </button>
-            <button className={`${styles.tab} ${activeTab === 'permissions' ? styles.activeTab : ''}`} onClick={() => setActiveTab('permissions')}>
-              <ShieldCheck size={13} style={{ display: 'inline', marginRight: 4 }} />
-              Requests {pendingPermissions.length > 0 && `(${pendingPermissions.length})`}
-            </button>
             {isAdmin && (
               <button className={`${styles.tab} ${activeTab === 'all' ? styles.activeTab : ''}`} onClick={() => { setActiveTab('all'); loadAll(); }}>
                 Historical
@@ -1133,32 +1247,7 @@ function RegularAttendancePage() {
             </div>
           )}
 
-          {activeTab === 'permissions' && (
-            <div className={styles.sectionCard}>
-              <div className={styles.sectionTitle}><ShieldCheck size={16} /> Pending Permission Requests</div>
-              {pendingPermissions.length === 0 ? <div className={styles.empty}>No pending requests</div> : (
-                <div className={styles.tableWrap}>
-                  <table className={styles.table}>
-                    <thead><tr><th>Employee</th><th>Date</th><th>Type</th><th>Reason</th><th>Actions</th></tr></thead>
-                    <tbody>
-                      {pendingPermissions.map(r => (
-                        <tr key={r.id}>
-                          <td><div style={{ fontWeight: 600 }}>{r.user?.name ?? '—'}</div><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{roleLabel(r.user?.role)}</div></td>
-                          <td>{formatDate(r.date)}</td>
-                          <td><span className={styles.badge} style={{ background: 'rgba(99,102,241,0.1)', color: '#4f46e5' }}>{r.permissionType?.replace('_',' ') ?? '—'}</span></td>
-                          <td style={{ maxWidth: 200, whiteSpace: 'pre-wrap', fontSize: '0.825rem' }}>{r.permissionReason ?? '—'}</td>
-                          <td>
-                            <button className={styles.approveBtn} onClick={() => handleApprove(r.id)}><CheckCircle size={12} style={{ display: 'inline', marginRight: 3 }} />Approve</button>
-                            <button className={styles.rejectBtn}  onClick={() => handleReject(r.id)}><XCircle size={12} style={{ display: 'inline', marginRight: 3 }} />Reject</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+
 
           {isAdmin && activeTab === 'all' && (
             <div className={styles.sectionCard}>
@@ -1206,13 +1295,10 @@ function RegularAttendancePage() {
               </select>
             </div>
             <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Date (leave blank for today)</label>
-              <input 
-                type="date" 
-                className={styles.formInput} 
-                value={permDate} 
-                onChange={e => setPermDate(e.target.value)} 
-                min={new Date().toISOString().split('T')[0]}
+              <CustomDatePicker 
+                label="Date"
+                selected={permDate}
+                onChange={setPermDate}
               />
             </div>
             <div className={styles.formGroup}>

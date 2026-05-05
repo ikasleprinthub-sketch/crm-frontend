@@ -39,6 +39,7 @@ export interface User {
   role: Role;
   status: UserStatus;
   managerId?: string;
+  manager?: { id: string; name: string; email: string; role: string };
   requestedBy?: { id: string; name: string };
   createdAt: string;
 }
@@ -110,6 +111,8 @@ export interface AuthUser {
   name: string;
   email: string;
   role: Role;
+  managerId?: string;
+  manager?: { id: string; name: string; email: string; role: string };
   token?: string;
 }
 

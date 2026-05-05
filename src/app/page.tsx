@@ -3,7 +3,7 @@ import Sidebar from '@/components/Sidebar'; //HI
 import Header from '@/components/Header';
 import StatCard from '@/components/StatCard';
 import { useApp } from '@/context/AppContext';
-import { Target, CheckSquare, Users, FolderOpen, Trophy, ClipboardList, Bell, Plus, X, Trash2 } from 'lucide-react';
+import { Target, CheckSquare, Users, FolderOpen, Trophy, ClipboardList, Bell, Plus, X, Trash2, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Charts from '@/components/Charts';
@@ -43,7 +43,10 @@ export default function Dashboard() {
 
   const priorityBadge = (priority: string) => `priority-${priority.toLowerCase()}`;
 
-  const getUserName = (id: string) => users.find(u => u.id === id)?.name || '—';
+  const getUserName = (id: string) => {
+    if (id === currentUser?.managerId && currentUser?.manager) return currentUser.manager.name;
+    return users.find(u => u.id === id)?.name || '—';
+  };
   const getDeptName = (id: string) => departments.find(d => d.id === id)?.name || '—';
   const getSourceName = (id: string) => sources.find(s => s.id === id)?.name || '—';
   const getLeadName = (task: any) => task.lead?.leadName || leads.find((l: any) => l.id === task.leadId)?.leadName || '—';
@@ -73,6 +76,44 @@ export default function Dashboard() {
 
             {/* Charts Row */}
             <Charts leads={leads} tasks={tasks} />
+
+            {currentUser?.managerId && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                 <section className="glass-card" style={{ borderLeft: '4px solid var(--primary)', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                        <div style={{ 
+                          width: '48px', 
+                          height: '48px', 
+                          borderRadius: '14px', 
+                          background: 'var(--primary-light)', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          fontSize: '1.3rem',
+                          fontWeight: 800,
+                          color: 'var(--primary)',
+                          boxShadow: '0 4px 12px rgba(67, 24, 255, 0.1)'
+                        }}>
+                          {getUserName(currentUser.managerId).charAt(0)}
+                        </div>
+                        <div>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>
+                            Reporting Manager
+                          </p>
+                          <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            {getUserName(currentUser.managerId)}
+                          </p>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Direct Supervisor</p>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700, marginTop: '2px' }}>CONNECTED</p>
+                      </div>
+                    </div>
+                 </section>
+              </div>
+            )}
           </>
         )}
 
@@ -187,8 +228,42 @@ export default function Dashboard() {
                 </section>
               </div>
 
-              {/* Right Column: Dynamic Feed (Optional) */}
+              {/* Right Column: Profile & Team Info */}
               <div className={styles.stack}>
+                {currentUser?.managerId && (
+                  <section className="glass-card" style={{ borderLeft: '4px solid var(--primary)' }}>
+                    <div className={styles.sectionHeader} style={{ marginBottom: '0.75rem' }}>
+                      <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <UserCheck size={18} color="var(--primary)" /> Reporting Manager
+                      </h2>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ 
+                        width: '45px', 
+                        height: '45px', 
+                        borderRadius: '50%', 
+                        background: 'var(--primary-light)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        fontSize: '1.2rem',
+                        fontWeight: 800,
+                        color: 'var(--primary)'
+                      }}>
+                        {getUserName(currentUser.managerId).charAt(0)}
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {getUserName(currentUser.managerId)}
+                        </p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                          DIRECT SUPERVISOR
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+                
                 {/* Space for future connected components */}
               </div>
             </div>
