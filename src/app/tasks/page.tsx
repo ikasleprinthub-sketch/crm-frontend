@@ -352,13 +352,18 @@ export default function TasksPage() {
                 {tasks.find(t => t.id === selectedTask)!.remarks && <p style={{ color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Remarks: <strong style={{ color: 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.remarks}</strong></p>}
               </div>
               <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>SOP CHECKLIST</h3>
-              <SOPChecklist steps={tasks.find(t => t.id === selectedTask)!.sopSteps || []} taskId={selectedTask!} onToggle={async (stepId, completed) => {
-                try {
-                  await updateTaskStep(selectedTask!, stepId, completed);
-                } catch (e: any) {
-                  showToast('Update Failed', e.response?.data?.message || 'Failed to update step.', 'error');
-                }
-              }} />
+              <SOPChecklist 
+                steps={tasks.find(t => t.id === selectedTask)!.sopSteps || []} 
+                taskId={selectedTask!} 
+                taskTypeId={tasks.find(t => t.id === selectedTask)!.taskTypeId}
+                onToggle={async (stepId, completed) => {
+                  try {
+                    await updateTaskStep(selectedTask!, stepId, completed);
+                  } catch (e: any) {
+                    showToast('Update Failed', e.response?.data?.message || 'Failed to update step.', 'error');
+                  }
+                }} 
+              />
             </div>
           )}
         </Modal>
