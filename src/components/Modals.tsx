@@ -7,6 +7,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar } from 'lucide-react';
 import CustomSelect from './CustomSelect';
+import CustomTimePicker from './CustomTimePicker';
 
 /* ── Modal Shell ── */
 interface ModalProps {
@@ -49,6 +50,7 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
     leadName: '', contactName: '', email: '', contactNumber: '', sourceId: sources[0]?.id || '',
     departmentId: departments[0]?.id || '', taskTypeId: taskTypes[0]?.id || '', status: 'NEW' as LeadStatus, remarks: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const filteredTypes = taskTypes.filter(t => t.departmentId === form.departmentId);
@@ -78,10 +80,15 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onSubmit(form);
+      setIsSubmitting(true);
+      try {
+        await onSubmit(form);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -158,27 +165,16 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
         <textarea className={styles.textarea} required value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Additional remarks..." rows={3} />
       </FormField>
       <div className={styles.formActions}>
-        <button type="submit" className={styles.submitBtn}>Create Lead</button>
+        <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+          {isSubmitting ? 'Creating Lead...' : 'Create Lead'}
+        </button>
       </div>
     </form>
   );
 }
 
 /* ── Form Helpers ── */
-const generateTimeOptions = () => {
-  const options = [];
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      const h = hour % 12 || 12;
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const m = minute.toString().padStart(2, '0');
-      const label = `${h}:${m} ${ampm}`;
-      const value = `${hour.toString().padStart(2, '0')}:${m}`;
-      options.push({ id: value, name: label });
-    }
-  }
-  return options;
-};
+
 
 const combineDateAndTime = (date: Date | null, timeStr: string) => {
   if (!date) return null;
@@ -197,7 +193,7 @@ const getTimeFromDate = (date: Date | null) => {
 
 /* ── Add Task Form ── */
 export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
-  const { departments, taskTypes, users, leads } = useApp();
+  const { departments, taskTypes, users, leads, showToast } = useApp();
   const [form, setForm] = useState({
     leadId: '',
     assignedToId: '',
@@ -209,15 +205,32 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
     completionDate: null as Date | null,
     remarks: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper: sync department & taskType from a lead
+  const syncFromLead = (leadId: string) => {
+    const lead = leads.find(l => l.id === leadId);
+    if (lead) {
+      return { leadId, departmentId: lead.departmentId, taskTypeId: lead.taskTypeId };
+    }
+    return { leadId };
+  };
 
   // Initialize defaults once lists are available
   React.useEffect(() => {
-    if (leads.length > 0 && !form.leadId) setForm(curr => ({ ...curr, leadId: leads[0].id }));
+    if (leads.length > 0 && !form.leadId) {
+      const firstLead = leads[0];
+      setForm(curr => ({
+        ...curr,
+        leadId: firstLead.id,
+        departmentId: firstLead.departmentId,
+        taskTypeId: firstLead.taskTypeId,
+      }));
+    }
     if (users.length > 0 && !form.assignedToId) {
       const firstEmp = users.find(u => u.role === 'EMPLOYEE');
       setForm(curr => ({ ...curr, assignedToId: firstEmp?.id || users[0].id }));
     }
-    if (departments.length > 0 && !form.departmentId) setForm(curr => ({ ...curr, departmentId: departments[0].id }));
     
     // Default start time to next 15-min interval
     const now = new Date();
@@ -226,31 +239,32 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
   }, [leads, users, departments]);
 
   const filteredTypes = taskTypes.filter(t => t.departmentId === form.departmentId);
-  const timeOptions = generateTimeOptions();
 
-  // Sync task type when department changes or types load
-  React.useEffect(() => {
-    if (filteredTypes.length > 0 && (!form.taskTypeId || !filteredTypes.find(t => t.id === form.taskTypeId))) {
-      setForm(curr => ({ ...curr, taskTypeId: filteredTypes[0].id }));
-    }
-  }, [form.departmentId, filteredTypes]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Explicit Validation
     if (!form.leadId || !form.assignedToId || !form.departmentId || !form.taskTypeId) {
-      alert("Please ensure all required fields (*) are selected.");
+      showToast('Selection Required', 'Please ensure all required fields (*) are selected.', 'error');
       return;
     }
 
     if (!form.remarks.trim()) {
-      alert("Remarks are required for the task.");
+      showToast('Remarks Required', 'Remarks are required for the task.', 'error');
       return;
     }
 
-    onSubmit(form);
+    setIsSubmitting(true);
+    try {
+      await onSubmit(form);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // Get display names for locked fields
+  const selectedDept = departments.find(d => d.id === form.departmentId);
+  const selectedType = taskTypes.find(t => t.id === form.taskTypeId);
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
@@ -259,7 +273,7 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
           label="Associated Lead *"
           options={leads.map(l => ({ id: l.id, name: `${l.leadName} (${l.leadNo})` }))}
           value={form.leadId}
-          onChange={val => setForm({ ...form, leadId: val })}
+          onChange={val => setForm({ ...form, ...syncFromLead(val) })}
         />
         <CustomSelect
           label="Assign To *"
@@ -270,17 +284,16 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       </div>
       <div className={styles.formRow}>
         <CustomSelect
-          label="Department *"
+          label="Department"
           options={departments.map(d => ({ id: d.id, name: d.name }))}
           value={form.departmentId}
-          onChange={val => setForm({ ...form, departmentId: val })}
+          onChange={val => setForm({ ...form, departmentId: val, taskTypeId: taskTypes.find(t => t.departmentId === val)?.id || '' })}
         />
         <CustomSelect
-          label="Task Type *"
+          label="Task Type"
           options={filteredTypes.map(t => ({ id: t.id, name: t.name }))}
           value={form.taskTypeId}
           onChange={val => setForm({ ...form, taskTypeId: val })}
-          placeholder={filteredTypes.length ? "Select Task Type" : "No types in this dept"}
         />
       </div>
       <div className={styles.formRow}>
@@ -311,16 +324,20 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
               className={styles.input}
               placeholderText="Select start date"
               required
-              calendarClassName={styles.premiumCalendar}
-              dayClassName={() => styles.premiumDay}
+              minDate={new Date()}
+              portalId="root"
+              popperClassName="react-datepicker-popper"
+              calendarClassName="premium-datepicker"
+              dayClassName={() => 'premium-day'}
+              showPopperArrow={false}
             />
           </div>
         </FormField>
-        <CustomSelect 
-          label="Start Time *"
-          options={timeOptions}
+        <CustomTimePicker
+          label="Start Time"
           value={getTimeFromDate(form.startDate)}
           onChange={time => setForm({ ...form, startDate: combineDateAndTime(form.startDate, time) })}
+          required
         />
       </div>
 
@@ -338,23 +355,29 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
               className={styles.input}
               placeholderText="Select completion date"
               required
-              calendarClassName={styles.premiumCalendar}
-              dayClassName={() => styles.premiumDay}
+              minDate={new Date()}
+              portalId="root"
+              popperClassName="react-datepicker-popper"
+              calendarClassName="premium-datepicker"
+              dayClassName={() => 'premium-day'}
+              showPopperArrow={false}
             />
           </div>
         </FormField>
-        <CustomSelect 
-          label="Target Completion Time *"
-          options={timeOptions}
+        <CustomTimePicker
+          label="Target Completion Time"
           value={getTimeFromDate(form.completionDate)}
           onChange={time => setForm({ ...form, completionDate: combineDateAndTime(form.completionDate || new Date(), time) })}
+          required
         />
       </div>
       <FormField label="Remarks *">
         <textarea className={styles.textarea} required value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Any specific instructions..." rows={3} />
       </FormField>
       <div className={styles.formActions}>
-        <button type="submit" className={styles.submitBtn}>Create Task</button>
+        <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+          {isSubmitting ? 'Creating Task...' : 'Create Task'}
+        </button>
       </div>
     </form>
   );
@@ -370,6 +393,7 @@ export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
     role: 'EMPLOYEE' as Role,
     managerId: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -402,14 +426,19 @@ export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      const submissionData = {
-        ...form,
-        managerId: form.managerId === "" ? null : form.managerId
-      };
-      onSubmit(submissionData);
+      setIsSubmitting(true);
+      try {
+        const submissionData = {
+          ...form,
+          managerId: form.managerId === "" ? null : form.managerId
+        };
+        await onSubmit(submissionData);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -487,8 +516,8 @@ export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       </div>
 
       <div className={styles.formActions}>
-        <button type="submit" className={styles.submitBtn}>
-          {isTeamLeader ? 'Submit Request' : 'Create Account'}
+        <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+          {isSubmitting ? 'Creating Account...' : (isTeamLeader ? 'Submit Request' : 'Create Account')}
         </button>
       </div>
     </form>
@@ -497,7 +526,7 @@ export function AddUserForm({ onSubmit }: { onSubmit: (data: any) => void }) {
 
 /* ── Edit User Form ── */
 export function EditUserForm({ user, onSubmit }: { user: User; onSubmit: (data: any) => void }) {
-  const { users } = useApp();
+  const { users, showToast } = useApp();
   const [form, setForm] = useState({
     name: user.name,
     email: user.email,
@@ -519,12 +548,12 @@ export function EditUserForm({ user, onSubmit }: { user: User; onSubmit: (data: 
     e.preventDefault();
 
     if (form.password && form.password.length < 6) {
-      alert("Password must be at least 6 characters long");
+      showToast('Weak Password', 'Password must be at least 6 characters long', 'error');
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      alert("Valid email is required");
+      showToast('Invalid Email', 'Valid email is required', 'error');
       return;
     }
 

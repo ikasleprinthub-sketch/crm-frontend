@@ -194,7 +194,7 @@ function TeamRow({ team }: { team: TeamData }) {
 // ─── SuperAdminMonitor ───────────────────────────────────────────────────────
 
 function SuperAdminMonitor() {
-  const { users } = useApp();
+  const { users, showToast } = useApp();
   const now = new Date();
 
   const [loading,            setLoading]            = useState(true);
@@ -375,17 +375,17 @@ function SuperAdminMonitor() {
       setOverrideRecord(null);
       await loadData();
     } catch (e: any) {
-      alert(e.response?.data?.message ?? 'Override failed');
+      showToast('Override Failed', e.response?.data?.message ?? 'Override failed', 'error');
     } finally { setSubmitting(false); }
   };
 
-  const handleApprove = async (id: string) => {
-    try { await api.patch(`/attendance/permission/${id}/approve`); await loadData(); }
-    catch (e: any) { alert(e.response?.data?.message ?? 'Failed'); }
+  const handleApproveSA = async (id: string) => {
+    try { await api.patch(`/attendance/permission/${id}/approve`); await loadData(); showToast('Approved', 'Permission request approved', 'success'); }
+    catch (e: any) { showToast('Error', e.response?.data?.message ?? 'Failed', 'error'); }
   };
-  const handleReject = async (id: string) => {
-    try { await api.patch(`/attendance/permission/${id}/reject`); await loadData(); }
-    catch (e: any) { alert(e.response?.data?.message ?? 'Failed'); }
+  const handleRejectSA = async (id: string) => {
+    try { await api.patch(`/attendance/permission/${id}/reject`); await loadData(); showToast('Rejected', 'Permission request rejected', 'error'); }
+    catch (e: any) { showToast('Error', e.response?.data?.message ?? 'Failed', 'error'); }
   };
 
   const totalToday    = allToday.length;
@@ -658,10 +658,10 @@ function SuperAdminMonitor() {
                       <td>
                         {r.permission === 'PENDING' && (
                           <>
-                            <button className={styles.approveBtn} onClick={() => handleApprove(r.id)}>
+                            <button className={styles.approveBtn} onClick={() => handleApproveSA(r.id)}>
                               <CheckCircle size={11} style={{ display: 'inline', marginRight: 3 }} />Approve
                             </button>
-                            <button className={styles.rejectBtn} onClick={() => handleReject(r.id)}>
+                            <button className={styles.rejectBtn} onClick={() => handleRejectSA(r.id)}>
                               <XCircle size={11} style={{ display: 'inline', marginRight: 3 }} />Reject
                             </button>
                           </>
@@ -875,7 +875,7 @@ function RegularAttendancePage() {
       await api.post('/attendance/check-in');
       await loadToday(); await loadStats();
       if (isManager || isAdmin) await loadTeam();
-    } catch (e: any) { alert(e.response?.data?.message ?? 'Check-in failed'); }
+    } catch (e: any) { showToast('Check-in Failed', e.response?.data?.message ?? 'Check-in failed', 'error'); }
     finally { setSubmitting(false); }
   };
 
@@ -883,7 +883,7 @@ function RegularAttendancePage() {
     if (!morningPlan.trim()) return;
     setSubmitting(true);
     try { await api.post('/attendance/morning-plan', { morningPlan }); await loadToday(); }
-    catch (e: any) { alert(e.response?.data?.message ?? 'Failed to save plan'); }
+    catch (e: any) { showToast('Save Failed', e.response?.data?.message ?? 'Failed to save plan', 'error'); }
     finally { setSubmitting(false); }
   };
 
@@ -894,29 +894,29 @@ function RegularAttendancePage() {
       setShowCheckOutForm(false); setDayCompletion('');
       await loadToday(); await loadStats(); await loadHistory();
       if (isManager || isAdmin) await loadTeam();
-    } catch (e: any) { alert(e.response?.data?.message ?? 'Check-out failed'); }
+    } catch (e: any) { showToast('Check-out Failed', e.response?.data?.message ?? 'Check-out failed', 'error'); }
     finally { setSubmitting(false); }
   };
 
   const handleApplyPermission = async () => {
-    if (!permReason.trim()) return alert('Please provide a reason');
+    if (!permReason.trim()) { showToast('Missing Reason', 'Please provide a reason', 'error'); return; }
     setSubmitting(true);
     try {
       await api.post('/attendance/permission/apply', { permissionType: permType, reason: permReason, date: permDate || undefined });
       setShowPermModal(false); setPermReason(''); setPermDate('');
       await loadToday();
       showToast('Request Submitted', 'Your leave request has been sent for approval.');
-    } catch (e: any) { alert(e.response?.data?.message ?? 'Failed to apply permission'); }
+    } catch (e: any) { showToast('Request Failed', e.response?.data?.message ?? 'Failed to apply permission', 'error'); }
     finally { setSubmitting(false); }
   };
 
   const handleApprove = async (id: string) => {
     try { await api.patch(`/attendance/permission/${id}/approve`); await Promise.all([loadPending(), loadTeam(), loadStats()]); }
-    catch (e: any) { alert(e.response?.data?.message ?? 'Failed'); }
+    catch (e: any) { showToast('Error', e.response?.data?.message ?? 'Failed', 'error'); }
   };
   const handleReject = async (id: string) => {
     try { await api.patch(`/attendance/permission/${id}/reject`); await Promise.all([loadPending(), loadTeam(), loadStats()]); }
-    catch (e: any) { alert(e.response?.data?.message ?? 'Failed'); }
+    catch (e: any) { showToast('Error', e.response?.data?.message ?? 'Failed', 'error'); }
   };
 
   const openOverride = (rec: AttendanceRecord) => {
@@ -933,7 +933,7 @@ function RegularAttendancePage() {
       await api.patch(`/attendance/${overrideRecord.id}`, { status: overrideStatus, checkIn: overrideCheckIn || null, checkOut: overrideCheckOut || null, remarks: overrideRemarks });
       setOverrideRecord(null);
       await Promise.all([loadAll(), loadTeam(), loadStats()]);
-    } catch (e: any) { alert(e.response?.data?.message ?? 'Override failed'); }
+    } catch (e: any) { showToast('Override Failed', e.response?.data?.message ?? 'Override failed', 'error'); }
     finally { setSubmitting(false); }
   };
 

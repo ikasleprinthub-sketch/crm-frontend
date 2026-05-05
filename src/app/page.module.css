@@ -469,40 +469,39 @@
 
 .customSelectMenu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 6px);
   left: 0;
   width: 100%;
   min-width: 220px;
   background: var(--surface);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
+  border-radius: 18px;
+  box-shadow: 0 24px 48px -8px rgba(0,0,0,0.25), 0 0 0 1px var(--glass-border);
   z-index: 2000;
   overflow: hidden;
-  animation: slideTooltip 0.2s ease-out;
+  animation: selectDrop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideTooltip {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes selectDrop {
+  from { opacity: 0; transform: scale(0.97) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
 }
 
 .selectSearchWrapper {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
   border-bottom: 1px solid var(--border);
   background: var(--surface-hover);
+}
+
+.selectSearchWrapper svg {
+  color: var(--primary);
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 
 .selectSearchWrapper input {
@@ -510,35 +509,70 @@
   background: transparent;
   width: 100%;
   font-size: 0.85rem;
+  font-weight: 600;
   outline: none;
   color: var(--text-primary);
+  font-family: inherit;
+}
+
+.selectSearchWrapper input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
 }
 
 .optionsList {
-  max-height: 300px;
+  max-height: 260px;
   overflow-y: auto;
-  padding: 0.5rem;
+  padding: 0.4rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 .optionItem {
-  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
   border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+  position: relative;
+}
+
+.optionItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 60%;
+  background: var(--primary);
+  border-radius: 0 3px 3px 0;
+  transition: transform 0.15s ease;
 }
 
 .optionItem:hover {
-  background: var(--primary);
-  color: var(--background);
+  background: var(--primary-light);
+  color: var(--primary);
+  transform: translateX(2px);
+}
+
+.optionItem:hover::before {
+  transform: translateY(-50%) scaleY(1);
 }
 
 .optionItem.selected {
-  background: var(--primary-light);
+  background: linear-gradient(90deg, var(--primary-light), transparent);
   color: var(--primary);
   font-weight: 700;
+}
+
+.optionItem.selected::before {
+  transform: translateY(-50%) scaleY(1);
 }
 
 /* ── Premium Calendar Signature Indigo ── */

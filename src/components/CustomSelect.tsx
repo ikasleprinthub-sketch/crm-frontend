@@ -16,11 +16,13 @@ interface CustomSelectProps {
   icon?: React.ReactNode;
   placeholder?: string;
   size?: 'sm' | 'md';
+  disabled?: boolean;
 }
 
-export default function CustomSelect({ label, options, value, onChange, icon, placeholder = 'Select...', size = 'md' }: CustomSelectProps) {
+export default function CustomSelect({ label, options, value, onChange, icon, placeholder = 'Select...', size = 'md', disabled = false }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find(o => o.id === value);
@@ -28,15 +30,30 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
     o.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const toggleDropdown = () => {
+    if (disabled) return;
+    if (!isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+    setIsOpen(!isOpen);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   return (
     <div className={`${styles.customSelectContainer} ${size === 'sm' ? styles.sm : ''}`} ref={containerRef}>
@@ -44,7 +61,8 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
       
       <div 
         className={`${styles.customSelectTrigger} ${isOpen ? styles.active : ''} ${size === 'sm' ? styles.smTrigger : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleDropdown}
+        style={disabled ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
       >
         <div className={styles.triggerContent}>
           {icon && <span className={styles.triggerIcon}>{icon}</span>}
@@ -56,7 +74,16 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
       </div>
 
       {isOpen && (
-        <div className={styles.customSelectMenu}>
+        <div 
+          className={styles.customSelectMenu}
+          style={{
+            position: 'fixed',
+            top: coords.top - window.scrollY,
+            left: coords.left - window.scrollX,
+            width: coords.width,
+            marginTop: '4px'
+          }}
+        >
           {options.length > 8 && (
             <div className={styles.selectSearchWrapper}>
               <Search size={14} />

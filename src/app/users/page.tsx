@@ -8,7 +8,7 @@ import styles from '../page.module.css';
 import { UserPlus, Edit2, Trash2 } from 'lucide-react';
 
 export default function UsersPage() {
-  const { currentUser, users, tasks, fetchInitialData, addUser, approveUser, rejectUser, deleteUser, updateUser } = useApp();
+  const { currentUser, users, tasks, fetchInitialData, addUser, approveUser, rejectUser, deleteUser, updateUser, showToast } = useApp();
   const [roleFilter, setRoleFilter] = useState<string>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -44,7 +44,7 @@ export default function UsersPage() {
       setIsModalOpen(false);
       fetchInitialData();
     } catch (e: any) {
-      alert(e.message || 'Failed to create account. Please check all fields.');
+      showToast('Action Failed', e.message || 'Failed to create account. Please check all fields.', 'error');
     }
   };
 
@@ -55,7 +55,7 @@ export default function UsersPage() {
       setEditingUser(null);
       fetchInitialData();
     } catch (e: any) {
-      alert(e.message || 'Failed to update account');
+      showToast('Update Failed', e.message || 'Failed to update account', 'error');
     }
   };
 
@@ -64,7 +64,7 @@ export default function UsersPage() {
       try {
         await deleteUser(id);
       } catch (e: any) {
-        alert(e.message);
+        showToast('Delete Failed', e.message, 'error');
       }
     }
   };
@@ -194,13 +194,15 @@ export default function UsersPage() {
                       >
                         <Edit2 size={12} />
                       </button>
-                      <button 
-                        className={styles.iconBtn} 
-                        style={{ color: 'var(--accent-red)', width: 28, height: 28, opacity: 0.6 }}
-                        onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.id); }}
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                      {user.role !== 'SUPER_ADMIN' && (
+                        <button 
+                          className={styles.iconBtn} 
+                          style={{ color: 'var(--accent-red)', width: 28, height: 28, opacity: 0.6 }}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.id); }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

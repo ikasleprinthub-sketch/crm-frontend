@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 export default function ConfigurationsPage() {
-  const { currentUser, departments, taskTypes, sources, fetchInitialData } = useApp();
+  const { currentUser, departments, taskTypes, sources, fetchInitialData, showToast } = useApp();
   const [activeTab, setActiveTab] = useState<'depts' | 'types' | 'sources'>('depts');
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,7 +60,7 @@ export default function ConfigurationsPage() {
       await fetchInitialData();
       setIsModalOpen(false);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Action failed');
+      showToast('Action Failed', err.response?.data?.message || 'Action failed', 'error');
     }
   };
 
@@ -73,7 +73,7 @@ export default function ConfigurationsPage() {
       await api.delete(`${endpoint}/${id}`);
       await fetchInitialData();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Delete failed');
+      showToast('Delete Failed', err.response?.data?.message || 'Delete failed', 'error');
     }
   };
 

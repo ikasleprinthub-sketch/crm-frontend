@@ -25,15 +25,18 @@ api.interceptors.response.use(
     const url = error.config?.url;
     const method = error.config?.method?.toUpperCase();
 
-    console.error(`❌ [API Error] ${status || 'Network'} ${method} ${url}: ${message}`);
-    
-    if (error.response) {
-      console.error('Data:', error.response.data);
-      console.error('Headers:', error.response.headers);
+    // Expected business errors (4xx) — log once as a warning, not an error
+    if (status && status >= 400 && status < 500) {
+      console.warn(`⚠ [API ${status}] ${method} ${url}: ${message}`);
+    } else if (error.response) {
+      // Unexpected server errors (5xx)
+      console.error(`❌ [API ${status}] ${method} ${url}: ${message}`);
+      console.error('Response:', error.response.data);
     } else if (error.request) {
-      console.error('No response received. The request was made but no response was received from the server.');
+      // Network errors — no response at all
+      console.error(`❌ [Network Error] ${method} ${url}: No response received`);
     } else {
-      console.error('Error setting up the request:', error.message);
+      console.error('❌ [Request Setup Error]:', error.message);
     }
 
     if (status === 401) {
