@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import styles from '../app/page.module.css';
+import { createPortal } from 'react-dom';
 
 interface Option {
   id: string;
@@ -29,6 +30,11 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
     width: 0, 
     openUp: false 
   });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const selectedOption = options.find(o => o.id === value);
   const filteredOptions = options.filter(o => 
@@ -67,7 +73,6 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
       document.addEventListener('mousedown', handleClose);
       window.addEventListener('scroll', handleScroll, true);
     } else {
-      // Reset coords when closed to ensure fresh calculation on next open
       setCoords({ top: null, left: 0, width: 0, openUp: false });
     }
     return () => {
@@ -75,6 +80,55 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
       window.removeEventListener('scroll', handleScroll, true);
     };
   }, [isOpen]);
+
+  const menuElement = isOpen && coords.top !== null && mounted && (
+    <div 
+      className={`${styles.customSelectMenu} ${coords.openUp ? styles.openUp : ''}`}
+      style={{
+        position: 'fixed',
+        top: coords.openUp 
+          ? (coords.top as number) - 6 
+          : (coords.top as number) + 6,
+        left: coords.left,
+        width: coords.width,
+        transform: coords.openUp ? 'translateY(-100%)' : 'none',
+        minWidth: '220px',
+        zIndex: 10005
+      }}
+    >
+      {options.length > 8 && (
+        <div className={styles.selectSearchWrapper}>
+          <Search size={14} />
+          <input 
+            type="text" 
+            placeholder="Search..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            autoFocus
+          />
+        </div>
+      )}
+      <div className={styles.optionsList}>
+        {filteredOptions.length === 0 && (
+          <div className={styles.noOptions}>No results found</div>
+        )}
+        {filteredOptions.map((option) => (
+          <div 
+            key={option.id}
+            className={`${styles.optionItem} ${value === option.id ? styles.selected : ''}`}
+            onClick={() => {
+              onChange(option.id);
+              setIsOpen(false);
+              setSearch('');
+            }}
+          >
+            {option.name}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className={`${styles.customSelectContainer} ${size === 'sm' ? styles.sm : ''}`} ref={containerRef}>
@@ -94,54 +148,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
         <ChevronDown size={size === 'sm' ? 14 : 16} className={`${styles.chevron} ${isOpen ? styles.rotate : ''}`} />
       </div>
 
-      {isOpen && coords.top !== null && (
-        <div 
-          className={`${styles.customSelectMenu} ${coords.openUp ? styles.openUp : ''}`}
-          style={{
-            position: 'fixed',
-            top: coords.openUp 
-              ? (coords.top as number) - 6 
-              : (coords.top as number) + 6,
-            left: coords.left,
-            width: coords.width,
-            transform: coords.openUp ? 'translateY(-100%)' : 'none',
-            minWidth: '220px',
-            zIndex: 9999
-          }}
-        >
-          {options.length > 8 && (
-            <div className={styles.selectSearchWrapper}>
-              <Search size={14} />
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                autoFocus
-              />
-            </div>
-          )}
-          <div className={styles.optionsList}>
-            {filteredOptions.length === 0 && (
-              <div className={styles.noOptions}>No results found</div>
-            )}
-            {filteredOptions.map((option) => (
-              <div 
-                key={option.id}
-                className={`${styles.optionItem} ${value === option.id ? styles.selected : ''}`}
-                onClick={() => {
-                  onChange(option.id);
-                  setIsOpen(false);
-                  setSearch('');
-                }}
-              >
-                {option.name}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {mounted && createPortal(menuElement as React.ReactElement, document.body)}
     </div>
   );
 }
