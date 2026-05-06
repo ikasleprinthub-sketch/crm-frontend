@@ -26,9 +26,8 @@ export default function CustomDatePicker({ label, selected, onChange, placeholde
           isClearable
           showPopperArrow={false}
           popperPlacement="bottom-start"
-          calendarClassName="premium-datepicker"
-          dayClassName={() => 'premium-day'}
-          fixedHeight
+          calendarClassName="premiumCalendar"
+          dayClassName={() => styles.premiumDay}
         />
       </div>
     </div>

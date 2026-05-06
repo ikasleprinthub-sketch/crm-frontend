@@ -358,6 +358,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  overflow: hidden;
 }
 
 .filterInput,
@@ -388,8 +389,7 @@
   outline: none;
   border-color: var(--primary);
   background: var(--surface);
-  box-shadow: 0 10px 25px -5px var(--primary-glow);
-  transform: translateY(-2px);
+  box-shadow: 0 5px 15px -5px var(--primary-glow);
 }
 
 .filterInput:hover,
@@ -447,6 +447,15 @@
   color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 600;
+  overflow: hidden;
+  flex: 1;
+}
+
+.triggerText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 
 .triggerIcon {
@@ -598,175 +607,102 @@
   transform: translateY(-50%) scaleY(1);
 }
 
-/* ── Premium Calendar Signature Indigo ── */
+/* ── Modern Glassmorphism Calendar ── */
 .premiumCalendar {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 16px !important;
-  box-shadow: var(--shadow) !important;
-  width: auto !important;
-  z-index: 9999 !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+  width: 280px !important;
+  z-index: 10001 !important;
   overflow: hidden !important;
-}
-
-:global(.react-datepicker-popper) {
-  z-index: 10000 !important;
-}
-
-@media (max-width: 480px) {
-  :global(.react-datepicker-popper) {
-    left: 50% !important;
-    top: 60px !important; /* Fixed distance from top instead of centering */
-    transform: translateX(-50%) !important;
-    position: fixed !important;
-  }
-  .premiumCalendar {
-    width: 90vw !important;
-    max-width: 320px !important;
-    transform: none !important;
-  }
-}
-
-.premiumCalendar,
-.premiumCalendar :global(.react-datepicker__header),
-.premiumCalendar :global(.react-datepicker__day),
-.premiumCalendar :global(.react-datepicker__current-month),
-.premiumCalendar :global(.react-datepicker__day-name) {
-  font-family: 'Outfit', 'Inter', sans-serif !important;
+  font-family: 'Outfit', sans-serif !important;
 }
 
 .premiumCalendar :global(.react-datepicker__header) {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
-  border: none !important;
-  padding: 0.8rem 0.5rem !important;
-  border-radius: 0 !important;
+  background: transparent !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  padding: 1.25rem 0 0.5rem 0 !important;
 }
 
 .premiumCalendar :global(.react-datepicker__current-month) {
-  color: white !important;
-  font-weight: 700 !important;
-  font-size: 0.9rem !important;
-  letter-spacing: -0.3px !important;
-  margin-bottom: 0.3rem !important;
+  color: var(--text-primary) !important;
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+  letter-spacing: -0.5px !important;
+  margin-bottom: 1rem !important;
 }
 
 .premiumCalendar :global(.react-datepicker__day-name) {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: var(--primary) !important;
   font-weight: 700 !important;
   font-size: 0.65rem !important;
-  width: 2.1rem !important;
-  margin: 0.05rem !important;
+  width: 2.3rem !important;
+  margin: 0 !important;
   text-transform: uppercase;
-}
-
-@media (max-width: 480px) {
-  .premiumCalendar :global(.react-datepicker__day-name),
-  .premiumDay {
-    width: 12vw !important;
-    max-width: 40px !important;
-    line-height: 12vw !important;
-    max-height: 40px !important;
-    margin: 0.05rem !important;
-    font-size: 0.75rem !important;
-  }
+  letter-spacing: 1px;
 }
 
 .premiumDay {
-  width: 2.1rem !important;
-  line-height: 2.1rem !important;
-  margin: 0.05rem !important;
-  border-radius: 10px !important;
+  width: 2.3rem !important;
+  line-height: 2.3rem !important;
+  margin: 2px !important;
+  border-radius: 50% !important; /* Circle style for modern look */
   font-weight: 600 !important;
-  font-size: 0.8rem !important;
+  font-size: 0.85rem !important;
   color: var(--text-primary) !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-@media (max-width: 480px) {
-  .premiumDay {
-    width: 1.8rem !important;
-    line-height: 1.8rem !important;
-    margin: 0.1rem !important;
-    font-size: 0.75rem !important;
-  }
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 .premiumDay:hover {
-  background: var(--primary-light) !important;
-  color: var(--primary) !important;
-  transform: translateY(-1px);
+  background: var(--primary) !important;
+  color: white !important;
+  transform: scale(1.2) rotate(5deg);
+  box-shadow: 0 10px 20px -5px var(--primary-glow) !important;
 }
 
 .premiumCalendar :global(.react-datepicker__day--selected) {
   background: var(--primary) !important;
   color: white !important;
-  font-weight: 700 !important;
-  box-shadow: 0 5px 15px rgba(67, 24, 255, 0.3) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 10px 25px -5px var(--primary-glow) !important;
+  border-radius: 50% !important;
 }
 
-.premiumCalendar :global(.react-datepicker__day--disabled) {
-  color: #ccc !important;
-  background: transparent !important;
-  cursor: not-allowed !important;
-  opacity: 0.3;
-}
-
-/* ── Premium Time Selection ── */
-.premiumCalendar :global(.react-datepicker__time-container) {
-  border-left: 1px solid var(--border) !important;
-  width: 110px !important;
-  background: var(--surface-hover) !important;
-}
-
-.premiumCalendar :global(.react-datepicker__time-header) {
-  display: none !important;
-  /* Remove the "Time" header for a cleaner look */
-}
-
-.premiumCalendar :global(.react-datepicker__time-box) {
-  width: 100% !important;
-  border-radius: 0 !important;
-}
-
-.premiumCalendar :global(.react-datepicker__time-list) {
-  padding: 0.5rem 0 !important;
-}
-
-.premiumCalendar :global(.react-datepicker__time-list-item) {
-  height: auto !important;
-  padding: 10px 0 !important;
-  font-size: 0.8rem !important;
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
-  border-radius: 10px !important;
-  margin: 4px 8px !important;
-  transition: all 0.2s ease !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-}
-
-.premiumCalendar :global(.react-datepicker__time-list-item:hover) {
-  background: var(--surface) !important;
+.premiumCalendar :global(.react-datepicker__day--keyboard-selected) {
+  background: rgba(67, 24, 255, 0.1) !important;
   color: var(--primary) !important;
-  box-shadow: var(--shadow-sm) !important;
-  transform: translateX(2px);
+  border-radius: 50% !important;
 }
 
-.premiumCalendar :global(.react-datepicker__time-list-item--selected) {
-  background: var(--primary) !important;
-  color: white !important;
-  box-shadow: 0 4px 12px rgba(67, 24, 255, 0.2) !important;
+.premiumCalendar :global(.react-datepicker__day--outside-month) {
+  opacity: 0.2;
 }
 
 .premiumCalendar :global(.react-datepicker__navigation) {
-  top: 1rem !important;
+  top: 1.2rem !important;
+}
+
+.premiumCalendar :global(.react-datepicker__navigation--previous) {
+  left: 15px !important;
+}
+
+.premiumCalendar :global(.react-datepicker__navigation--next) {
+  right: 15px !important;
 }
 
 .premiumCalendar :global(.react-datepicker__navigation-icon::before) {
-  border-color: white !important; /* Navigation arrows match the Indigo header */
+  border-color: var(--primary) !important;
   border-width: 2px !important;
-  opacity: 0.9 !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.premiumCalendar :global(.react-datepicker__time-container) {
+  border-left: 1px solid var(--border) !important;
+  width: 80px !important;
 }
 
 .premiumCalendar :global(.react-datepicker__triangle) {
