@@ -402,8 +402,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addDepartment = async (name: string) => {
     try {
       const res = await api.post('/departments', { name });
-      if (res.data?.success) setDepartments(prev => [...prev, res.data.data]);
-    } catch (e) { console.error(e); }
+      if (res.data?.success) {
+        setDepartments(prev => [res.data.data, ...prev]);
+      } else {
+        throw new Error(res.data?.message || 'Failed to add department');
+      }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   };
   const updateDepartment = async (id: string, name: string) => {
     try {
@@ -421,8 +428,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addTaskType = async (data: { name: string; departmentId: string }) => {
     try {
       const res = await api.post('/task-types', data);
-      if (res.data?.success) setTaskTypes(prev => [...prev, res.data.data]);
-    } catch (e) { console.error(e); }
+      if (res.data?.success) {
+        setTaskTypes(prev => [res.data.data, ...prev]);
+      } else {
+        throw new Error(res.data?.message || 'Failed to add task type');
+      }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   };
   const updateTaskType = async (id: string, name: string) => {
     try {
@@ -440,8 +454,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addSource = async (name: string) => {
     try {
       const res = await api.post('/sources', { name });
-      if (res.data?.success) setSources(prev => [...prev, res.data.data]);
-    } catch (e) { console.error(e); }
+      if (res.data?.success) {
+        setSources(prev => [res.data.data, ...prev]);
+      } else {
+        throw new Error(res.data?.message || 'Failed to add source');
+      }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   };
   const updateSource = async (id: string, name: string) => {
     try {
@@ -574,9 +595,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.post('/leads', leadData);
       if (res.data?.success) {
-        setLeads(prev => [...prev, res.data.data]);
+        setLeads(prev => [res.data.data, ...prev]);
+      } else {
+        throw new Error(res.data?.message || 'Failed to add lead');
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   };
   const updateLead = async (id: string, updates: Partial<Lead>) => {
     try {
@@ -598,9 +624,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.post('/tasks', taskData);
       if (res.data?.success) {
-        setTasks(prev => [...prev, res.data.data]);
+        setTasks(prev => [res.data.data, ...prev]);
+      } else {
+        throw new Error(res.data?.message || 'Failed to create task');
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   };
   const updateTask = async (id: string, updates: Partial<Task>) => {
     try {
