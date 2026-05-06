@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useApp } from '@/context/AppContext';
@@ -11,7 +12,8 @@ import {
 } from 'lucide-react';
 import SOPBuilder from '@/components/admin/SOPBuilder';
 
-export default function ConfigurationsPage() {
+function ConfigurationsContent() {
+  const searchParams = useSearchParams();
   const { currentUser, departments, taskTypes, sources, fetchInitialData, showToast } = useApp();
   const [activeTab, setActiveTab] = useState<'depts' | 'types' | 'sources' | 'settings'>('depts');
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -27,6 +29,30 @@ export default function ConfigurationsPage() {
       fetchConfigs();
     }
   }, [activeTab]);
+
+  // Handle Deep Linking (tab and typeId)
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const typeId = searchParams.get('typeId');
+
+    if (tab === 'types') {
+      setActiveTab('types');
+      if (typeId) {
+        // Wait for taskTypes to be loaded
+        const type = taskTypes.find(t => t.id === typeId);
+        if (type) {
+          setSelectedTaskType({ id: type.id, name: type.name });
+          setIsSOPModalOpen(true);
+        }
+      }
+    } else if (tab === 'depts') {
+      setActiveTab('depts');
+    } else if (tab === 'sources') {
+      setActiveTab('sources');
+    } else if (tab === 'settings') {
+      setActiveTab('settings');
+    }
+  }, [searchParams, taskTypes]);
 
   const fetchConfigs = async () => {
     try {
@@ -351,5 +377,13 @@ export default function ConfigurationsPage() {
         </Modal>
       </main>
     </div>
+  );
+}
+
+export default function ConfigurationsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ConfigurationsContent />
+    </Suspense>
   );
 }

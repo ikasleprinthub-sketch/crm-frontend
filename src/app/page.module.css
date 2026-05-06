@@ -363,6 +363,9 @@
 .filterInput,
 .filterSelect {
   padding-left: 2.8rem !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .transparentInput {

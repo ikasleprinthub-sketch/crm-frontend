@@ -7,7 +7,7 @@ import styles from '../app/page.module.css';
 interface CustomDatePickerProps {
   label: string;
   selected: Date | null;
-  onChange: (date: Date | null) => void;
+  onChange: (date: Date | null) => void; //Hi
   placeholder?: string;
 }
 
@@ -15,8 +15,8 @@ export default function CustomDatePicker({ label, selected, onChange, placeholde
   return (
     <div className={styles.customSelectContainer}>
       <label className={styles.filterLabel}>{label}</label>
-      <div className={styles.filterInputWrapper} style={{ background: 'var(--surface)', borderRadius: '14px', border: '1.5px solid var(--border)', transition: 'all 0.3s ease' }}>
-        <CalendarIcon size={16} className={styles.filterInputIcon} style={{ color: 'var(--primary)' }} />
+      <div className={styles.filterInputWrapper}>
+        <CalendarIcon size={16} className={styles.filterInputIcon} />
         <DatePicker
           selected={selected}
           onChange={onChange}

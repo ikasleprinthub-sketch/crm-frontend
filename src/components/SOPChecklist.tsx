@@ -10,10 +10,11 @@ import { formatDistanceToNow } from 'date-fns';
 interface SOPChecklistProps {
   steps: TaskSOPStep[];
   taskId: string;
+  taskTypeId?: string;
   onToggle: (stepId: string, isCompleted: boolean) => Promise<void>;
 }
 
-export default function SOPChecklist({ steps, taskId, onToggle }: SOPChecklistProps) {
+export default function SOPChecklist({ steps, taskId, taskTypeId, onToggle }: SOPChecklistProps) {
   const router = useRouter();
   const { currentUser } = useApp();
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -72,7 +73,7 @@ export default function SOPChecklist({ steps, taskId, onToggle }: SOPChecklistPr
               <div className={styles.adminActions}>
                 <button 
                   className={styles.configureBtn}
-                  onClick={() => router.push('/configurations')}
+                  onClick={() => router.push(`/configurations?tab=types&typeId=${taskTypeId}`)}
                 >
                   <Settings size={14} /> Configure SOP Workflow
                 </button>
