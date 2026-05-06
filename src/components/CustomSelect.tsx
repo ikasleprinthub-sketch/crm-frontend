@@ -23,6 +23,12 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number | null, left: number, width: number, openUp: boolean }>({ 
+    top: null, 
+    left: 0, 
+    width: 0, 
+    openUp: false 
+  });
 
   const selectedOption = options.find(o => o.id === value);
   const filteredOptions = options.filter(o => 
@@ -31,19 +37,43 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
 
   const toggleDropdown = () => {
     if (disabled) return;
+    if (!isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const menuHeight = 240; 
+      const shouldOpenUp = spaceBelow < menuHeight && rect.top > menuHeight;
+      
+      setCoords({
+        top: shouldOpenUp ? rect.top : rect.bottom,
+        left: rect.left,
+        width: rect.width,
+        openUp: shouldOpenUp
+      });
+    }
     setIsOpen(!isOpen);
   };
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClose = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
+    const handleScroll = () => {
+      if (isOpen) setIsOpen(false);
+    };
+
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleClose);
+      window.addEventListener('scroll', handleScroll, true);
+    } else {
+      // Reset coords when closed to ensure fresh calculation on next open
+      setCoords({ top: null, left: 0, width: 0, openUp: false });
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClose);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [isOpen]);
 
   return (
@@ -64,8 +94,21 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
         <ChevronDown size={size === 'sm' ? 14 : 16} className={`${styles.chevron} ${isOpen ? styles.rotate : ''}`} />
       </div>
 
-      {isOpen && (
-        <div className={styles.customSelectMenu}>
+      {isOpen && coords.top !== null && (
+        <div 
+          className={`${styles.customSelectMenu} ${coords.openUp ? styles.openUp : ''}`}
+          style={{
+            position: 'fixed',
+            top: coords.openUp 
+              ? (coords.top as number) - 6 
+              : (coords.top as number) + 6,
+            left: coords.left,
+            width: coords.width,
+            transform: coords.openUp ? 'translateY(-100%)' : 'none',
+            minWidth: '220px',
+            zIndex: 9999
+          }}
+        >
           {options.length > 8 && (
             <div className={styles.selectSearchWrapper}>
               <Search size={14} />

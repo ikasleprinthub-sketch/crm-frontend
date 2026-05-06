@@ -617,15 +617,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const res = await api.patch(`/leads/${id}`, updates);
       if (res.data?.success) {
         setLeads(prev => prev.map(l => l.id === id ? res.data.data : l));
+      } else {
+        throw new Error(res.data?.message || 'Failed to update lead');
       }
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      console.error('Update lead failed:', e);
+      const msg = e.response?.data?.message || e.message || 'Failed to update lead';
+      throw new Error(msg);
+    }
   };
+
   const deleteLead = async (id: string) => {
     try {
-      await api.delete(`/leads/${id}`);
-      setLeads(prev => prev.filter(l => l.id !== id));
-    } catch (e) { console.error(e); }
+      const res = await api.delete(`/leads/${id}`);
+      if (res.data?.success) {
+        setLeads(prev => prev.filter(l => l.id !== id));
+      } else {
+        throw new Error(res.data?.message || 'Failed to delete lead');
+      }
+    } catch (e: any) {
+      console.error('Delete lead failed:', e);
+      const msg = e.response?.data?.message || e.message || 'Failed to delete lead';
+      // Use the actual error message as the Title for maximum visibility
+      showToast(msg, 'This action is restricted to Admins and Super Admins.', 'error');
+      throw new Error(msg); 
+    }
   };
+
+
 
   // Tasks
   const addTask = async (taskData: any) => {
@@ -659,10 +678,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
   const deleteTask = async (id: string) => {
     try {
-      await api.delete(`/tasks/${id}`);
-      setTasks(prev => prev.filter(t => t.id !== id));
-    } catch (e) { console.error(e); }
+      const res = await api.delete(`/tasks/${id}`);
+      if (res.data?.success) {
+        setTasks(prev => prev.filter(t => t.id !== id));
+      } else {
+        throw new Error(res.data?.message || 'Failed to delete task');
+      }
+    } catch (e: any) {
+      console.error('Delete task failed:', e);
+      const msg = e.response?.data?.message || e.message || 'Failed to delete task';
+      // Use the actual error message as the Title for maximum visibility
+      showToast(msg, 'This action is restricted to Admins and Super Admins.', 'error');
+      throw new Error(msg);
+    }
   };
+
 
   // Notifications
   const markAsRead = async (id: string) => {
@@ -716,7 +746,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   ) => {
     setToast({ title, message, type, onConfirm, onCancel });
     if (type !== 'confirm') {
-      setTimeout(() => setToast(curr => curr?.message === message ? null : curr), 5000);
+      setTimeout(() => {
+        setToast(curr => {
+          if (curr?.message === message) {
+            return null;
+          }
+          return curr;
+        });
+      }, 5000);
     }
   }, []);
 

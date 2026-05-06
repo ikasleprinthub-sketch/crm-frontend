@@ -7,8 +7,9 @@ import Header from '@/components/Header';
 import { useApp } from '@/context/AppContext';
 import api from '@/lib/api';
 import styles from '../attendance/page.module.css';
+import permStyles from './permissions.module.css';
 import pageStyles from '../page.module.css';
-import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Calendar } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Calendar, Send } from 'lucide-react';
 
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -169,28 +170,56 @@ export default function PermissionsPage() {
         </div>
 
         {activeTab === 'apply' && (
-          <div className={styles.sectionCard} style={{ maxWidth: '600px' }}>
-            <div className={styles.sectionTitle}><FileText size={18} /> New Request</div>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Type</label>
-              <select className={styles.formSelect} value={permType} onChange={e => setPermType(e.target.value as PermissionType)}>
-                {PERMISSION_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-            </div>
-            
-            <CustomDatePicker 
-              label="Date"
-              selected={permDate}
-              onChange={setPermDate}
-            />
+          <div className={permStyles.container}>
+            <div className={permStyles.card}>
+              <div className={permStyles.title}>
+                <FileText size={24} color="var(--primary)" />
+                New Permission Request
+              </div>
+              
+              <div className={permStyles.formGrid}>
+                <div className={permStyles.field}>
+                  <label className={permStyles.label}>Request Type</label>
+                  <select 
+                    className={permStyles.select} 
+                    value={permType} 
+                    onChange={e => setPermType(e.target.value as PermissionType)}
+                  >
+                    {PERMISSION_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
 
-            <div className={styles.formGroup} style={{ marginTop: '1.25rem' }}>
-              <label className={styles.formLabel}>Reason</label>
-              <textarea className={styles.formTextarea} value={permReason} onChange={e => setPermReason(e.target.value)} placeholder="Explain why you need this permission…" />
+                <div className={permStyles.field}>
+                  <CustomDatePicker 
+                    label="Select Date"
+                    selected={permDate}
+                    onChange={setPermDate}
+                  />
+                </div>
+
+                <div className={`${permStyles.field} ${permStyles.fullWidth}`}>
+                  <label className={permStyles.label}>Reason / Explanation</label>
+                  <textarea 
+                    className={permStyles.textarea} 
+                    value={permReason} 
+                    onChange={e => setPermReason(e.target.value)} 
+                    placeholder="Provide details about your request..." 
+                  />
+                </div>
+              </div>
+
+              <button 
+                className={permStyles.submitBtn} 
+                onClick={handleApplyPermission} 
+                disabled={submitting}
+              >
+                {submitting ? 'Submitting...' : (
+                  <>
+                    Submit Request <Send size={18} />
+                  </>
+                )}
+              </button>
             </div>
-            <button className={styles.submitBtn} style={{ width: '100%', marginTop: '1rem' }} onClick={handleApplyPermission} disabled={submitting}>
-              {submitting ? 'Submitting…' : 'Submit Request'}
-            </button>
           </div>
         )}
 
