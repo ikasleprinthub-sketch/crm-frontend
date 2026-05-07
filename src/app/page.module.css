@@ -100,6 +100,8 @@
 /* ── Table ── */
 .tableContainer {
   overflow-x: auto;
+  padding-bottom: 120px; /* Space for dropdowns at the bottom */
+  margin-bottom: -120px; /* Offset the padding to maintain layout */
 }
 
 .table {
@@ -435,6 +437,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+}
+
+.customSelectContainer.isOpen {
+  z-index: 2500; /* Higher than regular headers/rows */
 }
 
 /* Redundant styles removed - now inherited from .customSelectTrigger */

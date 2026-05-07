@@ -47,7 +47,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   }, [isOpen]);
 
   return (
-    <div className={`${styles.customSelectContainer} ${size === 'sm' ? styles.sm : ''}`} ref={containerRef}>
+    <div className={`${styles.customSelectContainer} ${size === 'sm' ? styles.sm : ''} ${isOpen ? styles.isOpen : ''}`} ref={containerRef}>
       {label && <label className={styles.filterLabel}>{label}</label>}
       
       <div 
