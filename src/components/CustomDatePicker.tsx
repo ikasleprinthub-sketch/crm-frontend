@@ -26,10 +26,8 @@ export default function CustomDatePicker({ label, selected, onChange, placeholde
           isClearable
           showPopperArrow={false}
           popperPlacement="bottom-start"
-          portalId="root"
-          popperClassName="react-datepicker-popper"
-          calendarClassName="premium-datepicker"
-          dayClassName={() => 'premium-day'}
+          calendarClassName="premiumCalendar"
+          dayClassName={() => styles.premiumDay}
         />
       </div>
     </div>

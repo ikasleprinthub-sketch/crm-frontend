@@ -39,7 +39,8 @@ export default function TasksPage() {
           await deleteTask(id);
           showToast('Task Deleted', 'The task has been permanently removed.', 'success');
         } catch (e: any) {
-          showToast('Delete Failed', e.response?.data?.message || e.message || 'Failed to delete the task.', 'error');
+          // Toast is now handled globally in AppContext
+          console.error('Delete task UI error:', e);
         }
       }
     );

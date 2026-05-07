@@ -232,10 +232,8 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       setForm(curr => ({ ...curr, assignedToId: firstEmp?.id || users[0].id }));
     }
     
-    // Default start time to 5:30 PM (17:30)
-    const now = new Date();
-    now.setHours(17, 30, 0, 0);
-    setForm(curr => ({ ...curr, startDate: now }));
+    // Default start time to now
+    setForm(curr => ({ ...curr, startDate: new Date() }));
   }, [leads, users, departments]);
 
   const filteredTypes = taskTypes.filter(t => t.departmentId === form.departmentId);
@@ -254,18 +252,9 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       return;
     }
 
-    if (form.startDate && form.startDate.getHours() < 17 || (form.startDate?.getHours() === 17 && form.startDate?.getMinutes() < 30)) {
-      showToast('Validation Error', 'Task start time must be 5:30 PM or later.', 'error');
+    if (form.completionDate && form.startDate && form.completionDate < form.startDate) {
+      showToast('Validation Error', 'Target completion time cannot be before start time.', 'error');
       return;
-    }
-
-    if (form.completionDate) {
-      const compTime = form.completionDate.getHours() * 60 + form.completionDate.getMinutes();
-      const minTime = 17 * 60 + 30; // 17:30 in minutes
-      if (compTime < minTime) {
-        showToast('Validation Error', 'Target completion time cannot be before 5:30 PM.', 'error');
-        return;
-      }
     }
 
     setIsSubmitting(true);

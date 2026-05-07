@@ -251,7 +251,8 @@ export default function LeadsPage() {
                               await deleteLead(lead.id);
                               showToast('Lead Deleted', 'The lead has been removed.', 'success');
                             } catch (e: any) {
-                              showToast('Delete Failed', e.response?.data?.message || e.message, 'error');
+                              // Toast is now handled globally in AppContext
+                              console.error('Delete lead UI error:', e);
                             }
                           }
                         );
