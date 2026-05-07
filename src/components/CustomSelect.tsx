@@ -61,8 +61,13 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
 
   useEffect(() => {
     const handleClose = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        // If clicking outside the container, check if we're clicking inside the portal menu
+        const isClickInsideMenu = (event.target as Element).closest(`.${styles.customSelectMenu}`);
+        if (!isClickInsideMenu) {
+          setIsOpen(false);
+        }
       }
     };
     const handleScroll = () => {
