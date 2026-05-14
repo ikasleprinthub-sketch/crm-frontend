@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useApp, LeadStatus, Priority, TaskStatus, Role, User } from '@/context/AppContext';
 import styles from './Modals.module.css';
@@ -192,8 +192,8 @@ const getTimeFromDate = (date: Date | null) => {
 };
 
 /* ── Add Task Form ── */
-export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
-  const { departments, taskTypes, users, leads, showToast } = useApp();
+export function AddTaskForm({ onSubmit, initialLeadId }: { onSubmit: (data: any) => void, initialLeadId?: string }) {
+  const { departments, taskTypes, users, leads, tasks, showToast } = useApp();
   const [form, setForm] = useState({
     leadId: '',
     assignedToId: '',
@@ -216,10 +216,14 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
     return { leadId };
   };
 
+  const availableLeads = useMemo(() => leads.filter(l => !tasks.some(t => t.leadId === l.id)), [leads, tasks]);
+
   // Initialize defaults once lists are available
   React.useEffect(() => {
-    if (leads.length > 0 && !form.leadId) {
-      const firstLead = leads[0];
+    if (initialLeadId) {
+      setForm(curr => ({ ...curr, ...syncFromLead(initialLeadId) }));
+    } else if (availableLeads.length > 0 && !form.leadId) {
+      const firstLead = availableLeads[0];
       setForm(curr => ({
         ...curr,
         leadId: firstLead.id,
@@ -231,10 +235,7 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       const firstEmp = users.find(u => u.role === 'EMPLOYEE');
       setForm(curr => ({ ...curr, assignedToId: firstEmp?.id || users[0].id }));
     }
-    
-    // Default start time to now
-    setForm(curr => ({ ...curr, startDate: new Date() }));
-  }, [leads, users, departments]);
+  }, [availableLeads, users, departments, initialLeadId]);
 
   const filteredTypes = taskTypes.filter(t => t.departmentId === form.departmentId);
 
@@ -274,7 +275,7 @@ export function AddTaskForm({ onSubmit }: { onSubmit: (data: any) => void }) {
       <div className={styles.formRow}>
         <CustomSelect
           label="Associated Lead *"
-          options={leads.map(l => ({ id: l.id, name: `${l.leadName} (${l.leadNo})` }))}
+          options={availableLeads.map(l => ({ id: l.id, name: `${l.leadName} (${l.leadNo})` }))}
           value={form.leadId}
           onChange={val => setForm({ ...form, ...syncFromLead(val) })}
         />

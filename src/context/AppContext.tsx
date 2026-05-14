@@ -79,6 +79,9 @@ export interface TaskSOPStep {
   assignedRole: Role;
   deadlineHours: number;
   dueAt?: string;
+  completedAt?: string;
+  completedById?: string;
+  completedBy?: { id: string; name: string };
 }
 
 export interface Task {

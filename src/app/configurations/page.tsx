@@ -368,8 +368,9 @@ function ConfigurationsContent() {
             <SOPBuilder 
               taskTypeId={selectedTaskType.id} 
               taskTypeName={selectedTaskType.name}
-              onSave={() => {
-                showToast('Success', 'SOP Workflow updated successfully', 'success');
+              onSave={async () => {
+                await fetchInitialData();
+                showToast('Success', 'SOP Workflow updated and applied to existing tasks', 'success');
                 setIsSOPModalOpen(false);
               }}
             />
