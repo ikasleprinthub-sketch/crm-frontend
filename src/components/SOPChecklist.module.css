@@ -237,3 +237,15 @@
 .configureBtn:active {
   transform: translateY(0);
 }
+
+.completedBadge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

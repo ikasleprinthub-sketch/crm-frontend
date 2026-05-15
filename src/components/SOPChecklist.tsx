@@ -82,7 +82,7 @@ export default function SOPChecklist({ steps, taskId, taskTypeId, onToggle }: SO
           </div>
         ) : (
           steps.sort((a, b) => a.order - b.order).map((step, index) => {
-            const isLocked = index > 0 && !steps[index - 1].isCompleted;
+            const isLocked = false; // Sequential locking removed as per request
             const roleHierarchy: Record<string, number> = { 'EMPLOYEE': 1, 'MANAGER': 2, 'ADMIN': 3, 'SUPER_ADMIN': 4 };
             const userRank = roleHierarchy[currentUser?.role || ''] || 0;
             const stepRank = roleHierarchy[step.assignedRole] || 0;
@@ -116,9 +116,15 @@ export default function SOPChecklist({ steps, taskId, taskTypeId, onToggle }: SO
                           <Clock size={10} /> {formatDistanceToNow(new Date(step.dueAt))} left
                         </span>
                       )}
+                      {step.isCompleted && step.completedAt && (
+                        <span className={styles.completedBadge}>
+                          <CheckCircle2 size={10} /> {new Date(step.completedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
+                          {isAdmin && step.completedBy && <span style={{ marginLeft: '4px', opacity: 0.9 }}>by {step.completedBy.name}</span>}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  {isLocked && <p className={styles.lockText}>Complete previous step first</p>}
+                  {/* {isLocked && <p className={styles.lockText}>Complete previous step first</p>} */}
                   {!hasAccess && <p className={styles.lockText}>Requires {step.assignedRole} role</p>}
                 </div>
               </div>

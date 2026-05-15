@@ -18,6 +18,7 @@ export default function TasksPage() {
   } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
+  const selectedTaskObj = tasks.find(t => t.id === selectedTask);
   const [statusFilter, setStatusFilter] = useState<string>('NOT_YET_STARTED');
   const [deptFilter, setDeptFilter] = useState<string>('All');
   const [userFilter, setUserFilter] = useState<string>('All');
@@ -78,7 +79,9 @@ export default function TasksPage() {
   const getUserName = (id: string) => users.find(u => u.id === id)?.name || '—';
   const getDeptName = (id: string) => departments.find(d => d.id === id)?.name || '—';
   const getTypeName = (id: string) => taskTypes.find(t => t.id === id)?.name || '—';
-  const getLeadName = (task: any) => task.lead?.leadName || leads.find((l: any) => l.id === task.leadId)?.leadName || 'Unknown';
+  const getLeadName = (task: any) => task?.lead?.leadName || leads.find((l: any) => l.id === task?.leadId)?.leadName || 'Unknown';
+  const getLeadEmail = (task: any) => task?.lead?.email || leads.find((l: any) => l.id === task?.leadId)?.email || '—';
+  const getLeadPhone = (task: any) => task?.lead?.contactNumber || leads.find((l: any) => l.id === task?.leadId)?.contactNumber || '—';
 
   const statusBadge = (status: string) => `badge-${status.replace(/_/g, '').toLowerCase()}`;
   const priorityBadge = (priority: string) => `priority-${priority.toLowerCase()}`;
@@ -346,10 +349,12 @@ export default function TasksPage() {
           {tasks.find(t => t.id === selectedTask) && (
             <div style={{ padding: '0.25rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
-                <p style={{ color: 'var(--text-secondary)' }}>Lead: <strong style={{ color: 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)?.lead?.leadName || getLeadName(tasks.find(t => t.id === selectedTask)!)}</strong></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Lead: <strong style={{ color: 'var(--text-primary)' }}>{getLeadName(selectedTaskObj)}</strong></p>
                 <p style={{ color: 'var(--text-secondary)' }}>Assigned: <strong style={{ color: 'var(--text-primary)' }}>{getUserName(tasks.find(t => t.id === selectedTask)!.assignedToId)}</strong></p>
                 <p style={{ color: 'var(--text-secondary)' }}>Type: <strong style={{ color: 'var(--text-primary)' }}>{getTypeName(tasks.find(t => t.id === selectedTask)!.taskTypeId)}</strong></p>
-                <p style={{ color: 'var(--text-secondary)' }}>Priority: <strong style={{ color: tasks.find(t => t.id === selectedTask)!.priority === 'URGENT' ? 'var(--accent-red)' : 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.priority}</strong></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Priority: <strong style={{ color: selectedTaskObj?.priority === 'URGENT' ? 'var(--accent-red)' : 'var(--text-primary)' }}>{selectedTaskObj?.priority}</strong></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Email: <strong style={{ color: 'var(--text-primary)' }}>{getLeadEmail(selectedTaskObj!)}</strong></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Phone: <strong style={{ color: 'var(--text-primary)' }}>{getLeadPhone(selectedTaskObj!)}</strong></p>
                 {tasks.find(t => t.id === selectedTask)!.remarks && <p style={{ color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Remarks: <strong style={{ color: 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.remarks}</strong></p>}
               </div>
               <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>SOP CHECKLIST</h3>
