@@ -35,8 +35,6 @@ interface AttendanceRecord {
   totalHours: number | null;
   morningPlan: string | null;
   afternoonPlan: string | null;
-  eveningPlan: string | null;
-  nightPlan: string | null;
   dayCompletion: string | null;
   permission: PermissionStatus;
   permissionType: PermissionType | null;
@@ -148,9 +146,7 @@ const PIE_COLORS: Record<AttendanceStatus, string> = {
 function getDynamicGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return 'Morning Plan';
-  if (hour < 17) return 'Afternoon Plan';
-  if (hour < 21) return 'Evening Plan';
-  return 'Night Plan';
+  return 'Afternoon Plan';
 }
 
 function getGreetingPrefix() {
@@ -1002,6 +998,10 @@ function RegularAttendancePage() {
 
   const handleApplyPermission = async () => {
     if (!permReason.trim()) { showToast('Missing Reason', 'Please provide a reason', 'error'); return; }
+    if (!/^[a-zA-Z0-9\s]+$/.test(permReason)) {
+      showToast('Invalid Reason', 'Reason must contain only letters, numbers, and spaces', 'error');
+      return;
+    }
     if (!permDate) { showToast('Missing Date', 'Please select a date', 'error'); return; }
     setSubmitting(true);
     try {
@@ -1160,7 +1160,7 @@ function RegularAttendancePage() {
       )}
 
       {/* Read-only plans after checkout */}
-      {today?.checkIn && today?.checkOut && (today.morningPlan || today.afternoonPlan || today.eveningPlan) && (
+      {today?.checkIn && today?.checkOut && (today.morningPlan || today.afternoonPlan) && (
         <div className={styles.planCard}>
           {today.morningPlan && (
             <>
@@ -1172,18 +1172,6 @@ function RegularAttendancePage() {
             <>
               <div className={styles.planTitle} style={{ marginTop: '1rem' }}><FileText size={15} /> Afternoon Plan</div>
               <textarea className={styles.textarea} value={today.afternoonPlan} readOnly />
-            </>
-          )}
-          {today.eveningPlan && (
-            <>
-              <div className={styles.planTitle} style={{ marginTop: '1rem' }}><FileText size={15} /> Evening Plan</div>
-              <textarea className={styles.textarea} value={today.eveningPlan} readOnly />
-            </>
-          )}
-          {today.nightPlan && (
-            <>
-              <div className={styles.planTitle} style={{ marginTop: '1rem' }}><FileText size={15} /> Night Plan</div>
-              <textarea className={styles.textarea} value={today.nightPlan} readOnly />
             </>
           )}
           {today.dayCompletion && (

@@ -12,8 +12,6 @@ interface PlanRecord {
   date: string;
   morningPlan: string | null;
   afternoonPlan: string | null;
-  eveningPlan: string | null;
-  nightPlan: string | null;
   dayCompletion: string | null;
   status: string;
 }
@@ -57,7 +55,7 @@ export default function PlansPage() {
   };
 
   const hasAnyPlan = (plan: PlanRecord) => {
-    return plan.morningPlan || plan.afternoonPlan || plan.eveningPlan || plan.nightPlan || plan.dayCompletion;
+    return plan.morningPlan || plan.afternoonPlan || plan.dayCompletion;
   };
 
   return (
@@ -96,8 +94,6 @@ export default function PlansPage() {
                       <div className={styles.planSummary}>
                         {plan.morningPlan && <span className={styles.dot} title="Morning Plan set"></span>}
                         {plan.afternoonPlan && <span className={`${styles.dot} ${styles.afternoon}`} title="Afternoon Plan set"></span>}
-                        {plan.eveningPlan && <span className={`${styles.dot} ${styles.evening}`} title="Evening Plan set"></span>}
-                        {plan.nightPlan && <span className={`${styles.dot} ${styles.night}`} title="Night Plan set"></span>}
                         {plan.dayCompletion && <CheckCircle2 size={14} className={styles.doneIcon} />}
                       </div>
                       {expandedId === plan.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
@@ -106,7 +102,7 @@ export default function PlansPage() {
 
                   {expandedId === plan.id && (
                     <div className={styles.planDetails}>
-                      <div className={styles.grid}>
+                      <div className={styles.grid} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                         <div className={styles.section}>
                           <div className={styles.sectionLabel}>
                             <Clock size={14} /> Morning Plan
@@ -122,24 +118,6 @@ export default function PlansPage() {
                           </div>
                           <div className={styles.content}>
                             {plan.afternoonPlan || <span className={styles.placeholder}>No plan entered</span>}
-                          </div>
-                        </div>
-
-                        <div className={styles.section}>
-                          <div className={styles.sectionLabel}>
-                            <Clock size={14} /> Evening Plan
-                          </div>
-                          <div className={styles.content}>
-                            {plan.eveningPlan || <span className={styles.placeholder}>No plan entered</span>}
-                          </div>
-                        </div>
-
-                        <div className={styles.section}>
-                          <div className={styles.sectionLabel}>
-                            <Clock size={14} /> Night Plan
-                          </div>
-                          <div className={styles.content}>
-                            {plan.nightPlan || <span className={styles.placeholder}>No plan entered</span>}
                           </div>
                         </div>
 

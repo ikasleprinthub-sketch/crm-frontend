@@ -110,10 +110,9 @@ export default function PermissionsPage() {
     (async () => {
       setLoading(true);
       await Promise.all([loadPending(), loadMyHistory()]);
-      if (isSuper || isAdmin || isManager) setActiveTab('pending');
       setLoading(false);
     })();
-  }, [loadPending, loadMyHistory, isSuper, isAdmin, isManager]);
+  }, [loadPending, loadMyHistory]);
 
   const handleApplyPermission = async () => {
     if (!permReason.trim()) { showToast('Missing Reason', 'Please provide a reason', 'error'); return; }
