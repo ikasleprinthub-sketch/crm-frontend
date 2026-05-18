@@ -24,6 +24,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number | null, left: number, width: number, openUp: boolean }>({ 
     top: null, 
     left: 0, 
@@ -64,13 +65,18 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
       const target = event.target as Node;
       if (containerRef.current && !containerRef.current.contains(target)) {
         // If clicking outside the container, check if we're clicking inside the portal menu
-        const isClickInsideMenu = (event.target as Element).closest(`.${styles.customSelectMenu}`);
-        if (!isClickInsideMenu) {
-          setIsOpen(false);
+        if (menuRef.current && menuRef.current.contains(target)) {
+          return;
         }
+        setIsOpen(false);
       }
     };
-    const handleScroll = () => {
+    const handleScroll = (event: Event) => {
+      const target = event.target as Node;
+      // Do not close the dropdown if the scroll event is within the dropdown options list
+      if (menuRef.current && menuRef.current.contains(target)) {
+        return;
+      }
       if (isOpen) setIsOpen(false);
     };
 
@@ -88,6 +94,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
 
   const menuElement = isOpen && coords.top !== null && mounted && (
     <div 
+      ref={menuRef}
       className={`${styles.customSelectMenu} ${coords.openUp ? styles.openUp : ''}`}
       style={{
         position: 'fixed',
