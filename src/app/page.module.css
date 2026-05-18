@@ -287,6 +287,8 @@
 
 /* ── Premium Filter Bar ── */
 .filterCard {
+  position: relative;
+  z-index: 50;
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);

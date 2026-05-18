@@ -92,15 +92,7 @@
   box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
 }
 
-.dot.evening {
-  background: #8b5cf6;
-  box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
-}
 
-.dot.night {
-  background: #475569;
-  box-shadow: 0 0 8px rgba(71, 85, 105, 0.4);
-}
 
 .doneIcon {
   color: var(--accent-green);
