@@ -276,15 +276,14 @@ export default function LeadsPage() {
         </section>
 
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Lead" size="lg">
-          <AddLeadForm onSubmit={async (data) => { 
-            try {
-              await addLead(data); 
-              setIsModalOpen(false); 
-              showToast('Lead Added', 'New lead has been successfully recorded.', 'success');
-            } catch (e: any) {
-              showToast('Action Failed', e.response?.data?.message || e.message, 'error');
-            }
-          }} />
+          <AddLeadForm
+            onSubmit={async (data) => {
+              const lead = await addLead(data);
+              showToast('Lead Created', `${data.leadName} added. Upload documents below.`, 'success');
+              return lead;
+            }}
+            onClose={() => setIsModalOpen(false)}
+          />
         </Modal>
       </main>
     </div>

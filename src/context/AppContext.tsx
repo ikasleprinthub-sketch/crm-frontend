@@ -166,7 +166,7 @@ interface AppContextType {
 
   // Leads
   leads: Lead[];
-  addLead: (leadData: any) => Promise<void>;
+  addLead: (leadData: any) => Promise<any>;
   updateLead: (id: string, updates: Partial<Lead>) => Promise<void>;
   deleteLead: (id: string) => Promise<void>;
 
@@ -607,6 +607,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const res = await api.post('/leads', leadData);
       if (res.data?.success) {
         setLeads(prev => [res.data.data, ...prev]);
+        return res.data.data;
       } else {
         throw new Error(res.data?.message || 'Failed to add lead');
       }

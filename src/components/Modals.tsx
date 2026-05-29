@@ -1,6 +1,6 @@
 'use client';
-import React, { useState, useMemo } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { Eye, EyeOff, Upload, CheckCircle, XCircle, Loader } from 'lucide-react';
 import { useApp, LeadStatus, Priority, TaskStatus, Role, User } from '@/context/AppContext';
 import styles from './Modals.module.css';
 import DatePicker from 'react-datepicker';
@@ -8,6 +8,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 import CustomTimePicker from './CustomTimePicker';
+import api from '@/lib/api';
 
 /* ── Modal Shell ── */
 interface ModalProps {
@@ -44,30 +45,56 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 }
 
 /* ── Add Lead Form ── */
-export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
+const DOC_CATEGORIES = ['AADHAR', 'PAN', 'GST', 'PHOTO', 'OTHER'] as const;
+type DocCategory = typeof DOC_CATEGORIES[number];
+type UploadStatus = 'idle' | 'uploading' | 'done' | 'error';
+
+interface UploadRow {
+  category: DocCategory;
+  file: File | null;
+  status: UploadStatus;
+}
+
+export function AddLeadForm({
+  onSubmit,
+  onClose,
+}: {
+  onSubmit: (data: any) => Promise<any>;
+  onClose: () => void;
+}) {
   const { departments, sources, taskTypes, showToast } = useApp();
   const [form, setForm] = useState({
-    leadName: '', contactName: '', email: '', contactNumber: '', sourceId: sources[0]?.id || '',
-    departmentId: departments[0]?.id || '', taskTypeId: taskTypes[0]?.id || '', status: 'NEW' as LeadStatus, remarks: '',
+    leadName: '', contactName: '', email: '', contactNumber: '',
+    sourceId: sources[0]?.id || '',
+    departmentId: departments[0]?.id || '',
+    taskTypeId: taskTypes[0]?.id || '',
+    status: 'NEW' as LeadStatus,
+    remarks: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Step 2 state
+  const [step, setStep] = useState<1 | 2>(1);
+  const [createdLead, setCreatedLead] = useState<{ id: string; leadNo: string; leadName: string } | null>(null);
+  const [uploadRows, setUploadRows] = useState<UploadRow[]>(
+    DOC_CATEGORIES.map(c => ({ category: c, file: null, status: 'idle' }))
+  );
+  const [isUploading, setIsUploading] = useState(false);
+  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const filteredTypes = taskTypes.filter(t => t.departmentId === form.departmentId);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
     if (!form.leadName) {
       newErrors.leadName = 'Lead name is required';
       showToast('Validation Error', 'Lead/Business name is required');
     }
-    
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
       newErrors.email = 'Invalid email format';
       showToast('Validation Error', 'Please enter a valid email address');
     }
-    
     if (form.contactNumber) {
       const digits = form.contactNumber.replace(/\D/g, '');
       if (digits.length !== 10) {
@@ -75,101 +102,269 @@ export function AddLeadForm({ onSubmit }: { onSubmit: (data: any) => void }) {
         showToast('Validation Error', 'Phone number must be exactly 10 digits');
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
-      setIsSubmitting(true);
-      try {
-        await onSubmit(form);
-      } finally {
-        setIsSubmitting(false);
-      }
+    if (!validate()) return;
+    setIsSubmitting(true);
+    try {
+      const lead = await onSubmit(form);
+      setCreatedLead(lead);
+      setStep(2);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const setRowFile = (category: DocCategory, file: File | null) => {
+    setUploadRows(prev =>
+      prev.map(r => r.category === category ? { ...r, file, status: 'idle' } : r)
+    );
+  };
+
+  const handleUploadAndDone = async () => {
+    if (!createdLead) return;
+    const toUpload = uploadRows.filter(r => r.file && r.status === 'idle');
+
+    if (toUpload.length === 0) {
+      onClose();
+      return;
+    }
+
+    setIsUploading(true);
+    for (const row of toUpload) {
+      if (!row.file) continue;
+      setUploadRows(prev => prev.map(r => r.category === row.category ? { ...r, status: 'uploading' } : r));
+      try {
+        const fd = new FormData();
+        fd.append('file', row.file);
+        fd.append('category', row.category);
+        await api.post(`/leads/${createdLead.id}/documents`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setUploadRows(prev => prev.map(r => r.category === row.category ? { ...r, status: 'done' } : r));
+      } catch {
+        setUploadRows(prev => prev.map(r => r.category === row.category ? { ...r, status: 'error' } : r));
+      }
+    }
+    setIsUploading(false);
+
+    const hasError = uploadRows.some(r => r.status === 'error');
+    if (!hasError) {
+      showToast('Documents Uploaded', 'All documents saved successfully.', 'success');
+      setTimeout(onClose, 600);
+    }
+  };
+
+  // ── Step 1: Lead Info ──────────────────────────────────────────────────────
+  if (step === 1) {
+    return (
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.formRow}>
+          <FormField label="Lead/Business Name *">
+            <input
+              className={`${styles.input} ${errors.leadName ? styles.inputError : ''}`}
+              required
+              value={form.leadName}
+              onChange={e => setForm({ ...form, leadName: e.target.value })}
+              placeholder="Enter lead name"
+            />
+            {errors.leadName && <p className={styles.errorText}>{errors.leadName}</p>}
+          </FormField>
+          <FormField label="Contact Person *">
+            <input
+              className={styles.input}
+              required
+              value={form.contactName}
+              onChange={e => setForm({ ...form, contactName: e.target.value })}
+              placeholder="Contact Person Name"
+            />
+          </FormField>
+        </div>
+        <div className={styles.formRow}>
+          <FormField label="Phone">
+            <input
+              className={`${styles.input} ${errors.contactNumber ? styles.inputError : ''}`}
+              value={form.contactNumber}
+              onChange={e => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                setForm({ ...form, contactNumber: val });
+              }}
+              placeholder="10-digit number"
+            />
+            {errors.contactNumber && <p className={styles.errorText}>{errors.contactNumber}</p>}
+          </FormField>
+          <FormField label="Email">
+            <input
+              className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
+              type="email"
+              value={form.email}
+              onChange={e => setForm({ ...form, email: e.target.value })}
+              placeholder="Email address"
+            />
+            {errors.email && <p className={styles.errorText}>{errors.email}</p>}
+          </FormField>
+        </div>
+        <div className={styles.formRow}>
+          <CustomSelect
+            label="Source"
+            options={sources.map(s => ({ id: s.id, name: s.name }))}
+            value={form.sourceId}
+            onChange={val => setForm({ ...form, sourceId: val })}
+          />
+          <CustomSelect
+            label="Status"
+            options={(['NEW', 'CONVERTED'] as LeadStatus[]).map(s => ({ id: s, name: s }))}
+            value={form.status}
+            onChange={val => setForm({ ...form, status: val as LeadStatus })}
+          />
+        </div>
+        <div className={styles.formRow}>
+          <CustomSelect
+            label="Department"
+            options={departments.map(d => ({ id: d.id, name: d.name }))}
+            value={form.departmentId}
+            onChange={val => setForm({ ...form, departmentId: val, taskTypeId: taskTypes.find(t => t.departmentId === val)?.id || '' })}
+          />
+          <CustomSelect
+            label="Task Type"
+            options={filteredTypes.map(t => ({ id: t.id, name: t.name }))}
+            value={form.taskTypeId}
+            onChange={val => setForm({ ...form, taskTypeId: val })}
+          />
+        </div>
+        <FormField label="Remarks *">
+          <textarea
+            className={styles.textarea}
+            required
+            value={form.remarks}
+            onChange={e => setForm({ ...form, remarks: e.target.value })}
+            placeholder="Additional remarks..."
+            rows={3}
+          />
+        </FormField>
+        <div className={styles.formActions}>
+          <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+            {isSubmitting ? 'Creating Lead...' : 'Create Lead & Upload Documents →'}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // ── Step 2: Document Upload ────────────────────────────────────────────────
+  const anySelected = uploadRows.some(r => r.file);
+  const allDone = uploadRows.every(r => !r.file || r.status === 'done');
+
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
-      <div className={styles.formRow}>
-        <FormField label="Lead/Business Name *">
-          <input 
-            className={`${styles.input} ${errors.leadName ? styles.inputError : ''}`} 
-            required 
-            value={form.leadName} 
-            onChange={e => setForm({ ...form, leadName: e.target.value })} 
-            placeholder="Enter lead name" 
-          />
-          {errors.leadName && <p className={styles.errorText}>{errors.leadName}</p>}
-        </FormField>
-        <FormField label="Contact Person *">
-          <input className={styles.input} required value={form.contactName} onChange={e => setForm({ ...form, contactName: e.target.value })} placeholder="Contact Person Name" />
-        </FormField>
+    <div className={styles.form}>
+      {/* Header info */}
+      <div style={{
+        background: 'var(--surface-hover)',
+        border: '1px solid var(--border)',
+        borderRadius: '12px',
+        padding: '1rem 1.25rem',
+        marginBottom: '1.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+      }}>
+        <CheckCircle size={18} color="var(--accent-green)" />
+        <div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+            {createdLead?.leadName} — Created
+          </p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+            {createdLead?.leadNo} · Upload documents now or skip
+          </p>
+        </div>
       </div>
-      <div className={styles.formRow}>
-        <FormField label="Phone">
-          <input 
-            className={`${styles.input} ${errors.contactNumber ? styles.inputError : ''}`} 
-            value={form.contactNumber} 
-            onChange={e => {
-              const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-              setForm({ ...form, contactNumber: val });
-            }} 
-            placeholder="10-digit number" 
-          />
-          {errors.contactNumber && <p className={styles.errorText}>{errors.contactNumber}</p>}
-        </FormField>
-        <FormField label="Email">
-          <input 
-            className={`${styles.input} ${errors.email ? styles.inputError : ''}`} 
-            type="email" 
-            value={form.email} 
-            onChange={e => setForm({ ...form, email: e.target.value })} 
-            placeholder="Email address" 
-          />
-          {errors.email && <p className={styles.errorText}>{errors.email}</p>}
-        </FormField>
+
+      {/* Upload rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        {uploadRows.map(row => (
+          <div
+            key={row.category}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '100px 1fr 32px',
+              alignItems: 'center',
+              gap: '0.75rem',
+              padding: '0.75rem 1rem',
+              borderRadius: '10px',
+              border: '1px solid var(--border)',
+              background: row.status === 'done'
+                ? 'rgba(16,185,129,0.06)'
+                : row.status === 'error'
+                  ? 'rgba(239,68,68,0.06)'
+                  : 'var(--surface-hover)',
+            }}
+          >
+            {/* Category label */}
+            <span style={{
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              color: 'var(--primary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}>
+              {row.category}
+            </span>
+
+            {/* File input */}
+            <input
+              ref={el => { fileRefs.current[row.category] = el; }}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              disabled={isUploading || row.status === 'done'}
+              onChange={e => setRowFile(row.category, e.target.files?.[0] || null)}
+              style={{ fontSize: '0.8rem', color: 'var(--text-primary)', minWidth: 0 }}
+            />
+
+            {/* Status icon */}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {row.status === 'uploading' && <Loader size={16} color="var(--primary)" style={{ animation: 'spin 1s linear infinite' }} />}
+              {row.status === 'done'      && <CheckCircle size={16} color="var(--accent-green)" />}
+              {row.status === 'error'     && <XCircle size={16} color="var(--accent-red)" />}
+            </div>
+          </div>
+        ))}
       </div>
-      <div className={styles.formRow}>
-        <CustomSelect
-          label="Source"
-          options={sources.map(s => ({ id: s.id, name: s.name }))}
-          value={form.sourceId}
-          onChange={val => setForm({ ...form, sourceId: val })}
-        />
-        <CustomSelect
-          label="Status"
-          options={(['NEW', 'CONVERTED'] as LeadStatus[]).map(s => ({ id: s, name: s }))}
-          value={form.status}
-          onChange={val => setForm({ ...form, status: val as LeadStatus })}
-        />
-      </div>
-      <div className={styles.formRow}>
-        <CustomSelect
-          label="Department"
-          options={departments.map(d => ({ id: d.id, name: d.name }))}
-          value={form.departmentId}
-          onChange={val => setForm({ ...form, departmentId: val, taskTypeId: taskTypes.find(t => t.departmentId === val)?.id || '' })}
-        />
-        <CustomSelect
-          label="Task Type"
-          options={filteredTypes.map(t => ({ id: t.id, name: t.name }))}
-          value={form.taskTypeId}
-          onChange={val => setForm({ ...form, taskTypeId: val })}
-        />
-      </div>
-      <FormField label="Remarks *">
-        <textarea className={styles.textarea} required value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} placeholder="Additional remarks..." rows={3} />
-      </FormField>
-      <div className={styles.formActions}>
-        <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
-          {isSubmitting ? 'Creating Lead...' : 'Create Lead'}
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isUploading}
+          style={{
+            padding: '0.55rem 1.25rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border)',
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            cursor: isUploading ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            fontSize: '0.85rem',
+          }}
+        >
+          Skip
+        </button>
+        <button
+          type="button"
+          onClick={handleUploadAndDone}
+          disabled={isUploading || !anySelected || allDone}
+          className={styles.submitBtn}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+        >
+          <Upload size={14} />
+          {isUploading ? 'Uploading...' : 'Upload & Done'}
         </button>
       </div>
-    </form>
+    </div>
   );
 }
 
