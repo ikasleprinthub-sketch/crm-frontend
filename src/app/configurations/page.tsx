@@ -14,7 +14,12 @@ import SOPBuilder from '@/components/admin/SOPBuilder';
 
 function ConfigurationsContent() {
   const searchParams = useSearchParams();
-  const { currentUser, departments, taskTypes, sources, fetchInitialData, showToast } = useApp();
+  const {
+    currentUser, departments, taskTypes, sources, showToast,
+    addDepartment, updateDepartment, deleteDepartment,
+    addTaskType, updateTaskType, deleteTaskType,
+    addSource, updateSource, deleteSource,
+  } = useApp();
   const [activeTab, setActiveTab] = useState<'depts' | 'types' | 'sources' | 'settings'>('depts');
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,15 +116,16 @@ function ConfigurationsContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const endpoint =
-        activeTab === 'depts' ? '/departments' :
-        activeTab === 'types' ? '/task-types' : '/sources';
-      if (modalMode === 'add') {
-        await api.post(endpoint, formData);
+      if (activeTab === 'depts') {
+        if (modalMode === 'add') await addDepartment(formData.name);
+        else if (targetId) await updateDepartment(targetId, formData.name);
+      } else if (activeTab === 'types') {
+        if (modalMode === 'add') await addTaskType({ name: formData.name, departmentId: formData.departmentId });
+        else if (targetId) await updateTaskType(targetId, formData.name);
       } else {
-        await api.put(`${endpoint}/${targetId}`, formData);
+        if (modalMode === 'add') await addSource(formData.name);
+        else if (targetId) await updateSource(targetId, formData.name);
       }
-      await fetchInitialData();
       setIsModalOpen(false);
     } catch (err: any) {
       showToast('Action Failed', err.response?.data?.message || 'Action failed', 'error');
@@ -129,11 +135,9 @@ function ConfigurationsContent() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure? This may fail if it is currently in use.')) return;
     try {
-      const endpoint =
-        activeTab === 'depts' ? '/departments' :
-        activeTab === 'types' ? '/task-types' : '/sources';
-      await api.delete(`${endpoint}/${id}`);
-      await fetchInitialData();
+      if (activeTab === 'depts') await deleteDepartment(id);
+      else if (activeTab === 'types') await deleteTaskType(id);
+      else await deleteSource(id);
     } catch (err: any) {
       showToast('Delete Failed', err.response?.data?.message || 'Delete failed', 'error');
     }
@@ -369,7 +373,6 @@ function ConfigurationsContent() {
               taskTypeId={selectedTaskType.id} 
               taskTypeName={selectedTaskType.name}
               onSave={async () => {
-                await fetchInitialData();
                 showToast('Success', 'SOP Workflow updated and applied to existing tasks', 'success');
                 setIsSOPModalOpen(false);
               }}

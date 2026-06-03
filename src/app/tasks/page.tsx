@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useApp, TaskStatus } from '@/context/AppContext';
@@ -11,6 +12,7 @@ import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
 export default function TasksPage() {
+  const router = useRouter();
   const {
     currentUser, tasks, leads, addTask, updateTask,
     updateTaskStep, deleteTask, users, departments,
@@ -223,9 +225,9 @@ export default function TasksPage() {
                   const total = task.sopSteps?.length || 0;
                   const pct = total ? Math.round((completed / total) * 100) : 0;
                   return (
-                    <tr key={task.id}>
+                    <tr key={task.id} onClick={() => router.push(`/tasks/${task.id}`)} style={{ cursor: 'pointer' }}>
                       <td>
-                        <span style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--primary)' }} onClick={() => setSelectedTask(task.id)}>{task.taskNo}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{task.taskNo}</span>
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: 2 }}>{getDeptName(task.departmentId)}</p>
                       </td>
                       <td>
@@ -238,7 +240,7 @@ export default function TasksPage() {
                         {task.completionDate ? new Date(task.completionDate).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
                       </td>
                       <td><span className={`${styles.priority} ${priorityBadge(task.priority)}`}>{task.priority}</span></td>
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         {isEmployee && task.status === 'COMPLETED' ? (
                           <span 
                             className={`${styles.badge} ${statusBadge(task.status)}`}
@@ -272,7 +274,7 @@ export default function TasksPage() {
                           />
                         )}
                       </td>
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         <div style={{ cursor: 'pointer' }} onClick={() => setSelectedTask(task.id)}>
                           {total === 0 ? (
                             <span style={{ 
@@ -311,7 +313,7 @@ export default function TasksPage() {
                           )}
                         </div>
                       </td>
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           {isAdmin && (
                             <button 

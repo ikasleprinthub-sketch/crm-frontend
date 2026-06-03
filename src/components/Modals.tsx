@@ -162,7 +162,19 @@ export function AddLeadForm({
   // ── Step 1: Lead Info ──────────────────────────────────────────────────────
   if (step === 1) {
     return (
-      <form onSubmit={handleSubmit} className={styles.form}>
+      <>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.88rem' }}>1</div>
+            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--primary)' }}>Lead Details</span>
+          </div>
+          <div style={{ width: 64, height: 2, background: 'var(--border)', margin: '0 10px', marginBottom: '18px' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--border)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.88rem' }}>2</div>
+            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Documents</span>
+          </div>
+        </div>
+        <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.formRow}>
           <FormField label="Lead/Business Name *">
             <input
@@ -251,7 +263,8 @@ export function AddLeadForm({
             {isSubmitting ? 'Creating Lead...' : 'Create Lead & Upload Documents →'}
           </button>
         </div>
-      </form>
+        </form>
+      </>
     );
   }
 
@@ -260,111 +273,124 @@ export function AddLeadForm({
   const allDone = uploadRows.every(r => !r.file || r.status === 'done');
 
   return (
-    <div className={styles.form}>
-      {/* Header info */}
-      <div style={{
-        background: 'var(--surface-hover)',
-        border: '1px solid var(--border)',
-        borderRadius: '12px',
-        padding: '1rem 1.25rem',
-        marginBottom: '1.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
-      }}>
-        <CheckCircle size={18} color="var(--accent-green)" />
-        <div>
-          <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-            {createdLead?.leadName} — Created
-          </p>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-            {createdLead?.leadNo} · Upload documents now or skip
-          </p>
+    <>
+      {/* Step indicator */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(16,185,129,0.15)', color: 'var(--accent-green)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CheckCircle size={16} />
+          </div>
+          <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Lead Details</span>
+        </div>
+        <div style={{ width: 64, height: 2, background: 'var(--primary)', margin: '0 10px', marginBottom: '18px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.88rem' }}>2</div>
+          <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--primary)' }}>Documents</span>
         </div>
       </div>
 
-      {/* Upload rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-        {uploadRows.map(row => (
-          <div
-            key={row.category}
-            style={{
+      <div className={styles.form}>
+        {/* Header info */}
+        <div style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '12px', padding: '0.9rem 1.25rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <CheckCircle size={18} color="var(--accent-green)" />
+          <div>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{createdLead?.leadName} — Created</p>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{createdLead?.leadNo} · Upload documents now or skip</p>
+          </div>
+        </div>
+
+        {/* Upload rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.5rem' }}>
+          {uploadRows.map(row => (
+            <div key={row.category} style={{
               display: 'grid',
-              gridTemplateColumns: '100px 1fr 32px',
+              gridTemplateColumns: '90px 1fr 28px',
               alignItems: 'center',
               gap: '0.75rem',
-              padding: '0.75rem 1rem',
+              padding: '0.65rem 1rem',
               borderRadius: '10px',
-              border: '1px solid var(--border)',
-              background: row.status === 'done'
-                ? 'rgba(16,185,129,0.06)'
-                : row.status === 'error'
-                  ? 'rgba(239,68,68,0.06)'
-                  : 'var(--surface-hover)',
-            }}
-          >
-            {/* Category label */}
-            <span style={{
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              color: 'var(--primary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
+              border: `1px solid ${row.status === 'done' ? 'rgba(16,185,129,0.35)' : row.status === 'error' ? 'rgba(239,68,68,0.35)' : 'var(--border)'}`,
+              background: row.status === 'done' ? 'rgba(16,185,129,0.05)' : row.status === 'error' ? 'rgba(239,68,68,0.05)' : 'var(--surface-hover)',
             }}>
-              {row.category}
-            </span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {row.category}
+              </span>
 
-            {/* File input */}
-            <input
-              ref={el => { fileRefs.current[row.category] = el; }}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              disabled={isUploading || row.status === 'done'}
-              onChange={e => setRowFile(row.category, e.target.files?.[0] || null)}
-              style={{ fontSize: '0.8rem', color: 'var(--text-primary)', minWidth: 0 }}
-            />
+              {/* Hidden native input + styled button + filename */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                <input
+                  ref={el => { fileRefs.current[row.category] = el; }}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  disabled={isUploading || row.status === 'done'}
+                  onChange={e => setRowFile(row.category, e.target.files?.[0] || null)}
+                  style={{ display: 'none' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileRefs.current[row.category]?.click()}
+                  disabled={isUploading || row.status === 'done'}
+                  style={{
+                    padding: '0.3rem 0.7rem',
+                    borderRadius: '6px',
+                    border: `1px solid ${row.file ? 'var(--primary)' : 'var(--border)'}`,
+                    background: row.file ? 'var(--primary)' : 'transparent',
+                    color: row.file ? '#fff' : 'var(--text-secondary)',
+                    fontSize: '0.73rem',
+                    fontWeight: 600,
+                    cursor: isUploading || row.status === 'done' ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {row.status === 'done' ? 'Uploaded' : row.file ? 'Change' : 'Choose File'}
+                </button>
+                <span style={{
+                  fontSize: '0.73rem',
+                  color: row.file ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                }}>
+                  {row.file ? row.file.name : 'No file chosen'}
+                </span>
+              </div>
 
-            {/* Status icon */}
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              {row.status === 'uploading' && <Loader size={16} color="var(--primary)" style={{ animation: 'spin 1s linear infinite' }} />}
-              {row.status === 'done'      && <CheckCircle size={16} color="var(--accent-green)" />}
-              {row.status === 'error'     && <XCircle size={16} color="var(--accent-red)" />}
+              {/* Status icon */}
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                {row.status === 'uploading' && <Loader size={15} color="var(--primary)" style={{ animation: 'spin 1s linear infinite' }} />}
+                {row.status === 'done'      && <CheckCircle size={15} color="var(--accent-green)" />}
+                {row.status === 'error'     && <XCircle size={15} color="var(--accent-red)" />}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isUploading}
-          style={{
-            padding: '0.55rem 1.25rem',
-            borderRadius: '8px',
-            border: '1px solid var(--border)',
-            background: 'transparent',
-            color: 'var(--text-secondary)',
-            cursor: isUploading ? 'not-allowed' : 'pointer',
-            fontWeight: 600,
-            fontSize: '0.85rem',
-          }}
-        >
-          Skip
-        </button>
-        <button
-          type="button"
-          onClick={handleUploadAndDone}
-          disabled={isUploading || !anySelected || allDone}
-          className={styles.submitBtn}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-        >
-          <Upload size={14} />
-          {isUploading ? 'Uploading...' : 'Upload & Done'}
-        </button>
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isUploading}
+            style={{ padding: '0.55rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', cursor: isUploading ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+          >
+            Skip
+          </button>
+          <button
+            type="button"
+            onClick={handleUploadAndDone}
+            disabled={isUploading || !anySelected || allDone}
+            className={styles.submitBtn}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <Upload size={14} />
+            {isUploading ? 'Uploading...' : 'Upload & Done'}
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

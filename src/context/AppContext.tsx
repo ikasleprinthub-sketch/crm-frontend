@@ -1,10 +1,45 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import api from '@/lib/api';
 import { Bell, X, CheckCircle, AlertCircle, Info, HelpCircle } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import PageLoader from '@/components/PageLoader';
+
+// ─── MODULE-LEVEL HELPERS ─────────────────────────────────────────────────────
+
+function getArr(payload: any, key: string): any[] {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload[key])) return payload[key];
+  if (Array.isArray(payload.data)) return payload.data;
+  return [];
+}
+
+const STATIC_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function readStaticCache<T>(key: string): T[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.ts > STATIC_CACHE_TTL) { sessionStorage.removeItem(key); return null; }
+    return parsed.data as T[];
+  } catch { return null; }
+}
+
+function writeStaticCache(key: string, data: any[]): void {
+  if (typeof window === 'undefined') return;
+  try { sessionStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch { }
+}
+
+function clearStaticCaches(): void {
+  if (typeof window === 'undefined') return;
+  ['cache_departments', 'cache_taskTypes', 'cache_sources'].forEach(k => {
+    try { sessionStorage.removeItem(k); } catch { }
+  });
+}
 
 // ─── ENUMS / TYPES ──────────────────────────────────────────────────────────── //hi
 
@@ -67,6 +102,7 @@ export interface Lead {
   remarks?: string;
   status: LeadStatus;
   createdAt: string;
+  clientId?: string;
   source?: SourceOfLead;
 }
 
@@ -268,6 +304,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [currentUser, pathname, router]);
 
   const initialFetchDone = useRef(false);
+  const isFetchingRef = useRef(false);
 
   // Configure axios auth header
   useEffect(() => {
@@ -359,62 +396,90 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const interval = setInterval(fetchSync, 120000);
     return () => clearInterval(interval);
-  }, [currentUser]);
+  }, [currentUser?.id]); // id is stable; avoids interval reset on profile object changes
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     try {
       const isManagerOrAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER';
 
+      // Read sessionStorage cache for static data (departments, taskTypes, sources)
+      const cachedDeps = readStaticCache<Department>('cache_departments');
+      const cachedTypes = readStaticCache<TaskType>('cache_taskTypes');
+      const cachedSources = readStaticCache<SourceOfLead>('cache_sources');
+
       const [profileRes, depsRes, typesRes, usersRes, leadsRes, tasksRes, sourcesRes, notificationsRes, unreadRes] = await Promise.all([
         api.get('/auth/me'),
-        api.get('/departments'),
-        api.get('/task-types'),
+        cachedDeps   ? Promise.resolve(null) : api.get('/departments'),
+        cachedTypes  ? Promise.resolve(null) : api.get('/task-types'),
         api.get('/users'),
         isManagerOrAdmin ? api.get('/leads') : Promise.resolve({ data: { success: true, data: [] } }),
         api.get('/tasks'),
-        api.get('/sources'),
+        cachedSources ? Promise.resolve(null) : api.get('/sources'),
         api.get('/notifications'),
-        api.get('/notifications/unread-count')
+        api.get('/notifications/unread-count'),
       ]);
 
       if (profileRes.data?.success) {
         const profile = profileRes.data.data;
-        const updatedUser = { ...currentUser, ...profile };
-        // Only update if something changed to avoid infinite loop
-        if (JSON.stringify(updatedUser) !== JSON.stringify(currentUser)) {
-          setCurrentUser(updatedUser);
-          localStorage.setItem('crm_user', JSON.stringify(updatedUser));
-        }
+        setCurrentUser(prev => {
+          if (!prev) return null;
+          const updated = { ...prev, ...profile };
+          if (JSON.stringify(updated) !== JSON.stringify(prev)) {
+            localStorage.setItem('crm_user', JSON.stringify(updated));
+            return updated;
+          }
+          return prev;
+        });
       }
 
-      const getArr = (payload: any, key: string) => {
-        if (!payload) return [];
-        if (Array.isArray(payload)) return payload;
-        if (Array.isArray(payload[key])) return payload[key];
-        if (Array.isArray(payload.data)) return payload.data;
-        return [];
-      };
+      // Departments
+      if (cachedDeps) {
+        setDepartments(cachedDeps);
+      } else if (depsRes?.data?.success) {
+        const deps = getArr(depsRes.data.data, 'departments');
+        setDepartments(deps);
+        writeStaticCache('cache_departments', deps);
+      }
 
-      if (depsRes.data?.success) setDepartments(getArr(depsRes.data.data, 'departments'));
-      if (typesRes.data?.success) setTaskTypes(getArr(typesRes.data.data, 'taskTypes'));
+      // Task types
+      if (cachedTypes) {
+        setTaskTypes(cachedTypes);
+      } else if (typesRes?.data?.success) {
+        const types = getArr(typesRes.data.data, 'taskTypes');
+        setTaskTypes(types);
+        writeStaticCache('cache_taskTypes', types);
+      }
+
+      // Sources
+      if (cachedSources) {
+        setSources(cachedSources);
+      } else if (sourcesRes?.data?.success) {
+        const srcs = getArr(sourcesRes.data.data, 'sources');
+        setSources(srcs);
+        writeStaticCache('cache_sources', srcs);
+      }
+
       if (usersRes.data?.success) setUsers(getArr(usersRes.data.data, 'users'));
       if (leadsRes.data?.success) setLeads(getArr(leadsRes.data.data, 'leads'));
       if (tasksRes.data?.success) setTasks(getArr(tasksRes.data.data, 'tasks'));
-      if (sourcesRes.data?.success) setSources(getArr(sourcesRes.data.data, 'sources'));
-
       if (notificationsRes.data?.success) setNotifications(getArr(notificationsRes.data.data, 'notifications'));
       if (unreadRes.data?.success) setUnreadCount(unreadRes.data.data.count);
     } catch (error) {
       console.error('Failed to fetch initial data', error);
+    } finally {
+      isFetchingRef.current = false;
     }
-  };
+  }, [currentUser?.role]);
 
   // Master Data CRUD
   const addDepartment = async (name: string) => {
     try {
       const res = await api.post('/departments', { name });
       if (res.data?.success) {
-        setDepartments(prev => [res.data.data, ...prev]);
+        setDepartments(prev => { const next = [res.data.data, ...prev]; writeStaticCache('cache_departments', next); return next; });
       } else {
         throw new Error(res.data?.message || 'Failed to add department');
       }
@@ -426,13 +491,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateDepartment = async (id: string, name: string) => {
     try {
       const res = await api.put(`/departments/${id}`, { name });
-      if (res.data?.success) setDepartments(prev => prev.map(d => d.id === id ? res.data.data : d));
+      if (res.data?.success) setDepartments(prev => { const next = prev.map(d => d.id === id ? res.data.data : d); writeStaticCache('cache_departments', next); return next; });
     } catch (e) { console.error(e); }
   };
   const deleteDepartment = async (id: string) => {
     try {
       await api.delete(`/departments/${id}`);
-      setDepartments(prev => prev.filter(d => d.id !== id));
+      setDepartments(prev => { const next = prev.filter(d => d.id !== id); writeStaticCache('cache_departments', next); return next; });
     } catch (e) { console.error(e); }
   };
 
@@ -440,7 +505,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.post('/task-types', data);
       if (res.data?.success) {
-        setTaskTypes(prev => [res.data.data, ...prev]);
+        setTaskTypes(prev => { const next = [res.data.data, ...prev]; writeStaticCache('cache_taskTypes', next); return next; });
       } else {
         throw new Error(res.data?.message || 'Failed to add task type');
       }
@@ -452,13 +517,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateTaskType = async (id: string, name: string) => {
     try {
       const res = await api.put(`/task-types/${id}`, { name });
-      if (res.data?.success) setTaskTypes(prev => prev.map(t => t.id === id ? res.data.data : t));
+      if (res.data?.success) setTaskTypes(prev => { const next = prev.map(t => t.id === id ? res.data.data : t); writeStaticCache('cache_taskTypes', next); return next; });
     } catch (e) { console.error(e); }
   };
   const deleteTaskType = async (id: string) => {
     try {
       await api.delete(`/task-types/${id}`);
-      setTaskTypes(prev => prev.filter(t => t.id !== id));
+      setTaskTypes(prev => { const next = prev.filter(t => t.id !== id); writeStaticCache('cache_taskTypes', next); return next; });
     } catch (e) { console.error(e); }
   };
 
@@ -466,7 +531,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.post('/sources', { name });
       if (res.data?.success) {
-        setSources(prev => [res.data.data, ...prev]);
+        setSources(prev => { const next = [res.data.data, ...prev]; writeStaticCache('cache_sources', next); return next; });
       } else {
         throw new Error(res.data?.message || 'Failed to add source');
       }
@@ -478,17 +543,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateSource = async (id: string, name: string) => {
     try {
       const res = await api.put(`/sources/${id}`, { name });
-      if (res.data?.success) setSources(prev => prev.map(s => s.id === id ? res.data.data : s));
+      if (res.data?.success) setSources(prev => { const next = prev.map(s => s.id === id ? res.data.data : s); writeStaticCache('cache_sources', next); return next; });
     } catch (e) { console.error(e); }
   };
   const deleteSource = async (id: string) => {
     try {
       await api.delete(`/sources/${id}`);
-      setSources(prev => prev.filter(s => s.id !== id));
+      setSources(prev => { const next = prev.filter(s => s.id !== id); writeStaticCache('cache_sources', next); return next; });
     } catch (e) { console.error(e); }
   };
 
-  const refreshTasks = async () => {
+  const refreshTasks = useCallback(async () => {
     try {
       const res = await api.get('/tasks');
       if (res.data?.success) {
@@ -499,7 +564,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to refresh tasks', error);
     }
-  }
+  }, []);
 
   // Auth
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -520,6 +585,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('crm_user');
+    clearStaticCaches();
     router.push('/login');
   };
 
@@ -542,8 +608,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.post('/auth/register', userData);
       if (res.data?.success) {
-        // We fetch instead of just adding to state to get the full relations and status
-        await fetchInitialData();
+        // Only re-fetch users (not all 9 endpoints) to get full relations and status
+        const usersRes = await api.get('/users');
+        if (usersRes.data?.success) setUsers(getArr(usersRes.data.data, 'users'));
       }
     } catch (e: any) {
       const msg = e.response?.data?.message || 'Failed to create user';
@@ -742,8 +809,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const showToast = React.useCallback((
-    title: string, 
-    message: string, 
+    title: string,
+    message: string,
     type: 'success' | 'error' | 'info' | 'confirm' = 'info',
     onConfirm?: () => void,
     onCancel?: () => void
@@ -760,6 +827,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }, 5000);
     }
   }, []);
+
+  // Show a toast when the API returns 429 (rate limited)
+  useEffect(() => {
+    const handler = () => showToast('Too many requests', 'Please wait a moment and try again.', 'error');
+    window.addEventListener('api:rate-limited', handler);
+    return () => window.removeEventListener('api:rate-limited', handler);
+  }, [showToast]);
 
   if (!mounted) return null;
   if (!currentUser && pathname !== '/login') return null;

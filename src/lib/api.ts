@@ -20,10 +20,22 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
     const status = error.response?.status;
     const message = error.response?.data?.message || error.message;
     const url = error.config?.url;
     const method = error.config?.method?.toUpperCase();
+
+    // Rate limit — dispatch a DOM event so the UI can show a toast
+    if (status === 429) {
+      console.warn(`⚠ [Rate Limited] ${method} ${url}: Too many requests. Please wait before retrying.`);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('api:rate-limited'));
+      }
+    }
 
     // Expected business errors (4xx) — log once as a warning, not an error
     if (status && status >= 400 && status < 500) {
