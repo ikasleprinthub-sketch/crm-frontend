@@ -8,6 +8,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 import CustomTimePicker from './CustomTimePicker';
+import CustomDatePicker from './CustomDatePicker';
 import api from '@/lib/api';
 
 /* ── Modal Shell ── */
@@ -437,7 +438,7 @@ export function AddTaskForm({ onSubmit, initialLeadId }: { onSubmit: (data: any)
     return { leadId };
   };
 
-  const availableLeads = useMemo(() => leads.filter(l => !tasks.some(t => t.leadId === l.id)), [leads, tasks]);
+  const availableLeads = useMemo(() => leads.filter(l => l.status === 'CONVERTED' && !tasks.some(t => t.leadId === l.id)), [leads, tasks]);
 
   // Initialize defaults once lists are available
   React.useEffect(() => {
@@ -927,6 +928,172 @@ export function EditTaskForm({ task, onSubmit }: { task: any; onSubmit: (data: a
       <div className={styles.formActions}>
         <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
           {isSubmitting ? 'Updating Assignment...' : 'Update Assignment'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* ── Convert Lead Form ── */
+export function ConvertLeadForm({ 
+  lead, 
+  onSubmit,
+  onCancel
+}: { 
+  lead: any; 
+  onSubmit: (data: any) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const { users, showToast, currentUser } = useApp();
+  const [remarks, setRemarks] = useState(lead?.remarks || '');
+  const [interval, setInterval] = useState<'NONE' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'CUSTOM'>('NONE');
+  const [customNextDueDate, setCustomNextDueDate] = useState<Date | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent, skipRecurrence: boolean = false) => {
+    e.preventDefault();
+    if (!currentUser) {
+      showToast('Authentication Required', 'You must be logged in to perform this action.', 'error');
+      return;
+    }
+
+    const recurrenceInterval = skipRecurrence ? 'NONE' : interval;
+    if (recurrenceInterval === 'CUSTOM' && !customNextDueDate) {
+      showToast('Custom Date Required', 'Please select the next return filing date.', 'error');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const data: any = {
+        assignedToId: currentUser.id,
+        remarks: remarks || lead.remarks || '',
+        priority: 'REGULAR',
+        startDate: new Date().toISOString(),
+      };
+
+      if (recurrenceInterval !== 'NONE') {
+        data.recurrence = {
+          interval: recurrenceInterval,
+          ...(recurrenceInterval === 'CUSTOM' && { nextDueDate: customNextDueDate?.toISOString() })
+        };
+      }
+
+      await onSubmit(data);
+    } catch (e: any) {
+      // Toast error is handled by the caller
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={(e) => handleSubmit(e, false)} className={styles.form}>
+      <div style={{
+        background: 'rgba(67, 24, 255, 0.04)',
+        border: '1px solid rgba(67, 24, 255, 0.1)',
+        padding: '1rem',
+        borderRadius: '12px',
+        marginBottom: '1.25rem',
+        fontSize: '0.85rem',
+        color: 'var(--text-secondary)'
+      }}>
+        <p style={{ margin: 0 }}>Converting Lead: <strong style={{ color: 'var(--text-primary)' }}>{lead.leadName}</strong></p>
+        <p style={{ margin: '4px 0 0 0' }}>Filing Type: <strong style={{ color: 'var(--text-primary)' }}>{lead.taskType?.name || 'Standard Filing'}</strong></p>
+      </div>
+
+      {/* Recurrence Frequency Options */}
+      <div className={styles.formRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+        <label className={styles.label} style={{ fontWeight: 700 }}>Return Update Frequency</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', width: '100%' }}>
+          {[
+            { id: 'NONE', label: 'One-time Task (No Recurrence)' },
+            { id: 'MONTHLY', label: 'Monthly Return' },
+            { id: 'QUARTERLY', label: 'Quarterly Return' },
+            { id: 'YEARLY', label: 'Yearly Return' },
+            { id: 'CUSTOM', label: 'Custom Date' }
+          ].map(opt => {
+            const isSelected = interval === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setInterval(opt.id as any)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '10px',
+                  border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  background: isSelected ? 'rgba(67, 24, 255, 0.08)' : 'var(--surface)',
+                  color: isSelected ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: isSelected ? 800 : 500,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isSelected ? '0 4px 12px rgba(67, 24, 255, 0.1)' : 'none'
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Custom Next Due Date Picker */}
+      {interval === 'CUSTOM' && (
+        <div className={styles.formRow} style={{ marginTop: '0.5rem', width: '100%' }}>
+          <CustomDatePicker
+            label="Select Next Return Filing Date *"
+            selected={customNextDueDate}
+            onChange={(date: Date | null) => setCustomNextDueDate(date)}
+          />
+        </div>
+      )}
+
+      <FormField label="Remarks / Return Notes">
+        <textarea
+          className={styles.textarea}
+          value={remarks}
+          onChange={e => setRemarks(e.target.value)}
+          placeholder="Add specific details or instructions for this return filing..."
+          rows={3}
+        />
+      </FormField>
+
+      <div className={styles.formActions} style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', width: '100%' }}>
+        <button
+          type="button"
+          onClick={onCancel}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '10px',
+            border: '1px solid var(--border)',
+            background: 'none',
+            color: 'var(--text-secondary)',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '10px',
+            border: 'none',
+            background: 'var(--primary)',
+            color: 'white',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(67, 24, 255, 0.2)'
+          }}
+        >
+          {isSubmitting ? 'Converting...' : 'Convert to Task'}
         </button>
       </div>
     </form>

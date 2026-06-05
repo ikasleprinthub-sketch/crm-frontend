@@ -139,6 +139,7 @@ export interface Task {
   assignedTo?: User;
   lead?: Lead;
   createdAt: string;
+  isAutomated?: boolean;
 }
 
 export interface Notification {
@@ -205,6 +206,7 @@ interface AppContextType {
   addLead: (leadData: any) => Promise<any>;
   updateLead: (id: string, updates: Partial<Lead>) => Promise<void>;
   deleteLead: (id: string) => Promise<void>;
+  convertLeadToTask: (leadId: string, data: any) => Promise<any>;
 
   // Tasks
   tasks: Task[];
@@ -715,6 +717,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const convertLeadToTask = async (id: string, data: any) => {
+    try {
+      const res = await api.post(`/leads/${id}/convert`, data);
+      if (res.data?.success) {
+        const [leadsRes, tasksRes] = await Promise.all([
+          api.get('/leads'),
+          api.get('/tasks')
+        ]);
+        if (leadsRes.data?.success) setLeads(getArr(leadsRes.data.data, 'leads'));
+        if (tasksRes.data?.success) setTasks(getArr(tasksRes.data.data, 'tasks'));
+        return res.data.data;
+      } else {
+        throw new Error(res.data?.message || 'Failed to convert lead');
+      }
+    } catch (e: any) {
+      console.error('Convert lead failed:', e);
+      const msg = e.response?.data?.message || e.message || 'Failed to convert lead';
+      throw new Error(msg);
+    }
+  };
+
 
 
   // Tasks
@@ -846,7 +869,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       departments, addDepartment, updateDepartment, deleteDepartment,
       taskTypes, addTaskType, updateTaskType, deleteTaskType,
       sources, addSource, updateSource, deleteSource,
-      leads, addLead, updateLead, deleteLead,
+      leads, addLead, updateLead, deleteLead, convertLeadToTask,
       tasks, addTask, updateTask, updateTaskStep, deleteTask, refreshTasks,
       notifications, unreadCount, markAsRead, markAllAsRead,
       activities,

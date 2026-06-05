@@ -224,10 +224,35 @@ export default function TasksPage() {
                   const completed = task.sopSteps?.filter(s => s.isCompleted).length || 0;
                   const total = task.sopSteps?.length || 0;
                   const pct = total ? Math.round((completed / total) * 100) : 0;
+                  const isAutomated = !!task.isAutomated;
                   return (
-                    <tr key={task.id} onClick={() => router.push(`/tasks/${task.id}`)} style={{ cursor: 'pointer' }}>
+                    <tr 
+                      key={task.id} 
+                      onClick={() => router.push(`/tasks/${task.id}`)} 
+                      style={{ 
+                        cursor: 'pointer',
+                        background: isAutomated ? 'rgba(139, 92, 246, 0.04)' : undefined,
+                        borderLeft: isAutomated ? '4px solid #8b5cf6' : undefined
+                      }}
+                    >
                       <td>
-                        <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{task.taskNo}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{task.taskNo}</span>
+                          {isAutomated && (
+                            <span style={{
+                              background: '#8b5cf6',
+                              color: '#fff',
+                              fontSize: '0.6rem',
+                              fontWeight: 800,
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em'
+                            }}>
+                              Recurring
+                            </span>
+                          )}
+                        </div>
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: 2 }}>{getDeptName(task.departmentId)}</p>
                       </td>
                       <td>

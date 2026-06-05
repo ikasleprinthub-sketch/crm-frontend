@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useApp, LeadStatus } from '@/context/AppContext';
-import { Modal, AddLeadForm } from '@/components/Modals';
+import { Modal, AddLeadForm, ConvertLeadForm } from '@/components/Modals';
 import styles from '../page.module.css';
 import { Trash2, Users, Search, Building, Globe, Calendar, RotateCcw, FolderOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -14,10 +14,11 @@ export default function LeadsPage() {
   const {
     currentUser, leads, addLead, updateLead,
     deleteLead, departments, users, sources,
-    taskTypes, searchQuery, showToast
+    taskTypes, searchQuery, showToast, convertLeadToTask
   } = useApp();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [leadToConvert, setLeadToConvert] = useState<any | null>(null);
   const [filter, setFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
   const [sourceFilter, setSourceFilter] = useState<string>('All');
@@ -238,11 +239,15 @@ export default function LeadsPage() {
                         options={filters.filter(f => f !== 'All').map(s => ({ id: s, name: s.replace(/_/g, ' ') }))}
                         value={lead.status}
                         onChange={async (val) => {
-                          try {
-                            await updateLead(lead.id, { status: val as LeadStatus });
-                            showToast('Status Updated', `Lead ${lead.leadNo} status changed to ${val}`, 'success');
-                          } catch (e: any) {
-                            showToast('Update Failed', e.response?.data?.message || e.message, 'error');
+                          if (val === 'CONVERTED') {
+                            setLeadToConvert(lead);
+                          } else {
+                            try {
+                              await updateLead(lead.id, { status: val as LeadStatus });
+                              showToast('Status Updated', `Lead ${lead.leadNo} status changed to ${val}`, 'success');
+                            } catch (e: any) {
+                              showToast('Update Failed', e.response?.data?.message || e.message, 'error');
+                            }
                           }
                         }}
                       />
@@ -295,6 +300,24 @@ export default function LeadsPage() {
             }}
             onClose={() => setIsModalOpen(false)}
           />
+        </Modal>
+
+        <Modal isOpen={!!leadToConvert} onClose={() => setLeadToConvert(null)} title="Convert Lead to Return Filing Task" size="lg">
+          {leadToConvert && (
+            <ConvertLeadForm
+              lead={leadToConvert}
+              onSubmit={async (data) => {
+                try {
+                  await convertLeadToTask(leadToConvert.id, data);
+                  setLeadToConvert(null);
+                  showToast('Lead Converted', `Lead ${leadToConvert.leadNo} successfully converted to task.`, 'success');
+                } catch (e: any) {
+                  showToast('Conversion Failed', e.message, 'error');
+                }
+              }}
+              onCancel={() => setLeadToConvert(null)}
+            />
+          )}
         </Modal>
       </main>
     </div>
