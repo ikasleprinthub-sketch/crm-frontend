@@ -437,6 +437,7 @@ function SuperAdminMonitor() {
   }), [allToday, search, filterRole, filterStatus, filterDept, users]);
 
   const openOverride = (rec: AttendanceRecord) => {
+    setViewEmpRecord(null); // close view modal first
     setOverrideRecord(rec);
     setOverrideStatus(rec.status);
     setOverrideCheckIn(rec.checkIn ? new Date(rec.checkIn).toISOString().slice(0, 16) : '');
@@ -755,7 +756,7 @@ function SuperAdminMonitor() {
                         : <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>—</span>}
                     </td>
                     <td style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <button className={styles.viewBtn} onClick={() => { setViewEmpRecord(r); setEmpHistMonth(now.getMonth() + 1); setEmpHistYear(now.getFullYear()); }}>View</button>
+                      <button className={styles.viewBtn} onClick={() => { setOverrideRecord(null); setViewEmpRecord(r); setEmpHistMonth(now.getMonth() + 1); setEmpHistYear(now.getFullYear()); }}>View</button>
                       <button className={styles.overrideBtn} onClick={() => openOverride(r)}>Override</button>
                     </td>
                   </tr>
@@ -895,6 +896,10 @@ function SuperAdminMonitor() {
 
             <div className={styles.modalBtns}>
               <button className={styles.cancelBtn} onClick={() => setViewEmpRecord(null)}>Close</button>
+              <button className={styles.overrideBtn} style={{ padding: '0.65rem 1.25rem' }}
+                onClick={() => { openOverride(viewEmpRecord!); }}>
+                Override Attendance
+              </button>
             </div>
           </div>
         </div>
