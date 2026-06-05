@@ -32,6 +32,18 @@ interface TaskDoc {
   uploadedAt: string;
 }
 
+interface LeadDoc {
+  id: string;
+  leadId: string;
+  category: DocCategory;
+  originalName: string;
+  savedName: string;
+  filePath: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+}
+
 /* ── Lightbox ───────────────────────────────────────────────────────────── */
 function Lightbox({ docs, index, onClose, onNav, fileUrl, fmtSize }: {
   docs: TaskDoc[]; index: number; onClose: () => void;
@@ -123,7 +135,7 @@ export default function TaskDetailPage() {
   const { tasks, updateTaskStep, leads, users, departments, taskTypes } = useApp();
   const [task, setTask] = useState<any>(null);
 
-  // Documents
+  // Task documents
   const [documents, setDocuments] = useState<TaskDoc[]>([]);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [catFilter, setCatFilter] = useState<DocCategory | 'ALL'>('ALL');
@@ -134,6 +146,11 @@ export default function TaskDetailPage() {
   const [replacingDoc, setReplacingDoc] = useState<TaskDoc | null>(null);
   const [replacing, setReplacing] = useState(false);
   const replaceRef = useRef<HTMLInputElement>(null);
+
+  // Lead documents (read-only — inherited from the linked lead)
+  const [leadDocs, setLeadDocs] = useState<LeadDoc[]>([]);
+  const [leadPreviewIndex, setLeadPreviewIndex] = useState<number | null>(null);
+  const [leadCatFilter, setLeadCatFilter] = useState<DocCategory | 'ALL'>('ALL');
 
   useEffect(() => {
     if (id && tasks.length > 0) {
@@ -150,6 +167,19 @@ export default function TaskDetailPage() {
       .catch((err) => { if (err.code !== 'ERR_CANCELED') console.error(err); });
     return () => controller.abort();
   }, [id]);
+
+  useEffect(() => {
+    const leadId = task?.leadId;
+    if (!leadId) return;
+    // Resolve lead status from embedded object or context list
+    const leadStatus = task?.lead?.status ?? leads.find((l: any) => l.id === leadId)?.status;
+    if (leadStatus !== 'CONVERTED') return; // only show docs for converted leads
+    const controller = new AbortController();
+    api.get(`/leads/${leadId}/documents`, { signal: controller.signal })
+      .then(r => { if (r.data?.success) setLeadDocs(r.data.data ?? []); })
+      .catch((err) => { if (err.code !== 'ERR_CANCELED') console.error(err); });
+    return () => controller.abort();
+  }, [task?.leadId, task?.lead?.status, leads]);
 
   const handleUpload = async () => {
     if (!file || !id) return;
@@ -188,6 +218,8 @@ export default function TaskDetailPage() {
   };
 
   const fileUrl = (doc: TaskDoc) => `${FILE_BASE}${doc.filePath}/${doc.savedName}`;
+  const leadFileUrl = (doc: LeadDoc) => `${FILE_BASE}${doc.filePath}/${doc.savedName}`;
+  const filteredLeadDocs = leadCatFilter === 'ALL' ? leadDocs : leadDocs.filter(d => d.category === leadCatFilter);
   const isImage = (m: string) => m.startsWith('image/');
   const fmtSize = (b: number) => b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / (1024 * 1024)).toFixed(1)} MB`;
   const countFor = (cat: DocCategory) => documents.filter(d => {
@@ -285,6 +317,88 @@ export default function TaskDetailPage() {
             onToggle={(stepId, completed) => updateTaskStep(task.id, stepId, completed)}
           />
         </div>
+
+        {/* ── Lead Documents (read-only) ── */}
+        {leadDocs.length > 0 && (
+          <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+              <div style={{ width: 32, height: 32, borderRadius: '9px', background: 'rgba(79,70,229,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5' }}>
+                <FileText size={15} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Lead Documents</h3>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{leadDocs.length} file{leadDocs.length !== 1 ? 's' : ''} from the linked lead · read-only</p>
+              </div>
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#4f46e5', background: 'rgba(79,70,229,0.1)', border: '1px solid rgba(79,70,229,0.2)', padding: '3px 10px', borderRadius: '20px' }}>
+                From Lead
+              </span>
+            </div>
+
+            {/* Category filter */}
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+              {(['ALL', ...DOC_CATEGORIES] as const).map(cat => {
+                const count = cat === 'ALL' ? leadDocs.length : leadDocs.filter(d => d.category === cat).length;
+                const active = leadCatFilter === cat;
+                const c = cat !== 'ALL' ? CAT_COLOR[cat] : 'var(--primary)';
+                return (
+                  <button key={cat} onClick={() => setLeadCatFilter(cat)}
+                    style={{ padding: '0.3rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${active ? c : 'var(--border)'}`, background: active ? `${c}15` : 'transparent', color: active ? c : 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                    {cat} {count > 0 ? count : ''}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Doc grid */}
+            {filteredLeadDocs.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>No documents in this category</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: '0.85rem' }}>
+                {filteredLeadDocs.map((doc, idx) => {
+                  const isImg = doc.mimeType.startsWith('image/');
+                  const catColor = CAT_COLOR[doc.category] ?? '#6B7280';
+                  const globalIdx = leadDocs.indexOf(doc);
+                  return (
+                    <div key={doc.id}
+                      style={{ background: 'var(--surface)', borderRadius: '12px', border: `1px solid ${catColor}30`, overflow: 'hidden', position: 'relative', transition: 'box-shadow 0.2s' }}
+                      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)')}
+                      onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+
+                      {/* Category badge */}
+                      <span style={{ position: 'absolute', top: 6, left: 6, fontSize: '0.58rem', fontWeight: 800, color: catColor, background: `${catColor}20`, padding: '2px 6px', borderRadius: '4px', zIndex: 1, letterSpacing: '0.3px' }}>
+                        {doc.category}
+                      </span>
+
+                      <div onClick={() => setLeadPreviewIndex(globalIdx)} style={{ cursor: 'zoom-in' }}>
+                        {isImg ? (
+                          <div style={{ position: 'relative' }}>
+                            <img src={leadFileUrl(doc)} alt={doc.originalName} style={{ width: '100%', height: '115px', objectFit: 'cover', display: 'block' }} />
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0)', transition: 'background 0.2s' }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.3)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0)')}>
+                              <ZoomIn size={20} color="#fff" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ height: '115px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: `${catColor}08` }}>
+                            <File size={34} color={catColor} />
+                            <span style={{ fontSize: '0.63rem', color: catColor, fontWeight: 700, textTransform: 'uppercase' }}>
+                              {doc.originalName.split('.').pop()?.toUpperCase() ?? 'FILE'}
+                            </span>
+                          </div>
+                        )}
+                        <div style={{ padding: '0.55rem 0.75rem' }}>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{doc.originalName}</p>
+                          <p style={{ fontSize: '0.63rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{fmtSize(doc.size)} · {new Date(doc.uploadedAt).toLocaleDateString('en-GB')}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Documents ── */}
         <div className="glass-card" style={{ padding: '1.5rem' }}>
@@ -419,6 +533,17 @@ export default function TaskDetailPage() {
       {previewIndex !== null && (
         <Lightbox docs={documents} index={previewIndex} onClose={() => setPreviewIndex(null)}
           onNav={setPreviewIndex} fileUrl={fileUrl} fmtSize={fmtSize} />
+      )}
+
+      {leadPreviewIndex !== null && (
+        <Lightbox
+          docs={leadDocs as unknown as TaskDoc[]}
+          index={leadPreviewIndex}
+          onClose={() => setLeadPreviewIndex(null)}
+          onNav={setLeadPreviewIndex}
+          fileUrl={d => leadFileUrl(d as unknown as LeadDoc)}
+          fmtSize={fmtSize}
+        />
       )}
     </div>
   );
