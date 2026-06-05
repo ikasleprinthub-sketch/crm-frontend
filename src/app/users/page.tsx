@@ -8,7 +8,7 @@ import styles from '../page.module.css';
 import { UserPlus, Edit2, Trash2 } from 'lucide-react';
 
 export default function UsersPage() {
-  const { currentUser, users, tasks, fetchInitialData, addUser, approveUser, rejectUser, deleteUser, updateUser, showToast } = useApp();
+  const { currentUser, users, tasks, addUser, approveUser, rejectUser, deleteUser, updateUser, showToast } = useApp();
   const [roleFilter, setRoleFilter] = useState<string>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -62,7 +62,6 @@ export default function UsersPage() {
     try {
       await addUser(data);
       setIsModalOpen(false);
-      fetchInitialData();
       showToast('Member Added', 'The new team member has been successfully created.', 'success');
     } catch (e: any) {
       showToast('Action Failed', e.response?.data?.message || e.message || 'Failed to create account. Please check all fields.', 'error');
@@ -74,7 +73,6 @@ export default function UsersPage() {
     try {
       await updateUser(editingUser.id, data);
       setEditingUser(null);
-      fetchInitialData();
       showToast('User Updated', 'The user account has been successfully updated.', 'success');
     } catch (e: any) {
       showToast('Update Failed', e.response?.data?.message || e.message || 'Failed to update account', 'error');

@@ -16,7 +16,7 @@ import api from '@/lib/api';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { currentUser, leads, tasks, users, departments, sources, unreadCount, activities, notes, addNote, deleteNote, searchQuery, fetchInitialData } = useApp();
+  const { currentUser, leads, tasks, users, departments, sources, unreadCount, activities, notes, addNote, deleteNote, searchQuery } = useApp();
   const [isAddingQuick, setIsAddingQuick] = useState(false);
   const [quickNote, setQuickNote] = useState('');
   const [attendanceToday, setAttendanceToday] = useState<any>(null);
@@ -25,9 +25,8 @@ export default function Dashboard() {
   const isEmployee = currentUser?.role === 'EMPLOYEE';
 
   useEffect(() => {
-    fetchInitialData();
     fetchAttendance();
-  }, [fetchInitialData]);
+  }, []);
 
   const fetchAttendance = async () => {
     if (!currentUser) return;

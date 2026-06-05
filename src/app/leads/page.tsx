@@ -5,16 +5,18 @@ import Header from '@/components/Header';
 import { useApp, LeadStatus } from '@/context/AppContext';
 import { Modal, AddLeadForm } from '@/components/Modals';
 import styles from '../page.module.css';
-import { Trash2, Users, Search, Building, Globe, Calendar, RotateCcw } from 'lucide-react';
+import { Trash2, Users, Search, Building, Globe, Calendar, RotateCcw, FolderOpen } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
 export default function LeadsPage() {
-  const { 
-    currentUser, leads, addLead, updateLead, 
-    deleteLead, departments, users, sources, 
-    taskTypes, searchQuery, showToast 
+  const {
+    currentUser, leads, addLead, updateLead,
+    deleteLead, departments, users, sources,
+    taskTypes, searchQuery, showToast
   } = useApp();
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filter, setFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
@@ -211,7 +213,12 @@ export default function LeadsPage() {
                 {filtered.map(lead => (
                   <tr key={lead.id}>
                     <td>
-                      <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{lead.leadNo}</span>
+                      <span
+                        style={{ fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}
+                        onClick={() => router.push(`/leads/${lead.id}`)}
+                      >
+                        {lead.leadNo}
+                      </span>
                     </td>
                     <td>
                       <div>
@@ -241,24 +248,28 @@ export default function LeadsPage() {
                       />
                     </td>
                     <td>
-                      <button className={styles.iconBtn} onClick={() => {
-                        showToast(
-                          'Delete Lead?',
-                          'Are you sure you want to remove this lead from the pipeline?',
-                          'confirm',
-                          async () => {
-                            try {
-                              await deleteLead(lead.id);
-                              showToast('Lead Deleted', 'The lead has been removed.', 'success');
-                            } catch (e: any) {
-                              // Toast is now handled globally in AppContext
-                              console.error('Delete lead UI error:', e);
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        <button className={styles.iconBtn} onClick={() => router.push(`/leads/${lead.id}`)} title="View & Upload Documents">
+                          <FolderOpen size={16} />
+                        </button>
+                        <button className={styles.iconBtn} onClick={() => {
+                          showToast(
+                            'Delete Lead?',
+                            'Are you sure you want to remove this lead from the pipeline?',
+                            'confirm',
+                            async () => {
+                              try {
+                                await deleteLead(lead.id);
+                                showToast('Lead Deleted', 'The lead has been removed.', 'success');
+                              } catch (e: any) {
+                                console.error('Delete lead UI error:', e);
+                              }
                             }
-                          }
-                        );
-                      }} title="Delete">
-                        <Trash2 size={16} />
-                      </button>
+                          );
+                        }} title="Delete">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

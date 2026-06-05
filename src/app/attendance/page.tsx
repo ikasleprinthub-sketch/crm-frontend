@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -234,6 +234,7 @@ function SuperAdminMonitor() {
   const [monthlyData, setMonthlyData] = useState<AttendanceRecord[]>([]);
   const [pendingPermissions, setPendingPermissions] = useState<AttendanceRecord[]>([]);
   const [tick, setTick] = useState(0);
+  const loadDataFired = useRef(false);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60000);
@@ -298,15 +299,18 @@ function SuperAdminMonitor() {
     setLoading(false);
   }, []);
 
-  const loadMonthly = useCallback(async () => {
-    try {
-      const res = await api.get(`/attendance/all?month=${histMonth}&year=${histYear}`);
-      if (res.data?.success) setMonthlyData(res.data.data ?? []);
-    } catch { /* silent */ }
+  useEffect(() => {
+    if (loadDataFired.current) return;
+    loadDataFired.current = true;
+    loadData();
+  }, [loadData]);
+  useEffect(() => {
+    const controller = new AbortController();
+    api.get(`/attendance/all?month=${histMonth}&year=${histYear}`, { signal: controller.signal })
+      .then(res => { if (res.data?.success) setMonthlyData(res.data.data ?? []); })
+      .catch(err => { if (err.code !== 'ERR_CANCELED') console.error(err); });
+    return () => controller.abort();
   }, [histMonth, histYear]);
-
-  useEffect(() => { loadData(); }, [loadData]);
-  useEffect(() => { loadMonthly(); }, [loadMonthly]);
 
   // Pie data — today's status distribution
   const pieData = useMemo(() => {
@@ -866,9 +870,10 @@ function RegularAttendancePage() {
   const [tick, setTick] = useState(0);
   const [officeStartTime, setOfficeStartTime] = useState('10:00');
   const [officeEndTime, setOfficeEndTime] = useState('19:00');
+  const loadDataFired = useRef(false);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 10000); // Check every 10s
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -912,9 +917,11 @@ function RegularAttendancePage() {
   }, []);
 
   useEffect(() => {
+    if (loadDataFired.current) return;
+    loadDataFired.current = true;
     (async () => {
       setLoading(true);
-      await Promise.all([loadToday(), loadStats(), loadHistory(), fetchConfig()]);
+      await Promise.all([loadToday(), loadStats(), fetchConfig()]);
       if (isManager || isAdmin) await Promise.all([loadTeam(), loadPending()]);
       if (isAdmin) await loadAll();
       setLoading(false);
@@ -922,7 +929,14 @@ function RegularAttendancePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { loadHistory(); }, [loadHistory]);
+  // Re-fetches when histMonth/histYear changes; AbortController prevents Strict Mode double-call
+  useEffect(() => {
+    const controller = new AbortController();
+    api.get(`/attendance/my?month=${histMonth}&year=${histYear}`, { signal: controller.signal })
+      .then(r => { if (r.data?.success) setHistory(r.data.data); })
+      .catch(err => { if (err.code !== 'ERR_CANCELED') console.error(err); });
+    return () => controller.abort();
+  }, [histMonth, histYear]);
 
   const handleCheckIn = async () => {
     setSubmitting(true);

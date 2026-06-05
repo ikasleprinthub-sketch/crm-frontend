@@ -20,6 +20,7 @@ export default function SOPChecklist({ steps, taskId, taskTypeId, onToggle }: SO
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
+  const canEditSOP = isAdmin; // Only ADMIN and SUPER_ADMIN can toggle SOP steps
 
   const completedCount = steps.filter(s => s.isCompleted).length;
   const totalCount = steps.length;
@@ -42,7 +43,14 @@ export default function SOPChecklist({ steps, taskId, taskTypeId, onToggle }: SO
       <div className={styles.header}>
         <div className={styles.headerTitleRow}>
           <h3 className={styles.title}>SOP Checklist</h3>
-          <span className={styles.count}>{completedCount}/{totalCount} completed</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {!canEditSOP && (
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: 'rgba(107,114,128,0.1)', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                View Only
+              </span>
+            )}
+            <span className={styles.count}>{completedCount}/{totalCount} completed</span>
+          </div>
         </div>
         
         <div className={styles.progressTrack}>
@@ -82,23 +90,24 @@ export default function SOPChecklist({ steps, taskId, taskTypeId, onToggle }: SO
           </div>
         ) : (
           steps.sort((a, b) => a.order - b.order).map((step, index) => {
-            const isLocked = false; // Sequential locking removed as per request
-            const roleHierarchy: Record<string, number> = { 'EMPLOYEE': 1, 'MANAGER': 2, 'ADMIN': 3, 'SUPER_ADMIN': 4 };
-            const userRank = roleHierarchy[currentUser?.role || ''] || 0;
-            const stepRank = roleHierarchy[step.assignedRole] || 0;
-            const hasAccess = userRank >= stepRank || currentUser?.role === 'SUPER_ADMIN';
-            
+            const isLocked = false;
+
             return (
-              <div 
-                key={step.id} 
-                className={`${styles.item} ${step.isCompleted ? styles.completed : ''} ${isLocked ? styles.locked : ''} ${!hasAccess ? styles.noAccess : ''}`}
-                onClick={() => !isLocked && hasAccess && loadingId !== step.id && handleToggle(step.id, step.isCompleted)}
+              <div
+                key={step.id}
+                className={`${styles.item} ${step.isCompleted ? styles.completed : ''} ${isLocked ? styles.locked : ''} ${!canEditSOP ? styles.noAccess : ''}`}
+                onClick={() => canEditSOP && !isLocked && loadingId !== step.id && handleToggle(step.id, step.isCompleted)}
+                style={{ cursor: canEditSOP ? 'pointer' : 'default' }}
               >
                 <div className={styles.iconWrapper}>
                   {loadingId === step.id ? (
                     <Loader2 size={18} className={styles.spin} />
                   ) : isLocked ? (
                     <Lock size={16} className={styles.lockIcon} />
+                  ) : !canEditSOP ? (
+                    step.isCompleted
+                      ? <CheckCircle2 size={18} className={styles.checkedIcon} />
+                      : <Lock size={16} className={styles.lockIcon} />
                   ) : step.isCompleted ? (
                     <CheckCircle2 size={18} className={styles.checkedIcon} />
                   ) : (
@@ -124,8 +133,9 @@ export default function SOPChecklist({ steps, taskId, taskTypeId, onToggle }: SO
                       )}
                     </div>
                   </div>
-                  {/* {isLocked && <p className={styles.lockText}>Complete previous step first</p>} */}
-                  {!hasAccess && <p className={styles.lockText}>Requires {step.assignedRole} role</p>}
+                  {!canEditSOP && !step.isCompleted && (
+                    <p className={styles.lockText}>Only Admin can update SOP steps</p>
+                  )}
                 </div>
               </div>
             );
