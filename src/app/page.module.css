@@ -1,15 +1,17 @@
 /* ── Page Layout ── */
 .wrapper {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .main {
   flex: 1;
   padding: 0 2rem 2rem 2rem;
-  overflow-y: auto;
+  overflow-y: scroll;
   min-width: 0;
-  will-change: scroll-position;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* ── Mobile layout ── */
@@ -181,27 +183,26 @@
 
 /* ── Buttons ── */
 .primaryBtn {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: var(--primary);
   color: white;
   border: none;
-  padding: 0.75rem 1.75rem;
-  border-radius: 12px;
-  font-size: 0.9rem;
+  padding: 0.7rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: background 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .primaryBtn:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 15px 30px -5px var(--primary-glow);
+  background: var(--primary-dark);
 }
 
 .primaryBtn:active {
-  transform: translateY(0);
+  opacity: 0.9;
 }
 
 .secondaryBtn {
@@ -264,6 +265,9 @@
 }
 
 .filterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.45rem 1rem;
   border-radius: 20px;
   border: 1px solid var(--border);
@@ -292,10 +296,10 @@
   z-index: 50;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  padding: 2rem;
-  margin-bottom: 2.5rem;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
 }
 
 .filterGrid {
@@ -327,11 +331,6 @@
   position: relative;
   display: flex;
   align-items: center;
-  transition: transform 0.2s ease;
-}
-
-.filterInputWrapper:focus-within {
-  transform: translateY(-2px);
 }
 
 .filterInputIcon {
@@ -393,14 +392,12 @@
   outline: none;
   border-color: var(--primary);
   background: var(--surface);
-  box-shadow: 0 5px 15px -5px var(--primary-glow);
 }
 
 .filterInput:hover,
 .filterSelect:hover,
 .customSelectTrigger:hover {
-  border-color: var(--primary-light);
-  transform: translateY(-1px);
+  border-color: var(--primary);
 }
 
 .filterResetBtn {
@@ -409,28 +406,20 @@
   justify-content: center;
   gap: 0.6rem;
   height: 46px;
-  padding: 0 1.5rem;
-  background: rgba(238, 93, 80, 0.05);
-  border: 1.5px dashed rgba(238, 93, 80, 0.3);
-  border-radius: 12px;
+  padding: 0 1.25rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
   color: var(--accent-red);
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .filterResetBtn:hover {
-  background: var(--accent-red);
-  border-style: solid;
-  border-color: var(--accent-red);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(238, 93, 80, 0.3);
-}
-
-.filterResetBtn:active {
-  transform: translateY(0);
+  background: rgba(238, 93, 80, 0.08);
+  border-color: rgba(238, 93, 80, 0.4);
 }
 
 /* ── Custom Select Component ── */
@@ -505,12 +494,12 @@
   width: 100%;
   min-width: 220px;
   background: var(--surface);
-  border: 1px solid var(--glass-border);
-  border-radius: 18px;
-  box-shadow: 0 24px 48px -8px rgba(0,0,0,0.25), 0 0 0 1px var(--glass-border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   z-index: 2000;
   overflow: hidden;
-  animation: selectDrop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: selectDrop 0.15s ease;
 }
 
 @keyframes selectDrop {
@@ -570,47 +559,24 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.65rem 0.9rem;
-  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
-  position: relative;
-}
-
-.optionItem::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%) scaleY(0);
-  width: 3px;
-  height: 60%;
-  background: var(--primary);
-  border-radius: 0 3px 3px 0;
-  transition: transform 0.15s ease;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .optionItem:hover {
   background: var(--primary-light);
   color: var(--primary);
-  transform: translateX(2px);
-}
-
-.optionItem:hover::before {
-  transform: translateY(-50%) scaleY(1);
 }
 
 .optionItem.selected {
-  background: linear-gradient(90deg, var(--primary-light), transparent);
+  background: var(--primary-light);
   color: var(--primary);
   font-weight: 700;
-}
-
-.optionItem.selected::before {
-  transform: translateY(-50%) scaleY(1);
 }
 
 /* ── Modern Glassmorphism Calendar ── */
@@ -797,18 +763,17 @@
 }
 
 .submitBtn {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark))!important;
+  background: var(--primary)!important;
   color: white!important;
   border: none!important;
-  padding: 0.75rem 1.75rem!important;
-  border-radius: 12px!important;
-  font-size: 0.9rem!important;
+  padding: 0.7rem 1.5rem!important;
+  border-radius: 10px!important;
+  font-size: 0.88rem!important;
   font-weight: 700!important;
   cursor: pointer!important;
-  transition: all 0.3s ease!important;
-  box-shadow: 0 10px 20px -5px var(--primary-glow)!important;
+  transition: background 0.15s ease!important;
   white-space: nowrap!important;
-  letter-spacing: 0.3px!important;
+  letter-spacing: 0.2px!important;
   display: inline-flex!important;
   align-items: center!important;
   justify-content: center!important;
@@ -834,14 +799,13 @@
   justify-content: space-between;
   padding: 0.85rem 1rem;
   background: var(--surface-hover);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border);
-  transition: transform 0.2s;
+  transition: border-color 0.15s;
 }
 
 .taskSummaryItem:hover {
-  transform: translateX(4px);
-  border-color: var(--primary-light);
+  border-color: var(--primary);
 }
 
 .taskInfo {
@@ -940,8 +904,7 @@
 }
 
 .noteCard:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--primary-light);
 }
 
 .noteHeader {
@@ -1078,4 +1041,173 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+/* ── Premium System Settings ── */
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.settingsCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.settingsCard:hover {
+  border-color: var(--primary);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.settingsCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.settingsIconContainer {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-glow);
+  color: var(--primary);
+}
+
+.settingsIconContainer.sunset {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+}
+
+.settingsCardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settingsCardTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.settingsCardSubtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.settingsInputWrapper {
+  margin-bottom: 1rem;
+}
+
+.settingsTimeInput {
+  width: 100%;
+  max-width: 180px;
+  height: 48px;
+  padding: 0 1.25rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  background: var(--surface-hover);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.settingsTimeInput:focus {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+.settingsCardFooterText {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.rulesCard {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  margin-top: 1.5rem;
+}
+
+.rulesCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.rulesCardTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.rulesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.ruleItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--surface-hover);
+}
+
+.ruleItem:last-child {
+  border-bottom: none;
+}
+
+.ruleBadge {
+  min-width: 100px;
+  text-align: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.ruleBadge.present {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--accent-green);
+}
+
+.ruleBadge.late {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--accent-yellow);
+}
+
+.ruleBadge.halfday {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--accent-red);
+}
+
+.ruleDescription {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
 }

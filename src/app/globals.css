@@ -15,11 +15,11 @@
   --accent-blue: #5B92D0;
   --accent-purple: #8B5CF6;
   --border: #E5E7EB;
-  --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --sidebar-active: rgba(26, 75, 140, 0.1);
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-bg: #FFFFFF;
+  --glass-border: #E5E7EB;
   --surface-deep: #F9FAFB;
 }
 
@@ -39,11 +39,11 @@
   --accent-yellow: #EBC052;
   --accent-blue: #5B92D0;
   --accent-purple: #A78BFA;
-  --border: rgba(255, 255, 255, 0.05);
-  --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  --shadow-sm: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.2);
   --sidebar-active: rgba(235, 192, 82, 0.15);
-  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-bg: #1E293B;
   --glass-border: rgba(255, 255, 255, 0.08);
   --surface-deep: #0D1321;
 }
@@ -107,10 +107,7 @@ button { font-family: var(--font-sans); }
   box-shadow: var(--shadow);
   border: 1px solid var(--glass-border);
   padding: 1.5rem;
-}
-
-.glass-card:hover {
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+  contain: layout;
 }
 
 .glass-card-sm {
@@ -157,16 +154,14 @@ div.premium-datepicker {
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
   border-radius: 12px !important;
-  box-shadow: var(--shadow) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
   overflow: hidden !important;
   padding: 0 !important;
-  animation: calendarPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  backdrop-filter: blur(10px) !important;
 }
 
 @keyframes calendarPop {
-  from { opacity: 0; transform: scale(0.9) translateY(-10px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 div.premium-datepicker .react-datepicker__header {
@@ -211,8 +206,6 @@ div.premium-datepicker .premium-day {
 div.premium-datepicker .premium-day:hover {
   background: var(--primary-light) !important;
   color: var(--primary) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 8px var(--primary-glow) !important;
 }
 
 div.premium-datepicker .react-datepicker__day--today {
@@ -222,11 +215,9 @@ div.premium-datepicker .react-datepicker__day--today {
 }
 
 div.premium-datepicker .react-datepicker__day--selected {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+  background: var(--primary) !important;
   color: white !important;
-  font-weight: 800 !important;
-  box-shadow: 0 4px 10px var(--primary-glow) !important;
-  transform: scale(1.05) !important;
+  font-weight: 700 !important;
 }
 
 div.premium-datepicker .react-datepicker__day--outside-month {

@@ -165,6 +165,7 @@ export default function LeadDetailPage() {
   const [replacingDoc, setReplacingDoc] = useState<LeadDoc | null>(null);
   const [replacing, setReplacing] = useState(false);
   const replaceRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id && leads.length > 0) {
@@ -189,8 +190,9 @@ export default function LeadDetailPage() {
     fd.append('category', category);
     setUploading(true);
     try {
-      const r = await api.post(`/leads/${id}/documents`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setDocuments((prev) => [{ ...r.data.data, fromLeadNo: lead.leadNo }, ...prev]);
+      await api.post(`/leads/${id}/documents`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const refreshed = await api.get(`/leads/${id}/documents`);
+      setDocuments(refreshed.data.data);
       setFile(null);
       if (fileRef.current) fileRef.current.value = '';
     } catch {} finally { setUploading(false); }
@@ -400,9 +402,10 @@ export default function LeadDetailPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.9rem', marginBottom: '1.25rem' }}>
-              {filteredDocs.map((doc, i) => {
+              {filteredDocs.map((doc) => {
                 const globalIndex = documents.indexOf(doc);
                 const catColor = CAT_COLOR[doc.category];
+                const isConfirming = confirmDeleteId === doc.id;
                 return (
                   <div key={doc.id} style={{ background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden', position: 'relative', transition: 'box-shadow 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
                     onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)')}
@@ -411,13 +414,24 @@ export default function LeadDetailPage() {
                     {/* Replace + Delete overlay buttons */}
                     <button onClick={e => { e.stopPropagation(); triggerReplace(doc); }} title="Replace"
                       disabled={replacing && replacingDoc?.id === doc.id}
-                      style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1 }}>
+                      style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}>
                       <RefreshCw size={12} color="#fff" style={replacing && replacingDoc?.id === doc.id ? { animation: 'spin 1s linear infinite' } : {}} />
                     </button>
-                    <button onClick={e => { e.stopPropagation(); handleDelete(doc.id); }} title="Delete"
-                      style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1 }}>
+                    <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(doc.id); }} title="Delete"
+                      style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}>
                       <X size={12} color="#fff" />
                     </button>
+
+                    {/* Delete confirmation overlay */}
+                    {isConfirming && (
+                      <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(0,0,0,0.78)', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.65rem', padding: '0.75rem' }}>
+                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.78rem', textAlign: 'center', lineHeight: 1.4 }}>Delete this document?</p>
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button onClick={() => setConfirmDeleteId(null)} style={{ padding: '0.3rem 0.7rem', borderRadius: '6px', background: 'rgba(255,255,255,0.18)', border: 'none', color: '#fff', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                          <button onClick={() => { handleDelete(doc.id); setConfirmDeleteId(null); }} style={{ padding: '0.3rem 0.7rem', borderRadius: '6px', background: '#EF4444', border: 'none', color: '#fff', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>Delete</button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Preview */}
                     <div onClick={() => setPreviewIndex(globalIndex)} style={{ cursor: 'zoom-in' }}>

@@ -222,6 +222,50 @@ function TeamRow({ team }: { team: TeamData }) {
   );
 }
 
+// ─── LiveStatusCard ──────────────────────────────────────────────────────────
+
+function LiveStatusCard({
+  title, count, color, records, extra,
+}: {
+  title: string;
+  count: number;
+  color: string;
+  records: AttendanceRecord[];
+  extra?: (r: AttendanceRecord) => React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div style={{ background: 'var(--surface)', border: `1px solid ${color}30`, borderRadius: '14px', borderLeft: `4px solid ${color}`, overflow: 'hidden', transition: 'box-shadow 0.2s' }}>
+      <div onClick={() => setOpen(o => !o)} style={{ padding: '0.9rem 1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: '2rem', fontWeight: 900, color, margin: 0, lineHeight: 1 }}>{count}</p>
+          <p style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0.2rem 0 0' }}>{title}</p>
+        </div>
+        <ChevronDown size={14} color="var(--text-secondary)" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+      </div>
+      {open && (
+        <div style={{ borderTop: `1px solid ${color}20`, maxHeight: 220, overflowY: 'auto' }}>
+          {records.length === 0 ? (
+            <p style={{ textAlign: 'center', padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>None</p>
+          ) : records.map(r => (
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.55rem 1.1rem', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '7px', background: `${color}15`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900, flexShrink: 0 }}>
+                {(r.user?.name ?? '?').slice(0, 2).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.user?.name ?? '—'}</p>
+                <p style={{ fontSize: '0.63rem', color: 'var(--text-secondary)', margin: 0 }}>{roleLabel(r.user?.role)}</p>
+              </div>
+              {extra && <span style={{ fontSize: '0.72rem', color, fontWeight: 700, flexShrink: 0 }}>{extra(r)}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SuperAdminMonitor ───────────────────────────────────────────────────────
 
 function SuperAdminMonitor() {
@@ -426,20 +470,48 @@ function SuperAdminMonitor() {
     catch (e: any) { showToast('Error', e.response?.data?.message ?? 'Failed', 'error'); }
   };
 
-  const totalToday = allToday.length;
-  const presentToday = allToday.filter(r => ['PRESENT', 'LATE', 'HALF_DAY'].includes(r.status)).length;
+  const totalToday    = allToday.length;
+  const presentToday  = allToday.filter(r => ['PRESENT', 'LATE', 'HALF_DAY'].includes(r.status)).length;
   const attendanceRate = totalToday > 0 ? Math.round((presentToday / totalToday) * 100) : 0;
+
+  // Live status groupings
+  const activeNow    = useMemo(() => allToday.filter(r => r.checkIn && !r.checkOut), [allToday]);
+  const completedDay = useMemo(() => allToday.filter(r => r.checkIn && r.checkOut), [allToday]);
+  const notMarked    = useMemo(() => allToday.filter(r => !r.checkIn && r.status !== 'SUNDAY'), [allToday]);
+  const pendingCount = useMemo(() => pendingPermissions.filter(r => r.permission === 'PENDING').length, [pendingPermissions]);
 
   if (loading) return <div className={styles.empty}>Loading attendance data…</div>;
 
+  const todayLabel = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
   return (
     <>
-      {/* ── Refresh ── */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+      {/* ── Date + Refresh header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 4px rgba(34,197,94,0.18)', animation: 'none' }} />
+            <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 800, letterSpacing: '0.2px' }}>LIVE</span>
+          </div>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600 }}>{todayLabel}</span>
+        </div>
         <button className={styles.refreshBtn} onClick={loadData}>
           <RefreshCw size={13} style={{ display: 'inline', marginRight: 5 }} />Refresh
         </button>
       </div>
+
+      {/* ── Pending permission alert ── */}
+      {pendingCount > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)', borderLeft: '4px solid #f59e0b', borderRadius: '12px', padding: '0.75rem 1.1rem', marginBottom: '1.1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.85rem', color: '#b45309', fontWeight: 700 }}>
+            ⚠ {pendingCount} permission request{pendingCount !== 1 ? 's' : ''} awaiting your approval
+          </span>
+          <button onClick={() => setActiveTab('permissions')}
+            style={{ fontSize: '0.78rem', fontWeight: 800, color: '#b45309', background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.3)', padding: '0.35rem 0.85rem', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}>
+            Review Now →
+          </button>
+        </div>
+      )}
 
       {/* ── 6 Stat Cards ── */}
       <div className={styles.monitorGrid}>
@@ -457,6 +529,30 @@ function SuperAdminMonitor() {
             <div className={styles.monitorLbl}>{label}</div>
           </div>
         ))}
+      </div>
+
+      {/* ── Live Status Strip ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+        <LiveStatusCard
+          title="Active Now"
+          count={activeNow.length}
+          color="#16a34a"
+          records={activeNow}
+          extra={r => calculateLiveDiff(r.checkIn)}
+        />
+        <LiveStatusCard
+          title="Not Marked Yet"
+          count={notMarked.length}
+          color="#ea580c"
+          records={notMarked}
+        />
+        <LiveStatusCard
+          title="Day Completed"
+          count={completedDay.length}
+          color="#4f46e5"
+          records={completedDay}
+          extra={r => formatDuration(r.totalHours)}
+        />
       </div>
 
       {/* ── Charts Row ── */}
@@ -673,49 +769,61 @@ function SuperAdminMonitor() {
       {/* ── Permission Requests ── */}
       {activeTab === 'permissions' && (
         <div className={styles.sectionCard}>
-          <div className={styles.sectionTitle}><ShieldCheck size={16} /> Permission Requests</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div className={styles.sectionTitle} style={{ margin: 0 }}><ShieldCheck size={16} /> Permission Requests</div>
+            {pendingCount > 0 && (
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#b45309', background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)', padding: '0.25rem 0.75rem', borderRadius: '20px' }}>
+                {pendingCount} pending
+              </span>
+            )}
+          </div>
+
           {pendingPermissions.length === 0 ? (
             <div className={styles.empty}>No permission requests</div>
           ) : (
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Employee</th><th>Date</th><th>Type</th>
-                    <th>Reason</th><th>Status</th><th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingPermissions.map(r => (
-                    <tr key={r.id}>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>{r.user?.name ?? '—'}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{roleLabel(r.user?.role)}</div>
-                      </td>
-                      <td>{formatDate(r.date)}</td>
-                      <td>
-                        <span className={styles.badge} style={{ background: 'rgba(99,102,241,0.1)', color: '#4f46e5' }}>
-                          {r.permissionType?.replace('_', ' ') ?? '—'}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              {pendingPermissions.map(r => {
+                const typeColor = r.permissionType === 'LEAVE' ? '#4f46e5' : r.permissionType === 'HALF_DAY' ? '#b45309' : '#ea580c';
+                const typeBg   = r.permissionType === 'LEAVE' ? 'rgba(99,102,241,0.1)' : r.permissionType === 'HALF_DAY' ? 'rgba(234,179,8,0.1)' : 'rgba(249,115,22,0.1)';
+                return (
+                  <div key={r.id} style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', borderLeft: `4px solid ${r.permission === 'PENDING' ? '#f59e0b' : r.permission === 'APPROVED' ? '#16a34a' : '#ef4444'}` }}>
+                    {/* Avatar */}
+                    <div style={{ width: 38, height: 38, borderRadius: '9px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 900, flexShrink: 0 }}>
+                      {(r.user?.name ?? '?').slice(0, 2).toUpperCase()}
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex: 1, minWidth: 150 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{r.user?.name ?? '—'}</span>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--surface)', border: '1px solid var(--border)', padding: '1px 7px', borderRadius: '20px' }}>{roleLabel(r.user?.role)}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{formatDate(r.date)}</span>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: typeColor, background: typeBg, padding: '2px 8px', borderRadius: '20px' }}>
+                          {r.permissionType?.replace(/_/g, ' ') ?? '—'}
                         </span>
-                      </td>
-                      <td style={{ maxWidth: 200, whiteSpace: 'pre-wrap', fontSize: '0.825rem' }}>{r.permissionReason ?? '—'}</td>
-                      <td><span className={permBadgeClass(r.permission)}>{r.permission}</span></td>
-                      <td>
-                        {r.permission === 'PENDING' && (
-                          <>
-                            <button className={styles.approveBtn} onClick={() => handleApproveSA(r.id)}>
-                              <CheckCircle size={11} style={{ display: 'inline', marginRight: 3 }} />Approve
-                            </button>
-                            <button className={styles.rejectBtn} onClick={() => handleRejectSA(r.id)}>
-                              <XCircle size={11} style={{ display: 'inline', marginRight: 3 }} />Reject
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <span className={permBadgeClass(r.permission)}>{r.permission}</span>
+                      </div>
+                      {r.permissionReason && (
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0', lineHeight: 1.45, maxWidth: 380 }}>{r.permissionReason}</p>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    {r.permission === 'PENDING' && (
+                      <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                        <button className={styles.approveBtn} onClick={() => handleApproveSA(r.id)}>
+                          <CheckCircle size={11} style={{ display: 'inline', marginRight: 3 }} />Approve
+                        </button>
+                        <button className={styles.rejectBtn} onClick={() => handleRejectSA(r.id)}>
+                          <XCircle size={11} style={{ display: 'inline', marginRight: 3 }} />Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

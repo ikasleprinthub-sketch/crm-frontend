@@ -9,6 +9,7 @@ import api from '@/lib/api';
 import styles from '../page.module.css';
 import {
   Plus, Edit2, Trash2, Layers, Tag, Globe, ClipboardList, Settings, Clock,
+  Sun, Moon, HelpCircle,
 } from 'lucide-react';
 import SOPBuilder from '@/components/admin/SOPBuilder';
 
@@ -28,6 +29,15 @@ function ConfigurationsContent() {
   const [isSOPModalOpen, setIsSOPModalOpen] = useState(false);
   const [selectedTaskType, setSelectedTaskType] = useState<{ id: string; name: string } | null>(null);
   const [configs, setConfigs] = useState<any[]>([]);
+  const [startTimeVal, setStartTimeVal] = useState('10:00');
+  const [endTimeVal, setEndTimeVal] = useState('19:00');
+
+  useEffect(() => {
+    const start = configs.find(c => c.key === 'officeStartTime')?.value;
+    const end = configs.find(c => c.key === 'officeEndTime')?.value;
+    if (start) setStartTimeVal(start);
+    if (end) setEndTimeVal(end);
+  }, [configs]);
 
   useEffect(() => {
     if (activeTab === 'settings') {
@@ -245,77 +255,128 @@ function ConfigurationsContent() {
         {/* System Settings */}
         {activeTab === 'settings' && (
           <section className="glass-card" style={{ padding: '2.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', color: 'var(--primary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem', color: 'var(--primary)' }}>
               <Clock size={24} />
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Attendance Timing Configuration</h3>
             </div>
             
-            <div style={{ maxWidth: 500 }}>
-              <div style={{ marginBottom: '2.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  OFFICE START TIME (Cut-off for Late Attendance)
-                </label>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <input 
-                    type="time" 
-                    className={styles.input} 
-                    style={{ maxWidth: 180, fontSize: '1.1rem', fontWeight: 700 }}
-                    value={configs.find(c => c.key === 'officeStartTime')?.value || '10:00'}
-                    onChange={e => handleUpdateConfig('officeStartTime', e.target.value)}
-                  />
-                  <div style={{ 
-                    padding: '0.75rem 1rem', 
-                    background: 'var(--primary-glow)', 
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--primary)',
-                    fontSize: '0.85rem',
-                    color: 'var(--primary)',
-                    fontWeight: 600
-                  }}>
-                    Current Threshold: {to12Hour(configs.find(c => c.key === 'officeStartTime')?.value || '10:00')}
+            <div>
+              {/* Settings Grid */}
+              <div className={styles.settingsGrid}>
+                {/* Office Start Time Card */}
+                <div className={styles.settingsCard}>
+                  <div>
+                    <div className={styles.settingsCardHeader}>
+                      <div className={styles.settingsIconContainer}>
+                        <Sun size={20} />
+                      </div>
+                      <div className={styles.settingsCardInfo}>
+                        <span className={styles.settingsCardTitle}>Office Start Time</span>
+                        <span className={styles.settingsCardSubtitle}>Cut-off for Late Attendance</span>
+                      </div>
+                    </div>
+                    
+                    <div className={styles.settingsInputWrapper}>
+                      <input 
+                        type="time" 
+                        className={styles.settingsTimeInput} 
+                        value={startTimeVal}
+                        onChange={e => setStartTimeVal(e.target.value)}
+                      />
+                      {startTimeVal !== (configs.find(c => c.key === 'officeStartTime')?.value || '10:00') && (
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                          <button 
+                            className={styles.submitBtn} 
+                            style={{ padding: '0.4rem 1rem', fontSize: '0.75rem' }}
+                            onClick={() => handleUpdateConfig('officeStartTime', startTimeVal)}
+                          >
+                            Save Change
+                          </button>
+                          <button 
+                            className={styles.filterBtn} 
+                            style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', borderRadius: '10px' }}
+                            onClick={() => setStartTimeVal(configs.find(c => c.key === 'officeStartTime')?.value || '10:00')}
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  
+                  <p className={styles.settingsCardFooterText}>
+                    Employees checking in <strong>after</strong> this time will be marked as <span style={{ color: 'var(--accent-red)', fontWeight: 700 }}>LATE</span>.
+                  </p>
                 </div>
-                <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '0.75rem', lineHeight: 1.5 }}>
-                  Employees checking in <strong>after</strong> this time will be marked as <span style={{ color: 'var(--accent-red)', fontWeight: 700 }}>LATE</span>.
-                </p>
-              </div>
 
-              <div style={{ marginBottom: '2rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  OFFICE END TIME (Standard Shift End)
-                </label>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <input 
-                    type="time" 
-                    className={styles.input} 
-                    style={{ maxWidth: 180, fontSize: '1.1rem', fontWeight: 700 }}
-                    value={configs.find(c => c.key === 'officeEndTime')?.value || '19:00'}
-                    onChange={e => handleUpdateConfig('officeEndTime', e.target.value)}
-                  />
-                  <div style={{ 
-                    padding: '0.75rem 1rem', 
-                    background: 'rgba(99, 102, 241, 0.1)', 
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid #6366f1',
-                    fontSize: '0.85rem',
-                    color: '#6366f1',
-                    fontWeight: 600
-                  }}>
-                    Shift End: {to12Hour(configs.find(c => c.key === 'officeEndTime')?.value || '19:00')}
+                {/* Office End Time Card */}
+                <div className={styles.settingsCard}>
+                  <div>
+                    <div className={styles.settingsCardHeader}>
+                      <div className={`${styles.settingsIconContainer} ${styles.sunset}`}>
+                        <Moon size={20} />
+                      </div>
+                      <div className={styles.settingsCardInfo}>
+                        <span className={styles.settingsCardTitle}>Office End Time</span>
+                        <span className={styles.settingsCardSubtitle}>Standard Shift End</span>
+                      </div>
+                    </div>
+                    
+                    <div className={styles.settingsInputWrapper}>
+                      <input 
+                        type="time" 
+                        className={styles.settingsTimeInput} 
+                        value={endTimeVal}
+                        onChange={e => setEndTimeVal(e.target.value)}
+                      />
+                      {endTimeVal !== (configs.find(c => c.key === 'officeEndTime')?.value || '19:00') && (
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                          <button 
+                            className={styles.submitBtn} 
+                            style={{ padding: '0.4rem 1rem', fontSize: '0.75rem' }}
+                            onClick={() => handleUpdateConfig('officeEndTime', endTimeVal)}
+                          >
+                            Save Change
+                          </button>
+                          <button 
+                            className={styles.filterBtn} 
+                            style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', borderRadius: '10px' }}
+                            onClick={() => setEndTimeVal(configs.find(c => c.key === 'officeEndTime')?.value || '19:00')}
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  
+                  <p className={styles.settingsCardFooterText}>
+                    Define the official closing time for shift completion tracking.
+                  </p>
                 </div>
-                <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '0.75rem', lineHeight: 1.5 }}>
-                  Define the official closing time for shift completion tracking.
-                </p>
               </div>
               
-              <div style={{ padding: '1rem', background: 'var(--surface-hover)', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--border)' }}>
-                <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem' }}>Rule Explanation:</h4>
-                <ul style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', paddingLeft: '1.25rem', margin: 0 }}>
-                  <li>If Check-in &le; Start Time &rarr; <strong>PRESENT</strong></li>
-                  <li>If Check-in &gt; Start Time &rarr; <strong>LATE</strong></li>
-                  <li>Total hours &lt; 4 &rarr; <strong>HALF DAY</strong></li>
-                </ul>
+              {/* Rules & Regulations Card */}
+              <div className={styles.rulesCard}>
+                <div className={styles.rulesCardHeader}>
+                  <HelpCircle size={18} style={{ color: 'var(--primary)' }} />
+                  <h4 className={styles.rulesCardTitle}>Attendance Processing Rules</h4>
+                </div>
+                
+                <div className={styles.rulesList}>
+                  <div className={styles.ruleItem}>
+                    <span className={`${styles.ruleBadge} ${styles.present}`}>PRESENT</span>
+                    <span className={styles.ruleDescription}>If Check-in time is before or equal to the Office Start Time (Start Time)</span>
+                  </div>
+                  <div className={styles.ruleItem}>
+                    <span className={`${styles.ruleBadge} ${styles.late}`}>LATE</span>
+                    <span className={styles.ruleDescription}>If Check-in time is after the Office Start Time (Start Time)</span>
+                  </div>
+                  <div className={styles.ruleItem}>
+                    <span className={`${styles.ruleBadge} ${styles.halfday}`}>HALF DAY</span>
+                    <span className={styles.ruleDescription}>If total shift working duration is less than 4 hours</span>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
