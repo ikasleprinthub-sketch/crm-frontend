@@ -2,11 +2,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.5rem 0 1.75rem 0;
-  margin-bottom: 0.5rem;
+  padding: 1.25rem 2rem;
+  margin-left: -2rem;
+  margin-right: -2rem;
+  margin-bottom: 1.5rem;
   gap: 1rem;
   flex-wrap: wrap;
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
 }
 
 .title {
@@ -361,6 +368,13 @@
 
   .actions {
     gap: 0.5rem;
+  }
+
+  .header {
+    padding: 1rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    margin-bottom: 1rem;
   }
 
   .dropdown {

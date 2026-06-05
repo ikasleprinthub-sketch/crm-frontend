@@ -4,13 +4,7 @@
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
   padding: 1.35rem 1.5rem;
-  transition: all 0.25s ease;
   animation: fadeIn 0.4s ease-out forwards;
-}
-
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(67,24,255,0.12);
 }
 
 .main {
