@@ -101,7 +101,7 @@ function RequestCard({
             {initials(rec.user?.name)}
           </div>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', margin: 0, truncate: true, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {rec.user?.name ?? '—'}
             </p>
             <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>
