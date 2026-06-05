@@ -3,93 +3,29 @@ import Sidebar from '@/components/Sidebar'; //HI
 import Header from '@/components/Header';
 import StatCard from '@/components/StatCard';
 import { useApp } from '@/context/AppContext';
-import { 
-  Bell, Trophy, CheckSquare, Plus, X, ClipboardList, Trash2, UserCheck, 
-  UserPlus, FileText, Users, Briefcase, TrendingUp, Search, RefreshCw, 
-  ArrowRight, ShieldCheck, Calendar, Clock, Target, FolderOpen
+import {
+  Bell, Trophy, CheckSquare, Plus, X, ClipboardList, Trash2,
+  Users, ShieldCheck, Calendar, Target, FolderOpen
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Charts from '@/components/Charts';
 import styles from './page.module.css';
 import api from '@/lib/api';
 
-export default function Dashboard() {
-  const router = useRouter();
-  const { currentUser, leads, tasks, users, departments, sources, unreadCount, activities, notes, addNote, deleteNote, searchQuery } = useApp();
-  const [isAddingQuick, setIsAddingQuick] = useState(false);
-  const [quickNote, setQuickNote] = useState('');
-  const [attendanceToday, setAttendanceToday] = useState<any>(null);
-  const [myPermissions, setMyPermissions] = useState<any[]>([]);
-  const [attLoading, setAttLoading] = useState(false);
-  const isEmployee = currentUser?.role === 'EMPLOYEE';
-
-  useEffect(() => {
-    fetchAttendance();
-  }, []);
-
-  const fetchAttendance = async () => {
-    if (!currentUser) return;
-    setAttLoading(true);
-    try {
-      const [todayRes, histRes] = await Promise.all([
-        api.get('/attendance/today'),
-        api.get('/attendance/my')
-      ]);
-      if (todayRes.data?.success) setAttendanceToday(todayRes.data.data);
-      if (histRes.data?.success) {
-        setMyPermissions(histRes.data.data.filter((r: any) => r.permission !== 'NONE').slice(0, 3));
-      }
-    } catch (e) { console.error(e); }
-    setAttLoading(false);
-  };
-
-  const totalLeads = leads.length;
-  const convertedLeads = leads.filter(l => l.status === 'CONVERTED').length;
-  const pendingTasks = tasks.filter(t => t.status !== 'COMPLETED').length;
-  const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
-  const totalEmployees = users.filter(u => u.role === 'EMPLOYEE').length;
-  const urgentTasks = tasks.filter(t => t.priority === 'URGENT' && t.status !== 'COMPLETED').length;
-  
-  const filteredTasks = tasks.filter(t => 
-    t.taskNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.assignedTo?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredLeads = leads.filter(l => 
-    l.leadName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    l.leadNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    l.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const statusBadge = (status: string) => {
-    const key = status.replace(/_/g, '').toLowerCase();
-    return `badge-${key}`;
-  };
-
-  const priorityBadge = (priority: string) => `priority-${priority.toLowerCase()}`;
-
-  const getUserName = (id: string) => {
-    if (id === currentUser?.managerId && currentUser?.manager) return currentUser.manager.name;
-    return users.find(u => u.id === id)?.name || '—';
-  };
-  const getDeptName = (id: string) => departments.find(d => d.id === id)?.name || '—';
-  const getSourceName = (id: string) => sources.find(s => s.id === id)?.name || '—';
-  const getLeadName = (task: any) => task.lead?.leadName || leads.find((l: any) => l.id === task.leadId)?.leadName || '—';
-
-  const AttendanceCard = ({ attendanceToday, myPermissions }: { attendanceToday: any, myPermissions: any[] }) => (
+function AttendanceCard({ attendanceToday, myPermissions, getUserName }: { attendanceToday: any, myPermissions: any[], getUserName: (id: string) => string }) {
+  return (
     <div className={styles.stack} style={{ marginBottom: '2rem' }}>
-      {currentUser?.managerId && (
+      {attendanceToday?.managerId && (
         <section className="glass-card" style={{ borderLeft: '4px solid var(--primary)', padding: '1rem 1.5rem', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
               <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)', boxShadow: '0 4px 12px rgba(67, 24, 255, 0.1)' }}>
-                {getUserName(currentUser.managerId).charAt(0)}
+                {getUserName(attendanceToday.managerId).charAt(0)}
               </div>
               <div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>Reporting Manager</p>
-                <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{getUserName(currentUser.managerId)}</p>
+                <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{getUserName(attendanceToday.managerId)}</p>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -108,18 +44,17 @@ export default function Dashboard() {
           <a href="/attendance" className={styles.viewAll}>Details →</a>
         </div>
 
-        {/* Today Status Card */}
-        <div style={{ 
-          background: 'rgba(22, 163, 74, 0.05)', 
-          padding: '1rem', 
-          borderRadius: '12px', 
+        <div style={{
+          background: 'rgba(22, 163, 74, 0.05)',
+          padding: '1rem',
+          borderRadius: '12px',
           marginBottom: '1.25rem',
           border: '1px solid rgba(22, 163, 74, 0.1)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#15803d', textTransform: 'uppercase' }}>Today's Status</span>
-            <span className={`${styles.badge}`} style={{ 
-              background: attendanceToday?.checkIn ? '#16a34a' : '#dc2626', 
+            <span className={`${styles.badge}`} style={{
+              background: attendanceToday?.checkIn ? '#16a34a' : '#dc2626',
               color: 'white',
               fontSize: '0.65rem'
             }}>
@@ -142,13 +77,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Permissions History List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>RECENT PERMISSIONS</p>
           {myPermissions.map((p: any) => (
-            <div key={p.id} style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
+            <div key={p.id} style={{
+              display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
               padding: '0.5rem 0',
               borderBottom: '1px solid var(--border)'
@@ -162,10 +96,10 @@ export default function Dashboard() {
                   <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{new Date(p.date).toLocaleDateString()}</p>
                 </div>
               </div>
-              <span style={{ 
-                fontSize: '0.65rem', 
-                fontWeight: 800, 
-                color: p.permission === 'APPROVED' ? '#16a34a' : p.permission === 'REJECTED' ? '#dc2626' : '#ea580c' 
+              <span style={{
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                color: p.permission === 'APPROVED' ? '#16a34a' : p.permission === 'REJECTED' ? '#dc2626' : '#ea580c'
               }}>
                 {p.permission}
               </span>
@@ -180,6 +114,68 @@ export default function Dashboard() {
       </section>
     </div>
   );
+}
+
+export default function Dashboard() {
+  const router = useRouter();
+  const { currentUser, leads, tasks, users, departments, sources, unreadCount, notes, addNote, deleteNote, searchQuery } = useApp();
+  const [isAddingQuick, setIsAddingQuick] = useState(false);
+  const [quickNote, setQuickNote] = useState('');
+  const [attendanceToday, setAttendanceToday] = useState<any>(null);
+  const [myPermissions, setMyPermissions] = useState<any[]>([]);
+  const isEmployee = currentUser?.role === 'EMPLOYEE';
+
+  useEffect(() => {
+    fetchAttendance();
+  }, []);
+
+  const fetchAttendance = async () => {
+    if (!currentUser) return;
+    try {
+      const [todayRes, histRes] = await Promise.all([
+        api.get('/attendance/today'),
+        api.get('/attendance/my')
+      ]);
+      if (todayRes.data?.success) setAttendanceToday(todayRes.data.data);
+      if (histRes.data?.success) {
+        setMyPermissions(histRes.data.data.filter((r: any) => r.permission !== 'NONE').slice(0, 3));
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const totalLeads = leads.length;
+  const convertedLeads = useMemo(() => leads.filter(l => l.status === 'CONVERTED').length, [leads]);
+  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'COMPLETED').length, [tasks]);
+  const completedTasks = useMemo(() => tasks.filter(t => t.status === 'COMPLETED').length, [tasks]);
+  const totalEmployees = useMemo(() => users.filter(u => u.role === 'EMPLOYEE').length, [users]);
+  const urgentTasks = useMemo(() => tasks.filter(t => t.priority === 'URGENT' && t.status !== 'COMPLETED').length, [tasks]);
+
+  const filteredTasks = useMemo(() => tasks.filter(t =>
+    t.taskNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.assignedTo?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.status.toLowerCase().includes(searchQuery.toLowerCase())
+  ), [tasks, searchQuery]);
+
+  const filteredLeads = useMemo(() => leads.filter(l =>
+    l.leadName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    l.leadNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    l.status.toLowerCase().includes(searchQuery.toLowerCase())
+  ), [leads, searchQuery]);
+
+  const statusBadge = (status: string) => {
+    const key = status.replace(/_/g, '').toLowerCase();
+    return `badge-${key}`;
+  };
+
+  const priorityBadge = (priority: string) => `priority-${priority.toLowerCase()}`;
+
+  const getUserName = (id: string) => {
+    if (id === currentUser?.managerId && currentUser?.manager) return currentUser.manager.name;
+    return users.find(u => u.id === id)?.name || '—';
+  };
+  const getDeptName = (id: string) => departments.find(d => d.id === id)?.name || '—';
+  const getSourceName = (id: string) => sources.find(s => s.id === id)?.name || '—';
+  const getLeadName = (task: any) => task.lead?.leadName || leads.find((l: any) => l.id === task.leadId)?.leadName || '—';
 
   return (
     <div className={styles.wrapper}>
@@ -204,7 +200,7 @@ export default function Dashboard() {
 
             <Charts leads={leads} tasks={tasks} />
 
-            <AttendanceCard attendanceToday={attendanceToday} myPermissions={myPermissions} />
+            <AttendanceCard attendanceToday={attendanceToday} myPermissions={myPermissions} getUserName={getUserName} />
           </>
         )}
 
@@ -272,7 +268,7 @@ export default function Dashboard() {
                   </div>
                 </section>
               </div>
-              <AttendanceCard attendanceToday={attendanceToday} myPermissions={myPermissions} />
+              <AttendanceCard attendanceToday={attendanceToday} myPermissions={myPermissions} getUserName={getUserName} />
             </div>
           </div>
         )}

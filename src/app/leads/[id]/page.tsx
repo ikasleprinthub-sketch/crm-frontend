@@ -15,7 +15,7 @@ import api from '@/lib/api';
 const CATEGORIES = ['AADHAR', 'PAN', 'GST', 'PHOTO', 'OTHER'] as const;
 type DocumentCategory = typeof CATEGORIES[number];
 
-const FILE_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const FILE_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
 
 interface LeadDoc {
   id: string;

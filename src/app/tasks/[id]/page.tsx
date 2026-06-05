@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 
-const FILE_BASE = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const FILE_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
 const DOC_CATEGORIES = ['AADHAR', 'PAN', 'GST', 'PHOTO', 'OTHER'] as const;
 type DocCategory = typeof DOC_CATEGORIES[number];
 

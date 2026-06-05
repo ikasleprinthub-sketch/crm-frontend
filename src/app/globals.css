@@ -107,9 +107,6 @@ button { font-family: var(--font-sans); }
   box-shadow: var(--shadow);
   border: 1px solid var(--glass-border);
   padding: 1.5rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .glass-card:hover {
@@ -122,7 +119,6 @@ button { font-family: var(--font-sans); }
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--glass-border);
   padding: 1.25rem;
-  backdrop-filter: blur(8px);
 }
 
 /* ── Badge Colors ── */
