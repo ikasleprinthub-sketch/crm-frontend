@@ -7,7 +7,8 @@ import { useApp, TaskStatus } from '@/context/AppContext';
 import SOPChecklist from '@/components/SOPChecklist';
 import { Modal, AddTaskForm, EditTaskForm } from '@/components/Modals';
 import styles from '../page.module.css';
-import { Trash2, ClipboardList, Search, Building, User, Users, Calendar, RotateCcw, AlertCircle, Edit3 } from 'lucide-react';
+import { Trash2, ClipboardList, Search, Building, User, Users, Calendar, RotateCcw, AlertCircle, Edit3, FileSpreadsheet, FileText } from 'lucide-react';
+import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -95,6 +96,37 @@ export default function TasksPage() {
 
   const getStatusLabel = (s: string) => s.replace(/_/g, ' ');
 
+  const handleExcelDownload = () => {
+    const rows = filtered.map(t => ({
+      'Task No': t.taskNo,
+      'Lead / Client': t.lead?.leadName || getLeadName(t),
+      'Contact': t.contactName || '',
+      'Type': getTypeName(t.taskTypeId),
+      'Department': getDeptName(t.departmentId),
+      'Assigned To': getUserName(t.assignedToId),
+      'Due Date': t.completionDate ? new Date(t.completionDate).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+      'Priority': t.priority,
+      'Status': getStatusLabel(t.status),
+      'SOP Progress': `${t.sopSteps?.filter(s => s.isCompleted).length || 0}/${t.sopSteps?.length || 0}`,
+    }));
+    exportToExcel(rows, 'tasks');
+  };
+
+  const handlePDFDownload = () => {
+    const columns = ['Task No', 'Lead / Client', 'Type', 'Assigned To', 'Due Date', 'Priority', 'Status', 'SOP'];
+    const rows = filtered.map(t => [
+      t.taskNo,
+      t.lead?.leadName || getLeadName(t),
+      getTypeName(t.taskTypeId),
+      getUserName(t.assignedToId),
+      t.completionDate ? new Date(t.completionDate).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+      t.priority,
+      getStatusLabel(t.status),
+      `${t.sopSteps?.filter(s => s.isCompleted).length || 0}/${t.sopSteps?.length || 0}`,
+    ]);
+    exportToPDF(columns, rows as any, 'tasks', 'Task Management Report');
+  };
+
   const getStatusColor = (s: string) => {
     switch (s) {
       case 'NOT_YET_STARTED': return 'var(--text-secondary)';
@@ -129,6 +161,12 @@ export default function TasksPage() {
             <p>Track SOP progress, assign tasks, and manage deadlines</p>
           </div>
           <div className={styles.btnRow}>
+            <button className={styles.secondaryBtn} onClick={handleExcelDownload} title="Download Excel">
+              <FileSpreadsheet size={15} /> Excel
+            </button>
+            <button className={styles.secondaryBtn} onClick={handlePDFDownload} title="Download PDF">
+              <FileText size={15} /> PDF
+            </button>
             {!isEmployee && (
               <button className={styles.primaryBtn} onClick={() => setIsModalOpen(true)}>+ New Task</button>
             )}

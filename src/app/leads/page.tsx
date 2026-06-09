@@ -5,7 +5,9 @@ import Header from '@/components/Header';
 import { useApp, LeadStatus } from '@/context/AppContext';
 import { Modal, AddLeadForm, ConvertLeadForm } from '@/components/Modals';
 import styles from '../page.module.css';
-import { Trash2, Users, Search, Building, Globe, Calendar, RotateCcw, FolderOpen } from 'lucide-react';
+import { Trash2, Users, Search, Building, Globe, Calendar, RotateCcw, FolderOpen, FileSpreadsheet, FileText, Upload } from 'lucide-react';
+import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
+import BulkImportModal from '@/components/BulkImportModal';
 import { useRouter } from 'next/navigation';
 import CustomSelect from '@/components/CustomSelect';
 import CustomDatePicker from '@/components/CustomDatePicker';
@@ -19,6 +21,7 @@ export default function LeadsPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [leadToConvert, setLeadToConvert] = useState<any | null>(null);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [filter, setFilter] = useState<string>('All');
   const [deptFilter, setDeptFilter] = useState<string>('All');
   const [sourceFilter, setSourceFilter] = useState<string>('All');
@@ -99,6 +102,35 @@ export default function LeadsPage() {
     return acc;
   }, {} as any);
 
+  const handleExcelDownload = () => {
+    const rows = filtered.map(l => ({
+      'Lead No': l.leadNo,
+      'Client Name': l.leadName,
+      'Email': l.email || '',
+      'Phone': l.contactNumber || '',
+      'Source': getSourceName(l.sourceId),
+      'Department': getDeptName(l.departmentId),
+      'Date': l.date ? new Date(l.date).toLocaleDateString('en-GB') : '',
+      'Status': l.status.replace(/_/g, ' '),
+    }));
+    exportToExcel(rows, 'leads');
+  };
+
+  const handlePDFDownload = () => {
+    const columns = ['Lead No', 'Client Name', 'Email', 'Phone', 'Source', 'Department', 'Date', 'Status'];
+    const rows = filtered.map(l => [
+      l.leadNo,
+      l.leadName,
+      l.email || '',
+      l.contactNumber || '',
+      getSourceName(l.sourceId),
+      getDeptName(l.departmentId),
+      l.date ? new Date(l.date).toLocaleDateString('en-GB') : '',
+      l.status.replace(/_/g, ' '),
+    ]);
+    exportToPDF(columns, rows as any, 'leads', 'Lead Management Report');
+  };
+
   if (currentUser?.role === 'EMPLOYEE') {
     return (
       <div className={styles.wrapper}>
@@ -125,6 +157,15 @@ export default function LeadsPage() {
             <p>Manage your sales pipeline and follow up with potential clients</p>
           </div>
           <div className={styles.btnRow}>
+            <button className={styles.secondaryBtn} onClick={handleExcelDownload} title="Download Excel">
+              <FileSpreadsheet size={15} /> Excel
+            </button>
+            <button className={styles.secondaryBtn} onClick={handlePDFDownload} title="Download PDF">
+              <FileText size={15} /> PDF
+            </button>
+            <button className={styles.secondaryBtn} onClick={() => setIsBulkImportOpen(true)}>
+              <Upload size={15} /> Bulk Import
+            </button>
             <button className={styles.primaryBtn} onClick={() => setIsModalOpen(true)}>+ New Lead</button>
           </div>
         </div>
@@ -301,6 +342,12 @@ export default function LeadsPage() {
             onClose={() => setIsModalOpen(false)}
           />
         </Modal>
+
+        <BulkImportModal
+          isOpen={isBulkImportOpen}
+          onClose={() => setIsBulkImportOpen(false)}
+          onDone={() => { setIsBulkImportOpen(false); }}
+        />
 
         <Modal isOpen={!!leadToConvert} onClose={() => setLeadToConvert(null)} title="Convert Lead to Return Filing Task" size="lg">
           {leadToConvert && (

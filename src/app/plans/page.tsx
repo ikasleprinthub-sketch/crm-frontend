@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useApp } from '@/context/AppContext';
@@ -266,7 +266,7 @@ function DayRow({ rec, showUser }: { rec: DayRecord; showUser?: boolean }) {
 
 function MemberPlanCard({ name, records }: { name: string; records: DayRecord[] }) {
   const [open, setOpen] = useState(false);
-  const worked    = records.filter(r => ['PRESENT','LATE','HALF_DAY'].includes(r.status)).length;
+  const worked    = records.filter(r => ['PRESENT','HALF_DAY'].includes(r.status)).length;
   const morning   = records.filter(r => r.morningPlan).length;
   const done      = records.filter(r => r.dayCompletion).length;
   const fillPct   = worked > 0 ? Math.round((Math.min(morning, done) / worked) * 100) : 0;
@@ -314,7 +314,7 @@ function MemberPlanCard({ name, records }: { name: string; records: DayRecord[] 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function PlansPage() {
-  const { currentUser, showToast } = useApp();
+  const { currentUser, showToast, socket } = useApp();
   const router  = useRouter();
   const now     = new Date();
   const isAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(currentUser?.role ?? '');
@@ -327,24 +327,44 @@ export default function PlansPage() {
   // Super admin sees team view by default, regular users see own plans
   const [view, setView] = useState<'my' | 'team'>(isAdmin ? 'team' : 'my');
 
+  const loadPlansData = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const requests = [
+        api.get(`/attendance/my?month=${month}&year=${year}`, { signal })
+          .then(res => { if (res.data?.success) setMyRecords(res.data.data ?? []); })
+          .catch(err => { if (err.code !== 'ERR_CANCELED') console.warn('my plans:', err); }),
+      ];
+      if (isAdmin) {
+        requests.push(
+          api.get(`/attendance/all?month=${month}&year=${year}`, { signal })
+            .then(res => { if (res.data?.success) setTeamRecords(res.data.data ?? []); })
+            .catch(err => { if (err.code !== 'ERR_CANCELED') console.warn('team plans:', err); })
+        );
+      }
+      await Promise.all(requests);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [month, year, isAdmin]);
+
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    const requests = [
-      api.get(`/attendance/my?month=${month}&year=${year}`, { signal: controller.signal })
-        .then(res => { if (res.data?.success) setMyRecords(res.data.data ?? []); })
-        .catch(err => { if (err.code !== 'ERR_CANCELED') console.warn('my plans:', err); }),
-    ];
-    if (isAdmin) {
-      requests.push(
-        api.get(`/attendance/all?month=${month}&year=${year}`, { signal: controller.signal })
-          .then(res => { if (res.data?.success) setTeamRecords(res.data.data ?? []); })
-          .catch(err => { if (err.code !== 'ERR_CANCELED') console.warn('team plans:', err); })
-      );
-    }
-    Promise.all(requests).finally(() => setLoading(false));
+    loadPlansData(controller.signal).finally(() => setLoading(false));
     return () => controller.abort();
-  }, [month, year, isAdmin]);
+  }, [loadPlansData]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleUpdate = () => {
+      console.log('⏰ Socket: Attendance updated, reloading plans...');
+      loadPlansData();
+    };
+    socket.on('attendance:updated', handleUpdate);
+    return () => {
+      socket.off('attendance:updated', handleUpdate);
+    };
+  }, [socket, loadPlansData]);
 
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); } else setMonth(m => m - 1);
@@ -358,7 +378,7 @@ export default function PlansPage() {
   const activeRecords = view === 'team' ? teamRecords : myRecords;
 
   // My-view stats
-  const workedDays  = useMemo(() => myRecords.filter(r => ['PRESENT','LATE','HALF_DAY'].includes(r.status)).length, [myRecords]);
+  const workedDays  = useMemo(() => myRecords.filter(r => ['PRESENT','HALF_DAY'].includes(r.status)).length, [myRecords]);
   const withMorning = useMemo(() => myRecords.filter(r => r.morningPlan).length, [myRecords]);
   const withDone    = useMemo(() => myRecords.filter(r => r.dayCompletion).length, [myRecords]);
   const fillRate    = workedDays > 0 ? Math.round((Math.min(withMorning, withDone) / workedDays) * 100) : 0;
@@ -374,7 +394,7 @@ export default function PlansPage() {
     return Object.values(map).sort((a, b) => a.name.localeCompare(b.name));
   }, [teamRecords]);
 
-  const teamPresent  = useMemo(() => teamRecords.filter(r => ['PRESENT','LATE','HALF_DAY'].includes(r.status)).length, [teamRecords]);
+  const teamPresent  = useMemo(() => teamRecords.filter(r => ['PRESENT','HALF_DAY'].includes(r.status)).length, [teamRecords]);
   const teamMorning  = useMemo(() => teamRecords.filter(r => r.morningPlan).length, [teamRecords]);
   const teamDone     = useMemo(() => teamRecords.filter(r => r.dayCompletion).length, [teamRecords]);
 

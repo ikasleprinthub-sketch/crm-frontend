@@ -62,12 +62,22 @@ export interface SOPStep {
 export interface Department {
   id: string;
   name: string;
+  code?: string | null;
+  description?: string | null;
+  isActive?: boolean;
+  _count?: { taskTypes: number; tasks: number; leads: number };
 }
 
 export interface TaskType {
   id: string;
   name: string;
   departmentId: string;
+  description?: string | null;
+  slaDays?: number;
+  defaultPriority?: string;
+  isActive?: boolean;
+  department?: { id: string; name: string };
+  _count?: { leads: number; tasks: number };
 }
 
 export interface User {
@@ -86,6 +96,8 @@ export interface User {
 export interface SourceOfLead {
   id: string;
   name: string;
+  description?: string | null;
+  isActive?: boolean;
 }
 
 export interface Lead {
@@ -241,6 +253,8 @@ interface AppContextType {
   // Page Loading (for transitions)
   isPageLoading: boolean;
   setIsPageLoading: (val: boolean) => void;
+
+  socket: Socket | null;
 }
 
 
@@ -290,6 +304,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activities, setActivities] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
+
+  const showToast = React.useCallback((
+    title: string,
+    message: string,
+    type: 'success' | 'error' | 'info' | 'confirm' = 'info',
+    onConfirm?: () => void,
+    onCancel?: () => void
+  ) => {
+    setToast({ title, message, type, onConfirm, onCancel });
+    if (type !== 'confirm') {
+      setTimeout(() => {
+        setToast(curr => {
+          if (curr?.message === message) {
+            return null;
+          }
+          return curr;
+        });
+      }, 5000);
+    }
+  }, []);
+
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -324,57 +359,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser?.token]); // Only re-run if token changes
 
-  // ─── WebSocket Real-time Notifications (Disabled for Vercel compatibility) ───
-  /*
-  useEffect(() => {
-    if (!currentUser) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-      }
-      return;
-    }
-
-    // Initialize socket connection
-    const socketUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
-    const newSocket = io(socketUrl, {
-      withCredentials: true,
-      transports: ['websocket', 'polling']
-    });
-
-    newSocket.on('connect', () => {
-      console.log('🔌 Connected to WebSocket server');
-      // Join targeted room
-      newSocket.emit('join', currentUser.id);
-    });
-
-    newSocket.on('connect_error', (err) => {
-      console.error('🔌 WebSocket connection error:', err.message);
-    });
-
-    newSocket.on('notification', (notif: Notification) => {
-      console.log('🔔 Real-time notification received:', notif);
-      
-      // Update notifications state
-      setNotifications(prev => [notif, ...prev]);
-      setUnreadCount(prev => prev + 1);
-      
-      // Show toast
-      setToast({ title: notif.title || 'New Alert', message: notif.message });
-      setTimeout(() => setToast(null), 5000);
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('🔌 Disconnected from WebSocket server');
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [currentUser]);
-  */
+  // ─── WebSocket Real-time Notifications (Moved below to after refresh functions) ───
 
   // Fallback polling (less frequent, every 2 mins) just to keep data synced
   useEffect(() => {
@@ -567,6 +552,80 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to refresh tasks', error);
     }
   }, []);
+
+  const refreshLeads = useCallback(async () => {
+    try {
+      const res = await api.get('/leads');
+      if (res.data?.success) {
+        setLeads(getArr(res.data.data, 'leads'));
+      }
+    } catch (error) {
+      console.error('Failed to refresh leads', error);
+    }
+  }, []);
+
+  // ─── WebSocket Real-time Pipeline ───
+  useEffect(() => {
+    if (!currentUser) {
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
+      return;
+    }
+
+    // Initialize socket connection
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const newSocket = io(socketUrl, {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    });
+
+    newSocket.on('connect', () => {
+      console.log('🔌 Connected to WebSocket server');
+      // Join targeted room with details
+      newSocket.emit('join', {
+        userId: currentUser.id,
+        role: currentUser.role,
+        departmentId: currentUser.departmentId
+      });
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('🔌 WebSocket connection error:', err.message);
+    });
+
+    newSocket.on('notification', (notif: Notification) => {
+      console.log('🔔 Real-time notification received:', notif);
+      
+      // Update notifications state
+      setNotifications(prev => [notif, ...prev]);
+      setUnreadCount(prev => prev + 1);
+      
+      // Show toast using context showToast helper
+      showToast(notif.title || 'New Alert', notif.message, 'info');
+    });
+
+    newSocket.on('task:updated', (data: any) => {
+      console.log('📝 Socket: Task updated, refreshing tasks list...', data);
+      refreshTasks();
+    });
+
+    newSocket.on('lead:updated', (data: any) => {
+      console.log('📈 Socket: Lead updated, refreshing leads list...', data);
+      refreshLeads();
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('🔌 Disconnected from WebSocket server');
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [currentUser, refreshTasks, refreshLeads, showToast]);
 
   // Auth
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -831,25 +890,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) { console.error(e); }
   };
 
-  const showToast = React.useCallback((
-    title: string,
-    message: string,
-    type: 'success' | 'error' | 'info' | 'confirm' = 'info',
-    onConfirm?: () => void,
-    onCancel?: () => void
-  ) => {
-    setToast({ title, message, type, onConfirm, onCancel });
-    if (type !== 'confirm') {
-      setTimeout(() => {
-        setToast(curr => {
-          if (curr?.message === message) {
-            return null;
-          }
-          return curr;
-        });
-      }, 5000);
-    }
-  }, []);
+
 
   // Show a toast when the API returns 429 (rate limited)
   useEffect(() => {
@@ -878,7 +919,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       showToast,
       searchQuery,
       setSearchQuery,
-      isPageLoading, setIsPageLoading
+      isPageLoading, setIsPageLoading,
+      socket
     }}>
       <>
         {isPageLoading && <PageLoader />}

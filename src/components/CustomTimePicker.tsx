@@ -1,19 +1,20 @@
 'use client';
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Clock } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Clock, ChevronDown } from 'lucide-react';
 import styles from './CustomTimePicker.module.css';
 
 interface CustomTimePickerProps {
-  label: string;
+  label?: string;
   value: string; // "HH:mm" 24-hour
   onChange: (value: string) => void;
   required?: boolean;
 }
 
 function to12h(time24: string) {
-  const [hStr, mStr] = (time24 || '09:00').split(':');
+  const [hStr, mStr] = (time24 || '10:00').split(':');
   let h = parseInt(hStr, 10);
   const m = parseInt(mStr || '0', 10);
+  if (isNaN(h)) h = 10;
   const ampm: 'AM' | 'PM' = h >= 12 ? 'PM' : 'AM';
   if (h === 0) h = 12;
   else if (h > 12) h -= 12;
@@ -22,107 +23,153 @@ function to12h(time24: string) {
 
 function to24h(hour: number, minute: number, ampm: 'AM' | 'PM') {
   let h = hour;
-  if (ampm === 'AM') { if (h === 12) h = 0; }
-  else { if (h !== 12) h += 12; }
+  if (ampm === 'AM') {
+    if (h === 12) h = 0;
+  } else {
+    if (h !== 12) h += 12;
+  }
   return `${h.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 }
 
 export default function CustomTimePicker({ label, value, onChange, required }: CustomTimePickerProps) {
   const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const init = to12h(value);
-  const [hour, setHour] = useState(init.hour);
-  const [minute, setMinute] = useState(init.minute);
-  const [ampm, setAmpm] = useState<'AM' | 'PM'>(init.ampm);
-  const ref = useRef<HTMLDivElement>(null);
+  const { hour, minute, ampm } = to12h(value);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hourColRef = useRef<HTMLDivElement>(null);
+  const minuteColRef = useRef<HTMLDivElement>(null);
+  
+  const hourRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const minuteRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
+  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  const minutes = Array.from({ length: 60 }, (_, i) => i);
+
+  const selectHour = (h: number) => {
+    onChange(to24h(h, minute, ampm));
+  };
+
+  const selectMinute = (m: number) => {
+    onChange(to24h(hour, m, ampm));
+  };
+
+  const selectAmpm = (a: 'AM' | 'PM') => {
+    onChange(to24h(hour, minute, a));
+  };
+
+  // Click outside listener to close dropdown
   useEffect(() => {
-    const p = to12h(value);
-    setHour(p.hour); setMinute(p.minute); setAmpm(p.ampm);
-  }, [value]);
-
-  const emit = useCallback((h: number, m: number, a: 'AM' | 'PM') => {
-    onChange(to24h(h, m, a));
-  }, [onChange]);
-
-  const stepHour = (dir: 1 | -1) => {
-    const next = hour + dir;
-    const h = next > 12 ? 1 : next < 1 ? 12 : next;
-    setHour(h); emit(h, minute, ampm);
-  };
-  const stepMinute = (dir: 1 | -1) => {
-    const next = minute + dir;
-    const m = next > 59 ? 0 : next < 0 ? 59 : next;
-    setMinute(m); emit(hour, m, ampm);
-  };
-  const toggleAmpm = (a: 'AM' | 'PM') => { setAmpm(a); emit(hour, minute, a); };
-
-  const handleOpen = () => {
-    if (ref.current) {
-      const rect = ref.current.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: 200 // Fixed width for the picker
-      });
-    }
-    setOpen(!open);
-  };
-
-  useEffect(() => {
-    const fn = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        // Also check if click is inside the fixed panel (which might be outside ref if we don't portal it)
-        // Since we are using fixed pos, we should check if the click target is within the panel class
-        const target = e.target as HTMLElement;
-        if (!target.closest(`.${styles.panel}`)) {
-          setOpen(false);
-        }
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
       }
     };
-    if (open) document.addEventListener('mousedown', fn);
-    return () => document.removeEventListener('mousedown', fn);
+    if (open) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
   }, [open]);
+
+  // Scroll active item into view using local scrollTop calculations
+  useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => {
+        // Centering Hour
+        const activeHourBtn = hourRefs.current[hour];
+        const hourContainer = hourColRef.current;
+        if (activeHourBtn && hourContainer) {
+          const offsetTop = activeHourBtn.offsetTop;
+          const containerHeight = hourContainer.clientHeight;
+          const elementHeight = activeHourBtn.clientHeight;
+          hourContainer.scrollTop = offsetTop - (containerHeight / 2) + (elementHeight / 2);
+        }
+
+        // Centering Minute
+        const activeMinuteBtn = minuteRefs.current[minute];
+        const minuteContainer = minuteColRef.current;
+        if (activeMinuteBtn && minuteContainer) {
+          const offsetTop = activeMinuteBtn.offsetTop;
+          const containerHeight = minuteContainer.clientHeight;
+          const elementHeight = activeMinuteBtn.clientHeight;
+          minuteContainer.scrollTop = offsetTop - (containerHeight / 2) + (elementHeight / 2);
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [open, hour, minute]);
 
   const display = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${ampm}`;
 
   return (
-    <div className={styles.wrap} ref={ref}>
-      <label className={styles.label}>{label}{required && ' *'}</label>
+    <div className={styles.wrap} ref={containerRef}>
+      {label && <label className={styles.label}>{label}{required && ' *'}</label>}
 
-      <button type="button" className={`${styles.trigger} ${open ? styles.open : ''}`} onClick={handleOpen}>
-        <Clock size={14} className={styles.icon} />
-        <span>{display}</span>
+      <button
+        type="button"
+        className={`${styles.trigger} ${open ? styles.open : ''}`}
+        onClick={() => setOpen(!open)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Clock size={16} className={styles.icon} />
+          <span>{display}</span>
+        </div>
+        <ChevronDown size={14} className={styles.icon} />
       </button>
 
       {open && (
-        <div 
-          className={styles.panel}
-          style={{
-            position: 'fixed',
-            top: coords.top - window.scrollY + 6,
-            left: coords.left - window.scrollX,
-            zIndex: 9999
-          }}
-        >
-          {/* Hour */}
-          <div className={styles.col} onWheel={(e) => { e.preventDefault(); stepHour(e.deltaY < 0 ? 1 : -1); }}>
-            <span className={styles.val}>{hour.toString().padStart(2, '0')}</span>
-            <span className={styles.unit}>HH</span>
+        <div className={styles.panel}>
+          {/* Hours Column */}
+          <div ref={hourColRef} className={`${styles.col} ${styles.colBorder}`}>
+            {hours.map((h) => {
+              const isSelected = h === hour;
+              return (
+                <button
+                  key={h}
+                  ref={(el) => { hourRefs.current[h] = el; }}
+                  type="button"
+                  onClick={() => selectHour(h)}
+                  className={`${styles.btn} ${isSelected ? styles.btnActive : ''}`}
+                >
+                  {h.toString().padStart(2, '0')}
+                </button>
+              );
+            })}
           </div>
 
-          <span className={styles.colon}>:</span>
-
-          {/* Minute */}
-          <div className={styles.col} onWheel={(e) => { e.preventDefault(); stepMinute(e.deltaY < 0 ? 1 : -1); }}>
-            <span className={styles.val}>{minute.toString().padStart(2, '0')}</span>
-            <span className={styles.unit}>MM</span>
+          {/* Minutes Column */}
+          <div ref={minuteColRef} className={`${styles.col} ${styles.colBorder}`}>
+            {minutes.map((m) => {
+              const isSelected = m === minute;
+              return (
+                <button
+                  key={m}
+                  ref={(el) => { minuteRefs.current[m] = el; }}
+                  type="button"
+                  onClick={() => selectMinute(m)}
+                  className={`${styles.btn} ${isSelected ? styles.btnActive : ''}`}
+                >
+                  {m.toString().padStart(2, '0')}
+                </button>
+              );
+            })}
           </div>
 
-          {/* AM / PM */}
-          <div className={styles.ampm}>
-            <button type="button" className={`${styles.ap} ${ampm === 'AM' ? styles.apActive : ''}`} onClick={() => toggleAmpm('AM')}>AM</button>
-            <button type="button" className={`${styles.ap} ${ampm === 'PM' ? styles.apActive : ''}`} onClick={() => toggleAmpm('PM')}>PM</button>
+          {/* AM/PM Column */}
+          <div className={styles.ampmCol}>
+            {(['AM', 'PM'] as const).map((a) => {
+              const isSelected = a === ampm;
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => selectAmpm(a)}
+                  className={`${styles.btn} ${isSelected ? styles.btnActive : ''}`}
+                >
+                  {a}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

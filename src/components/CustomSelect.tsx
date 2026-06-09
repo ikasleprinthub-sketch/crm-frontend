@@ -25,6 +25,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number | null, left: number, width: number, openUp: boolean }>({ 
     top: null, 
     left: 0, 
@@ -32,6 +33,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
     openUp: false 
   });
   const [mounted, setMounted] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   useEffect(() => {
     setMounted(true);
@@ -41,6 +43,77 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   const filteredOptions = options.filter(o => 
     o.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  useEffect(() => {
+    if (isOpen) {
+      const initialIndex = filteredOptions.findIndex(o => o.id === value);
+      setFocusedIndex(initialIndex >= 0 ? initialIndex : 0);
+    } else {
+      setFocusedIndex(-1);
+    }
+  }, [isOpen, search, value, options]);
+
+  useEffect(() => {
+    if (isOpen && menuRef.current && focusedIndex >= 0) {
+      const menuEl = menuRef.current;
+      const optionEls = menuEl.querySelectorAll(`.${styles.optionItem}`);
+      const activeEl = optionEls[focusedIndex] as HTMLElement;
+      if (activeEl) {
+        activeEl.scrollIntoView({
+          block: 'nearest',
+          behavior: 'auto'
+        });
+      }
+    }
+  }, [focusedIndex, isOpen]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+
+    if (!isOpen) {
+      if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+        e.preventDefault();
+        toggleDropdown();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        if (filteredOptions.length > 0) {
+          setFocusedIndex(prev => (prev + 1) % filteredOptions.length);
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (filteredOptions.length > 0) {
+          setFocusedIndex(prev => (prev - 1 + filteredOptions.length) % filteredOptions.length);
+        }
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
+          onChange(filteredOptions[focusedIndex].id);
+          setIsOpen(false);
+          setSearch('');
+          triggerRef.current?.focus();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsOpen(false);
+        setSearch('');
+        triggerRef.current?.focus();
+        break;
+      case 'Tab':
+        setIsOpen(false);
+        setSearch('');
+        break;
+      default:
+        break;
+    }
+  };
 
   const toggleDropdown = () => {
     if (disabled) return;
@@ -125,10 +198,10 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
         {filteredOptions.length === 0 && (
           <div className={styles.noOptions}>No results found</div>
         )}
-        {filteredOptions.map((option) => (
+        {filteredOptions.map((option, index) => (
           <div 
             key={option.id}
-            className={`${styles.optionItem} ${value === option.id ? styles.selected : ''}`}
+            className={`${styles.optionItem} ${value === option.id ? styles.selected : ''} ${index === focusedIndex ? styles.focused : ''}`}
             onClick={() => {
               onChange(option.id);
               setIsOpen(false);
@@ -143,10 +216,16 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   );
 
   return (
-    <div className={`${styles.customSelectContainer} ${size === 'sm' ? styles.sm : ''} ${isOpen ? styles.isOpen : ''}`} ref={containerRef}>
+    <div 
+      className={`${styles.customSelectContainer} ${size === 'sm' ? styles.sm : ''} ${isOpen ? styles.isOpen : ''}`} 
+      ref={containerRef}
+      onKeyDown={handleKeyDown}
+    >
       {label && <label className={styles.filterLabel}>{label}</label>}
       
       <div 
+        ref={triggerRef}
+        tabIndex={disabled ? -1 : 0}
         className={`${styles.customSelectTrigger} ${isOpen ? styles.active : ''} ${size === 'sm' ? styles.smTrigger : ''}`}
         onClick={toggleDropdown}
         style={disabled ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
