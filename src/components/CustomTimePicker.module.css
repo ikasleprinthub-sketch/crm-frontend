@@ -6,61 +6,62 @@
 }
 
 .label {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+  display: block;
 }
 
 /* ── Trigger ── */
 .trigger {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  justify-content: space-between;
   width: 100%;
-  padding: 0.8rem 1.1rem;
-  background: var(--surface);
+  padding: 0.65rem 1rem;
+  background: var(--surface-hover);
   border: 1.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   font-weight: 700;
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
+  outline: none;
 }
 
 .trigger:hover {
   border-color: var(--primary);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.07);
 }
 
 .open {
   border-color: var(--primary);
-  background: var(--surface-hover);
-  box-shadow: 0 0 0 4px var(--primary-light);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .icon {
-  color: var(--primary);
+  color: var(--text-secondary);
   opacity: 0.7;
   flex-shrink: 0;
 }
 
 /* ── Dropdown Panel ── */
 .panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  z-index: 100;
   display: flex;
-  align-items: center;
-  gap: 0.8rem;
   background: var(--surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  box-shadow: 0 24px 48px -12px rgba(0,0,0,0.3), 0 0 0 1px var(--glass-border);
-  padding: 1.2rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+  height: 240px;
+  width: 240px;
+  overflow: hidden;
   animation: pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
 }
@@ -72,78 +73,71 @@
 
 /* ── Scrollable Column ── */
 .col {
+  flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-  cursor: ns-resize;
-  padding: 0.4rem;
-  border-radius: 12px;
-  transition: background 0.2s ease;
+  gap: 2px;
+  padding: 0 4px;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
-.col:hover {
+.col::-webkit-scrollbar {
+  width: 5px;
+}
+
+.col::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.col::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+
+.col::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.colBorder {
+  border-right: 1px solid var(--border);
+}
+
+/* ── Items ── */
+.btn {
+  padding: 8px 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s, color 0.15s;
+  text-align: center;
+  width: 100%;
+  display: block;
+}
+
+.btn:hover {
   background: var(--surface-hover);
 }
 
-.val {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
-  min-width: 44px;
-  text-align: center;
-  letter-spacing: 1px;
-  line-height: 1;
+.btnActive {
+  background: var(--primary) !important;
+  color: #fff !important;
+  font-weight: 800 !important;
 }
 
-.unit {
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: var(--primary);
-  opacity: 0.5;
-  letter-spacing: 1px;
-}
-
-/* ── Colon ── */
-.colon {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--primary);
-  opacity: 0.3;
-  margin-top: -0.8rem;
-}
-
-/* ── AM / PM ── */
-.ampm {
+/* ── AM / PM column ── */
+.ampmCol {
+  width: 60px;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-left: 0.4rem;
-}
-
-.ap {
-  padding: 0.45rem 0.8rem;
-  border-radius: 10px;
-  border: 1.5px solid var(--border);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 800;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.5px;
-}
-
-.ap:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.apActive {
-  background: var(--primary) !important;
-  border-color: var(--primary) !important;
-  color: white !important;
-  box-shadow: 0 4px 12px var(--primary-glow);
+  gap: 6px;
+  padding-left: 4px;
+  justify-content: center;
 }

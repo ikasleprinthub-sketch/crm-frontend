@@ -1,0 +1,327 @@
+/* ─── Step Bar ─────────────────────────────────────────────────────────────── */
+.stepBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: nowrap;
+}
+
+.stepDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.stepDot.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+}
+.stepDot.done {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.stepLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.stepLabel.active { color: var(--primary); }
+
+.stepLine {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.stepLine.done { background: var(--accent-green); }
+
+/* ─── Upload Step ──────────────────────────────────────────────────────────── */
+.uploadStep {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.templateBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.2s;
+}
+.templateBtn:hover { background: rgba(99, 102, 241, 0.18); }
+
+.dropZone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+}
+.dropZone:hover,
+.dropZone.dragOver {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.04);
+}
+.dropIcon { color: var(--primary); opacity: 0.7; }
+.dropTitle { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+.dropSub   { font-size: 0.78rem; color: var(--text-secondary); }
+
+.uploadHints {
+  background: rgba(91, 146, 208, 0.07);
+  border: 1px solid rgba(91, 146, 208, 0.2);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.uploadHints strong { color: var(--text-primary); }
+
+/* ─── Preview Step ─────────────────────────────────────────────────────────── */
+.previewStep {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.previewMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.rowCount {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.15rem 0.5rem;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.errorCount {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--accent-red);
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.resetBtn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+
+.assignDefault {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 1rem;
+}
+.assignDefault label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 90px;
+}
+
+.tableWrapper {
+  max-height: 320px;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.previewTable th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  z-index: 1;
+}
+.previewTable td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+.previewTable tbody tr:last-child td { border-bottom: none; }
+.previewTable tbody tr:hover { background: var(--surface-hover); }
+
+.errorRow { background: rgba(239, 68, 68, 0.04) !important; }
+.successRow { background: rgba(16, 185, 129, 0.03); }
+
+.rowNum {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  width: 30px;
+}
+.leadName { font-weight: 600; display: block; }
+.sub {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.missing { color: var(--accent-red); font-weight: 600; }
+
+/* ─── Badges ───────────────────────────────────────────────────────────────── */
+.okBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--accent-green);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.warnBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--accent-yellow);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.errorBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--accent-red);
+  font-size: 0.72rem;
+  font-weight: 700;
+  max-width: 160px;
+}
+.errorBadge span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ─── Footer / Import Button ────────────────────────────────────────────────── */
+.previewFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.blockMsg {
+  font-size: 0.78rem;
+  color: var(--accent-red);
+  flex: 1;
+}
+.importBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.importBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.importBtn:not(:disabled):hover { opacity: 0.88; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.7s linear infinite; }
+
+/* ─── Result Step ──────────────────────────────────────────────────────────── */
+.resultStep {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.summaryCards {
+  display: flex;
+  gap: 1rem;
+}
+.summaryCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 1.25rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-height: 110px;
+}
+.summaryCard.total   { background: var(--surface); color: var(--text-secondary); }
+.summaryCard.success { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.2); color: var(--accent-green); }
+.summaryCard.failed  { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.2); color: var(--accent-red); }
+
+.summaryNum {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: inherit;
+}

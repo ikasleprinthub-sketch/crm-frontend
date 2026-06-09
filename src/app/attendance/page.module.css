@@ -460,52 +460,76 @@
    SUPER ADMIN MONITOR — NEW CLASSES
 ══════════════════════════════════════════════════════════ */
 
-/* ── 6-card monitor grid ── */
+/* ── 5-card monitor grid ── */
 .monitorGrid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.25rem;
   margin-bottom: 1.75rem;
 }
 
-@media (max-width: 1200px) { .monitorGrid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 700px)  { .monitorGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1400px) { .monitorGrid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px)  { .monitorGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px)  { .monitorGrid { grid-template-columns: 1fr; } }
 
 .monitorCard {
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
-  border-radius: 18px;
-  padding: 1.25rem 1rem;
-  text-align: center;
-  box-shadow: 0 8px 20px -6px rgba(0,0,0,0.15);
-  transition: transform 0.2s;
+  border-radius: 16px;
+  padding: 1.5rem 1.25rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  box-shadow: var(--shadow);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
-.monitorCard:hover { transform: translateY(-2px); }
+
+.monitorCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--glow-color, var(--glass-border));
+  box-shadow: 0 12px 24px -10px var(--shadow-color, rgba(0, 0, 0, 0.15));
+}
 
 .monitorIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 0.6rem;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.monitorCard:hover .monitorIcon {
+  transform: scale(1.1) rotate(5deg);
 }
 
 .monitorVal {
-  font-size: 1.75rem;
-  font-weight: 800;
+  font-size: 2.25rem;
+  font-weight: 900;
   line-height: 1;
-  margin-bottom: 0.3rem;
+  letter-spacing: -0.5px;
+  margin-top: 0.25rem;
+  order: 2;
 }
 
 .monitorLbl {
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  font-weight: 800;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+  margin-right: 2.8rem; /* prevent label text from overlapping absolute icon */
+  order: 1;
 }
 
 /* ── Charts Row ── */
@@ -752,3 +776,317 @@
   gap: 0.4rem;
 }
 .refreshBtn:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── Live Status Strip ── */
+.liveStatusCard {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.liveStatusCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--glow-color, var(--border));
+  box-shadow: 0 12px 24px -10px var(--shadow-color, rgba(0, 0, 0, 0.15));
+}
+
+.liveStatusHeader {
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  user-select: none;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.liveStatusHeader:hover {
+  background: var(--surface-hover);
+}
+
+.liveStatusIconBox {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.liveStatusCard:hover .liveStatusIconBox {
+  transform: scale(1.05);
+}
+
+.pulsingDot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 0 2px var(--surface);
+  animation: pulsePulse 1.8s infinite;
+}
+
+@keyframes pulsePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7), 0 0 0 2px var(--surface);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0), 0 0 0 2px var(--surface);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0), 0 0 0 2px var(--surface);
+  }
+}
+
+.liveStatusDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.liveStatusVal {
+  font-size: 2.25rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.liveStatusLbl {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.liveStatusChevron {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              background 0.2s ease, 
+              color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.liveStatusCard:hover .liveStatusChevron {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.liveStatusChevronOpen {
+  transform: rotate(180deg);
+}
+
+.liveStatusContent {
+  border-top: 1px solid var(--border);
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--surface-deep);
+}
+
+/* Custom Scrollbar for list container */
+.liveStatusContent::-webkit-scrollbar {
+  width: 6px;
+}
+.liveStatusContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+.liveStatusContent::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+.liveStatusContent::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.liveStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s ease;
+}
+
+.liveStatusRow:hover {
+  background: var(--surface-hover);
+}
+
+.liveStatusRow:last-child {
+  border-bottom: none;
+}
+
+.liveStatusAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.liveStatusInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.liveStatusName {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liveStatusRole {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin: 0.1rem 0 0;
+}
+
+.liveStatusExtra {
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.liveStatusEmpty {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ── Custom Tooltip & Chart Styles ── */
+.customTooltip {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  box-shadow: var(--shadow);
+  min-width: 140px;
+}
+
+.tooltipLabel {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 0.4rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tooltipDivider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 0.5rem;
+}
+
+.tooltipItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+.tooltipItem:last-child {
+  margin-bottom: 0;
+}
+
+.tooltipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.tooltipName {
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex: 1;
+}
+
+.tooltipVal {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.chartCard {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow) !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.chartCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Premium Segment Controller for Toggle Buttons */
+.toggleContainer {
+  display: flex;
+  background: var(--surface-hover);
+  border: 1.5px solid var(--border);
+  padding: 3px;
+  border-radius: 20px;
+  align-items: center;
+}
+
+.toggleBtn {
+  padding: 0.35rem 0.95rem;
+  border-radius: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggleBtn:hover {
+  color: var(--text-primary);
+}
+
+.toggleActive {
+  background: var(--primary) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.25);
+}
