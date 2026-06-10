@@ -349,7 +349,7 @@ export default function LeadsPage() {
           onDone={() => { setIsBulkImportOpen(false); }}
         />
 
-        <Modal isOpen={!!leadToConvert} onClose={() => setLeadToConvert(null)} title="Convert Lead to Return Filing Task" size="lg">
+        <Modal isOpen={!!leadToConvert} onClose={() => setLeadToConvert(null)} title="Convert Lead" size="lg">
           {leadToConvert && (
             <ConvertLeadForm
               lead={leadToConvert}
@@ -357,7 +357,7 @@ export default function LeadsPage() {
                 try {
                   await convertLeadToTask(leadToConvert.id, data);
                   setLeadToConvert(null);
-                  showToast('Lead Converted', `Lead ${leadToConvert.leadNo} successfully converted to task.`, 'success');
+                  showToast('Lead Converted', `Lead ${leadToConvert.leadNo} successfully converted.`, 'success');
                 } catch (e: any) {
                   showToast('Conversion Failed', e.message, 'error');
                 }

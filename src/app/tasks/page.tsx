@@ -149,6 +149,8 @@ export default function TasksPage() {
     }
   };
 
+  const unassignedLeadsCount = leads.filter(l => l.status === 'CONVERTED' && !tasks.some(t => t.leadId === l.id)).length;
+
   return (
     <div className={styles.wrapper}>
       <Sidebar />
@@ -157,7 +159,24 @@ export default function TasksPage() {
 
         <div className={styles.pageTitleRow}>
           <div>
-            <h2>All Tasks ({tasks.length})</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <h2>All Tasks ({tasks.length})</h2>
+              {!isEmployee && unassignedLeadsCount > 0 && (
+                <span style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: 'var(--accent-red)',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <AlertCircle size={12} /> {unassignedLeadsCount} Unassigned Task{unassignedLeadsCount !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
             <p>Track SOP progress, assign tasks, and manage deadlines</p>
           </div>
           <div className={styles.btnRow}>
@@ -264,10 +283,10 @@ export default function TasksPage() {
                   const pct = total ? Math.round((completed / total) * 100) : 0;
                   const isAutomated = !!task.isAutomated;
                   return (
-                    <tr 
-                      key={task.id} 
-                      onClick={() => router.push(`/tasks/${task.id}`)} 
-                      style={{ 
+                    <tr
+                      key={task.id}
+                      onClick={() => router.push(`/tasks/${task.id}`)}
+                      style={{
                         cursor: 'pointer',
                         background: isAutomated ? 'rgba(139, 92, 246, 0.04)' : undefined,
                         borderLeft: isAutomated ? '4px solid #8b5cf6' : undefined
@@ -305,7 +324,7 @@ export default function TasksPage() {
                       <td><span className={`${styles.priority} ${priorityBadge(task.priority)}`}>{task.priority}</span></td>
                       <td onClick={(e) => e.stopPropagation()}>
                         {isEmployee && task.status === 'COMPLETED' ? (
-                          <span 
+                          <span
                             className={`${styles.badge} ${statusBadge(task.status)}`}
                             style={{
                               background: getStatusBgColor(task.status),
@@ -340,12 +359,12 @@ export default function TasksPage() {
                       <td onClick={(e) => e.stopPropagation()}>
                         <div style={{ cursor: 'pointer' }} onClick={() => setSelectedTask(task.id)}>
                           {total === 0 ? (
-                            <span style={{ 
-                              color: 'var(--accent-red)', 
-                              fontSize: '0.65rem', 
-                              fontWeight: 800, 
-                              display: 'flex', 
-                              alignItems: 'center', 
+                            <span style={{
+                              color: 'var(--accent-red)',
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              display: 'flex',
+                              alignItems: 'center',
                               gap: 4,
                               background: 'rgba(239, 68, 68, 0.08)',
                               padding: '2px 6px',
@@ -357,16 +376,16 @@ export default function TasksPage() {
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <div className={styles.miniBar}>
-                                <div 
-                                  className={styles.miniFill} 
-                                  style={{ 
+                                <div
+                                  className={styles.miniFill}
+                                  style={{
                                     width: `${pct}%`,
                                     background: pct === 100 ? 'var(--accent-green)' : pct > 0 ? 'var(--accent-yellow)' : 'var(--text-secondary)'
                                   }}
                                 />
                               </div>
-                              <span style={{ 
-                                fontSize: '0.72rem', 
+                              <span style={{
+                                fontSize: '0.72rem',
                                 fontWeight: 700,
                                 color: pct === 100 ? 'var(--accent-green)' : pct > 0 ? 'var(--accent-yellow)' : 'var(--text-secondary)'
                               }}>
@@ -379,9 +398,9 @@ export default function TasksPage() {
                       <td onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           {isAdmin && (
-                            <button 
-                              className={styles.iconBtn} 
-                              onClick={() => { setTaskToEdit(task); setIsEditModalOpen(true); }} 
+                            <button
+                              className={styles.iconBtn}
+                              onClick={() => { setTaskToEdit(task); setIsEditModalOpen(true); }}
                               title="Edit"
                               style={{ color: 'var(--primary)' }}
                             >
@@ -423,9 +442,9 @@ export default function TasksPage() {
                 {tasks.find(t => t.id === selectedTask)!.remarks && <p style={{ color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Remarks: <strong style={{ color: 'var(--text-primary)' }}>{tasks.find(t => t.id === selectedTask)!.remarks}</strong></p>}
               </div>
               <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>SOP CHECKLIST</h3>
-              <SOPChecklist 
-                steps={tasks.find(t => t.id === selectedTask)!.sopSteps || []} 
-                taskId={selectedTask!} 
+              <SOPChecklist
+                steps={tasks.find(t => t.id === selectedTask)!.sopSteps || []}
+                taskId={selectedTask!}
                 taskTypeId={tasks.find(t => t.id === selectedTask)!.taskTypeId}
                 onToggle={async (stepId, completed) => {
                   try {
@@ -433,7 +452,7 @@ export default function TasksPage() {
                   } catch (e: any) {
                     showToast('Update Failed', e.response?.data?.message || 'Failed to update step.', 'error');
                   }
-                }} 
+                }}
               />
             </div>
           )}
@@ -441,10 +460,10 @@ export default function TasksPage() {
 
         {/* Add Task Modal */}
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Task" size="lg">
-          <AddTaskForm onSubmit={async (data) => { 
+          <AddTaskForm onSubmit={async (data) => {
             try {
-              await addTask(data); 
-              setIsModalOpen(false); 
+              await addTask(data);
+              setIsModalOpen(false);
               showToast('Task Created', 'The new task has been successfully assigned.', 'success');
             } catch (e: any) {
               showToast('Creation Failed', e.response?.data?.message || e.message || 'Could not create the task. Please check all fields.', 'error');
@@ -455,17 +474,17 @@ export default function TasksPage() {
         {/* Edit Task Modal */}
         <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={`Edit Task: ${taskToEdit?.taskNo}`} size="lg">
           {taskToEdit && (
-            <EditTaskForm 
-              task={taskToEdit} 
-              onSubmit={async (data) => { 
+            <EditTaskForm
+              task={taskToEdit}
+              onSubmit={async (data) => {
                 try {
-                  await updateTask(taskToEdit.id, data); 
-                  setIsEditModalOpen(false); 
+                  await updateTask(taskToEdit.id, data);
+                  setIsEditModalOpen(false);
                   showToast('Task Reassigned', 'The task has been successfully reassigned to the team member.', 'success');
                 } catch (e) {
                   showToast('Update Failed', 'Failed to update task details.', 'error');
                 }
-              }} 
+              }}
             />
           )}
         </Modal>
