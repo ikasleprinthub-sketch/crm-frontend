@@ -429,11 +429,11 @@ export function AddTaskForm({ onSubmit, initialLeadId }: { onSubmit: (data: any)
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Helper: sync department & taskType from a lead
+  // Helper: sync department, taskType, and remarks from a lead
   const syncFromLead = (leadId: string) => {
     const lead = leads.find(l => l.id === leadId);
     if (lead) {
-      return { leadId, departmentId: lead.departmentId, taskTypeId: lead.taskTypeId };
+      return { leadId, departmentId: lead.departmentId, taskTypeId: lead.taskTypeId, remarks: lead.remarks || '' };
     }
     return { leadId };
   };
@@ -451,6 +451,7 @@ export function AddTaskForm({ onSubmit, initialLeadId }: { onSubmit: (data: any)
         leadId: firstLead.id,
         departmentId: firstLead.departmentId,
         taskTypeId: firstLead.taskTypeId,
+        remarks: firstLead.remarks || '',
       }));
     }
     if (users.length > 0 && !form.assignedToId) {
@@ -1003,40 +1004,19 @@ export function ConvertLeadForm({
       </div>
 
       {/* Recurrence Frequency Options */}
-      <div className={styles.formRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-        <label className={styles.label} style={{ fontWeight: 700 }}>Return Update Frequency</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', width: '100%' }}>
-          {[
-            { id: 'NONE', label: 'One-time Task (No Recurrence)' },
-            { id: 'MONTHLY', label: 'Monthly Return' },
-            { id: 'QUARTERLY', label: 'Quarterly Return' },
-            { id: 'YEARLY', label: 'Yearly Return' },
-            { id: 'CUSTOM', label: 'Custom Date' }
-          ].map(opt => {
-            const isSelected = interval === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setInterval(opt.id as any)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '10px',
-                  border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border)',
-                  background: isSelected ? 'rgba(67, 24, 255, 0.08)' : 'var(--surface)',
-                  color: isSelected ? 'var(--primary)' : 'var(--text-secondary)',
-                  fontWeight: isSelected ? 800 : 500,
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: isSelected ? '0 4px 12px rgba(67, 24, 255, 0.1)' : 'none'
-                }}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
+      <div className={styles.formRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px', marginBottom: '1rem', width: '100%' }}>
+        <CustomSelect
+          label="Return Update Frequency"
+          options={[
+            { id: 'NONE', name: 'One-time Task (No Recurrence)' },
+            { id: 'MONTHLY', name: 'Monthly Return' },
+            { id: 'QUARTERLY', name: 'Quarterly Return' },
+            { id: 'YEARLY', name: 'Yearly Return' },
+            { id: 'CUSTOM', name: 'Custom Date' }
+          ]}
+          value={interval}
+          onChange={(val) => setInterval(val as any)}
+        />
       </div>
 
       {/* Custom Next Due Date Picker */}
@@ -1093,7 +1073,7 @@ export function ConvertLeadForm({
             boxShadow: '0 4px 12px rgba(67, 24, 255, 0.2)'
           }}
         >
-          {isSubmitting ? 'Converting...' : 'Convert to Task'}
+          {isSubmitting ? 'Converting...' : 'Convert Lead'}
         </button>
       </div>
     </form>
