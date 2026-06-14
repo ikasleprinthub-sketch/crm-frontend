@@ -14,14 +14,15 @@ interface CustomDatePickerProps {
 export default function CustomDatePicker({ label, selected, onChange, placeholder = 'dd/mm/yyyy' }: CustomDatePickerProps) {
   return (
     <div className={styles.customSelectContainer}>
-      <label className={styles.filterLabel}>{label}</label>
-      <div className={styles.filterInputWrapper}>
-        <CalendarIcon size={16} className={styles.filterInputIcon} />
+      {label && <label className={styles.filterLabel}>{label}</label>}
+      <div className={styles.customSelectTrigger} style={{ padding: 0, cursor: 'text', position: 'relative' }}>
+        <CalendarIcon size={16} className={styles.filterInputIcon} style={{ left: '16px', position: 'absolute', top: '50%', transform: 'translateY(-50%)' }} />
         <DatePicker
           selected={selected}
           onChange={onChange}
           placeholderText={placeholder}
-          className={`${styles.filterInput} ${styles.transparentInput}`}
+          className={styles.filterInput}
+          style={{ width: '100%', height: '100%', cursor: 'pointer', color: 'var(--text-primary)', fontWeight: 700 }}
           dateFormat="dd/MM/yyyy"
           isClearable
           showPopperArrow={false}

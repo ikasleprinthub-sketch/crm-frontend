@@ -228,12 +228,17 @@ export function AddLeadForm({
             value={form.sourceId}
             onChange={val => setForm({ ...form, sourceId: val })}
           />
-          <CustomSelect
-            label="Status"
-            options={(['NEW', 'CONVERTED'] as LeadStatus[]).map(s => ({ id: s, name: s }))}
-            value={form.status}
-            onChange={val => setForm({ ...form, status: val as LeadStatus })}
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.25rem' }}>
+              STATUS
+            </label>
+            <div style={{ height: '48px', borderRadius: '14px', border: '1.5px dashed rgba(16, 185, 129, 0.4)', background: 'rgba(16, 185, 129, 0.05)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', cursor: 'not-allowed', userSelect: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 0 2px rgba(16,185,129,0.2)' }} />
+                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--accent-green)' }}>NEW</span>
+              </div>
+            </div>
+          </div>
         </div>
         <div className={styles.formRow}>
           <CustomSelect
@@ -991,16 +996,22 @@ export function ConvertLeadForm({
   return (
     <form onSubmit={(e) => handleSubmit(e, false)} className={styles.form}>
       <div style={{
-        background: 'rgba(67, 24, 255, 0.04)',
-        border: '1px solid rgba(67, 24, 255, 0.1)',
-        padding: '1rem',
-        borderRadius: '12px',
-        marginBottom: '1.25rem',
-        fontSize: '0.85rem',
-        color: 'var(--text-secondary)'
+        background: 'linear-gradient(145deg, rgba(67, 24, 255, 0.05) 0%, rgba(67, 24, 255, 0.01) 100%)',
+        border: '1px solid rgba(67, 24, 255, 0.15)',
+        boxShadow: 'inset 0 2px 10px rgba(67, 24, 255, 0.02)',
+        padding: '1.25rem 1.5rem',
+        borderRadius: '16px',
+        marginBottom: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.25rem'
       }}>
-        <p style={{ margin: 0 }}>Converting Lead: <strong style={{ color: 'var(--text-primary)' }}>{lead.leadName}</strong></p>
-        <p style={{ margin: '4px 0 0 0' }}>Filing Type: <strong style={{ color: 'var(--text-primary)' }}>{lead.taskType?.name || 'Standard Filing'}</strong></p>
+        <p style={{ margin: 0, fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--primary)' }}>Converting Lead</p>
+        <p style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>{lead.leadName}</p>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '0.2rem' }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)', boxShadow: '0 0 0 2px rgba(67, 24, 255, 0.2)' }} />
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{lead.taskType?.name || 'Standard Filing'}</span>
+        </div>
       </div>
 
       {/* Recurrence Frequency Options */}

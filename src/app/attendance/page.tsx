@@ -683,7 +683,7 @@ function SuperAdminMonitor() {
         <div className={styles.chartCard}>
           <div className={styles.chartTitle}>Today&apos;s Distribution</div>
           {pieData.length === 0 ? <div className={styles.empty}>No data</div> : (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250} minWidth={0} minHeight={250}>
               <PieChart>
                 <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value">
                   {pieData.map(entry => <Cell key={entry.name} fill={PIE_COLORS[entry.name as AttendanceStatus] ?? '#94a3b8'} />)}
@@ -717,7 +717,7 @@ function SuperAdminMonitor() {
             </div>
           )}
           {trendData.length === 0 ? <div className={styles.empty}>No trend data</div> : (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={220}>
               <BarChart data={trendData} barSize={10} barGap={3}>
                 <defs>
                   {[['colorPresent','#22c55e','#15803d'],['colorLate','#f97316','#c2410c'],['colorAbsent','#ef4444','#b91c1c'],['colorHalfDay','#eab308','#a16207']].map(([id,s,e]) => (

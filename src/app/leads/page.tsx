@@ -277,9 +277,12 @@ export default function LeadsPage() {
                     <td>
                       <CustomSelect
                         size="sm"
+                        disabled={lead.status === 'CONVERTED' && currentUser?.role !== 'SUPER_ADMIN'}
                         options={filters.filter(f => f !== 'All').map(s => ({ id: s, name: s.replace(/_/g, ' ') }))}
                         value={lead.status}
                         onChange={async (val) => {
+                          if (val === lead.status) return;
+                          
                           if (val === 'CONVERTED') {
                             setLeadToConvert(lead);
                           } else {
