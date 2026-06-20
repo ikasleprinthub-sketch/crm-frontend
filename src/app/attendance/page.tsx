@@ -346,8 +346,9 @@ function SuperAdminMonitor() {
     return () => clearInterval(id);
   }, []);
 
-  type AdminTab = 'roles' | 'teams' | 'records' | 'permissions' | 'corrections' | 'overrideHistory' | 'productivity';
-  const [activeTab, setActiveTab] = useState<AdminTab>('roles');
+  type AdminTab = 'teams' | 'records' | 'permissions' | 'corrections' | 'overrideHistory' | 'productivity';
+  const [activeTab, setActiveTab] = useState<AdminTab>('productivity');
+  const [showRolePerformance, setShowRolePerformance] = useState(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -742,10 +743,74 @@ function SuperAdminMonitor() {
         </div>
       </div>
 
+      {/* Role Performance Toggle */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <button 
+          onClick={() => setShowRolePerformance(!showRolePerformance)}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            width: '100%',
+            padding: '1rem 1.25rem',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            fontSize: '1rem',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Activity size={18} style={{ color: 'var(--primary)' }} />
+            Role Performance Overview
+          </div>
+          {showRolePerformance ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+        </button>
+        
+        {showRolePerformance && (
+          <div className={styles.rolesGrid} style={{ marginTop: '1rem' }}>
+            {roleStats.map(rs => {
+              const rateColor = rs.rate >= 80 ? '#16a34a' : rs.rate >= 60 ? '#ea580c' : '#dc2626';
+              const barColor  = rs.rate >= 80 ? '#22c55e' : rs.rate >= 60 ? '#f97316' : '#ef4444';
+              return (
+                <div key={rs.role} className={styles.roleCard}>
+                  <div className={styles.roleCardHeader}>
+                    <span className={styles.roleLabel}>{roleLabel(rs.role)}</span>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 800, color: rateColor }}>{rs.rate}%</span>
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', fontWeight: 600 }}>
+                    Weighted Score (Present×1 · Late×0.75 · Half Day×0.5)
+                  </div>
+                  <div className={styles.roleStatsRow}>
+                    {[
+                      { val: rs.present, lbl: 'Present', color: '#16a34a' },
+                      { val: rs.late, lbl: 'Late', color: '#f97316' },
+                      { val: rs.halfDay, lbl: 'Half Day', color: '#b45309' },
+                      { val: rs.absent, lbl: 'Absent', color: '#dc2626' },
+                    ].map(({ val, lbl, color }) => (
+                      <div key={lbl} className={styles.roleStat}>
+                        <div style={{ color, fontWeight: 800, fontSize: '1.1rem' }}>{val}</div>
+                        <div className={styles.roleStatLbl}>{lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className={styles.progressBarWrap}>
+                    <div className={styles.progressBar} style={{ width: `${rs.rate}%`, background: barColor }} />
+                  </div>
+                  <div className={styles.roleTotal}>{rs.total} total employees</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Tabs */}
       <div className={styles.tabs}>
         {([
-          { key: 'roles', label: 'Role Performance' },
           { key: 'productivity', label: 'Productivity Scores' },
           { key: 'teams', label: 'Team Mapping' },
           { key: 'records', label: `All Records (${eligibleToday.length})` },
@@ -761,43 +826,7 @@ function SuperAdminMonitor() {
         ))}
       </div>
 
-      {/* Role Performance — weighted formula, no SUPER_ADMIN */}
-      {activeTab === 'roles' && (
-        <div className={styles.rolesGrid}>
-          {roleStats.map(rs => {
-            const rateColor = rs.rate >= 80 ? '#16a34a' : rs.rate >= 60 ? '#ea580c' : '#dc2626';
-            const barColor  = rs.rate >= 80 ? '#22c55e' : rs.rate >= 60 ? '#f97316' : '#ef4444';
-            return (
-              <div key={rs.role} className={styles.roleCard}>
-                <div className={styles.roleCardHeader}>
-                  <span className={styles.roleLabel}>{roleLabel(rs.role)}</span>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 800, color: rateColor }}>{rs.rate}%</span>
-                </div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', fontWeight: 600 }}>
-                  Weighted Score (Present×1 · Late×0.75 · Half Day×0.5)
-                </div>
-                <div className={styles.roleStatsRow}>
-                  {[
-                    { val: rs.present, lbl: 'Present', color: '#16a34a' },
-                    { val: rs.late, lbl: 'Late', color: '#f97316' },
-                    { val: rs.halfDay, lbl: 'Half Day', color: '#b45309' },
-                    { val: rs.absent, lbl: 'Absent', color: '#dc2626' },
-                  ].map(({ val, lbl, color }) => (
-                    <div key={lbl} className={styles.roleStat}>
-                      <div style={{ color, fontWeight: 800, fontSize: '1.1rem' }}>{val}</div>
-                      <div className={styles.roleStatLbl}>{lbl}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className={styles.progressBarWrap}>
-                  <div className={styles.progressBar} style={{ width: `${rs.rate}%`, background: barColor }} />
-                </div>
-                <div className={styles.roleTotal}>{rs.total} total employees</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+
 
       {/* Productivity Scores */}
       {activeTab === 'productivity' && (
