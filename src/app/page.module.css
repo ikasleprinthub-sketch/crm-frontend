@@ -443,6 +443,11 @@
 
 /* Redundant styles removed - now inherited from .customSelectTrigger */
 
+.customSelectTrigger :global(.react-datepicker-wrapper) {
+  width: 100%;
+  height: 100%;
+}
+
 
 .triggerContent {
   display: flex;
