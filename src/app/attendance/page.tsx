@@ -16,6 +16,7 @@ import {
   Clock, LogIn, LogOut, FileText, Users, ShieldCheck, CheckCircle,
   XCircle, Search, RefreshCw, UserCheck, UserX, Calendar,
   ChevronDown, ChevronRight, Activity, History, ClipboardEdit,
+  Download, X,
 } from 'lucide-react';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -324,6 +325,189 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   );
 };
 
+// ─── DownloadReportModal ─────────────────────────────────────────────────────
+
+type PeriodType = 'monthly' | 'yearly' | 'custom';
+
+function DownloadReportModal({ onClose }: { onClose: () => void }) {
+  const now = new Date();
+  const [periodType, setPeriodType] = useState<PeriodType>('monthly');
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [downloading, setDownloading] = useState(false);
+
+  const years = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear()];
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      let url = `/attendance/report/download?periodType=${periodType}&format=csv`;
+      if (periodType === 'monthly') url += `&month=${month}&year=${year}`;
+      else if (periodType === 'yearly') url += `&year=${year}`;
+      else url += `&startDate=${startDate}&endDate=${endDate}`;
+
+      // Use fetch directly so we can handle the blob
+      const crmUser = typeof window !== 'undefined' ? localStorage.getItem('crm_user') : null;
+      const token = crmUser ? JSON.parse(crmUser)?.token : null;
+      const baseURL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api';
+      const res = await fetch(`${baseURL}${url}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any)?.message ?? 'Download failed');
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') ?? '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match?.[1] ?? 'Attendance_Report.csv';
+
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+      onClose();
+    } catch (err: any) {
+      alert(err?.message ?? 'Download failed. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const isValid = periodType === 'custom'
+    ? Boolean(startDate && endDate && startDate <= endDate)
+    : true;
+
+  return (
+    <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className={styles.modal} style={{ maxWidth: 500 }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px -4px rgba(99,102,241,0.4)' }}>
+              <Download size={18} color="white" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>Download Attendance Report</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 2 }}>Export as CSV — all employees</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={14} /></button>
+        </div>
+
+        {/* Period Type Selector */}
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Report Period</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+            {(['monthly', 'yearly', 'custom'] as PeriodType[]).map(pt => (
+              <button
+                key={pt}
+                onClick={() => setPeriodType(pt)}
+                style={{
+                  padding: '0.65rem 0.5rem',
+                  borderRadius: 10,
+                  border: periodType === pt ? '2px solid #6366f1' : '1.5px solid var(--border)',
+                  background: periodType === pt ? 'rgba(99,102,241,0.08)' : 'var(--surface)',
+                  color: periodType === pt ? '#6366f1' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  textTransform: 'capitalize',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {pt === 'monthly' ? '📅 Monthly' : pt === 'yearly' ? '📆 Yearly' : '🗓️ Custom'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Monthly Options */}
+        {periodType === 'monthly' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Month</label>
+              <select className={styles.formSelect} value={month} onChange={e => setMonth(Number(e.target.value))}>
+                {MONTHS.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+              </select>
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Year</label>
+              <select className={styles.formSelect} value={year} onChange={e => setYear(Number(e.target.value))}>
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Yearly Options */}
+        {periodType === 'yearly' && (
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Year</label>
+            <select className={styles.formSelect} value={year} onChange={e => setYear(Number(e.target.value))}>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Custom Date Range */}
+        {periodType === 'custom' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Start Date</label>
+              <input type="date" className={styles.formInput} value={startDate} onChange={e => setStartDate(e.target.value)} max={endDate || undefined} />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>End Date</label>
+              <input type="date" className={styles.formInput} value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate || undefined} />
+            </div>
+          </div>
+        )}
+
+        {/* Info Box */}
+        <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 10, padding: '0.75rem 1rem', marginBottom: '1.25rem', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          📊 The report includes a <strong>summary section</strong> (totals per employee) and a <strong>detailed daily records section</strong> with check-in/out times, status, and permissions.
+        </div>
+
+        {/* Buttons */}
+        <div className={styles.modalBtns}>
+          <button className={styles.cancelBtn} onClick={onClose}>Cancel</button>
+          <button
+            onClick={handleDownload}
+            disabled={downloading || !isValid}
+            style={{
+              padding: '0.65rem 1.5rem',
+              background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 10,
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              cursor: downloading || !isValid ? 'not-allowed' : 'pointer',
+              opacity: downloading || !isValid ? 0.6 : 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'opacity 0.2s',
+            }}
+          >
+            <Download size={14} />
+            {downloading ? 'Preparing…' : 'Download CSV'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── SuperAdminMonitor ────────────────────────────────────────────────────────
 
 function SuperAdminMonitor() {
@@ -331,6 +515,7 @@ function SuperAdminMonitor() {
   const now = new Date();
 
   const [loading, setLoading] = useState(true);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [allToday, setAllToday] = useState<AttendanceRecord[]>([]);
   const [monthlyData, setMonthlyData] = useState<AttendanceRecord[]>([]);
@@ -621,7 +806,9 @@ function SuperAdminMonitor() {
 
   return (
     <>
-      {/* Date + Refresh */}
+      {showDownloadModal && <DownloadReportModal onClose={() => setShowDownloadModal(false)} />}
+
+      {/* Date + Refresh + Download */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -630,9 +817,25 @@ function SuperAdminMonitor() {
           </div>
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600 }}>{todayLabel}</span>
         </div>
-        <button className={styles.refreshBtn} onClick={loadData}>
-          <RefreshCw size={13} style={{ display: 'inline', marginRight: 5 }} />Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button
+            onClick={() => setShowDownloadModal(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.5rem 1.1rem',
+              background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+              color: 'white', border: 'none', borderRadius: 10,
+              fontSize: '0.825rem', fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 4px 12px -2px rgba(99,102,241,0.4)',
+              transition: 'opacity 0.2s',
+            }}
+          >
+            <Download size={13} /> Download Report
+          </button>
+          <button className={styles.refreshBtn} onClick={loadData}>
+            <RefreshCw size={13} style={{ display: 'inline', marginRight: 5 }} />Refresh
+          </button>
+        </div>
       </div>
 
       {/* Pending alerts */}
@@ -1999,13 +2202,13 @@ function RegularAttendancePage() {
 
 export default function AttendancePage() {
   const { currentUser } = useApp();
-  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const isMonitor = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN';
 
   return (
     <div className={pageStyles.wrapper}>
       <Sidebar />
       <main className={pageStyles.main}>
-        {isSuperAdmin ? (
+        {isMonitor ? (
           <>
             <Header title="Attendance Monitor" subtitle="Organization-wide attendance command center" />
             <div className={pageStyles.pageTitleRow}>
