@@ -101,8 +101,10 @@
 /* ── Table ── */
 .tableContainer {
   overflow-x: auto;
-  padding-bottom: 120px; /* Space for dropdowns at the bottom */
-  margin-bottom: -120px; /* Offset the padding to maintain layout */
+  padding-bottom: 120px;
+  /* Space for dropdowns at the bottom */
+  margin-bottom: -120px;
+  /* Offset the padding to maintain layout */
 }
 
 .table {
@@ -322,7 +324,8 @@
   gap: 0.5rem;
   font-size: 0.72rem;
   font-weight: 800;
-  color: var(--primary); /* Shift to brand color for visibility */
+  color: var(--primary);
+  /* Shift to brand color for visibility */
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 0.25rem;
@@ -338,7 +341,8 @@
   position: absolute;
   left: 14px;
   color: var(--primary);
-  opacity: 0.8; /* Higher opacity for visibility */
+  opacity: 0.8;
+  /* Higher opacity for visibility */
   pointer-events: none;
   z-index: 10;
 }
@@ -438,7 +442,8 @@
 }
 
 .customSelectContainer.isOpen {
-  z-index: 2500; /* Higher than regular headers/rows */
+  z-index: 2500;
+  /* Higher than regular headers/rows */
 }
 
 /* Redundant styles removed - now inherited from .customSelectTrigger */
@@ -508,15 +513,22 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   z-index: 2000;
   overflow: hidden;
   animation: selectDrop 0.15s ease;
 }
 
 @keyframes selectDrop {
-  from { opacity: 0; transform: scale(0.95) translateY(4px); }
-  to   { opacity: 1; transform: scale(1)   translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .openUp {
@@ -524,8 +536,15 @@
 }
 
 @keyframes selectDropUp {
-  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
-  to   { opacity: 1; transform: scale(1)   translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .selectSearchWrapper {
@@ -634,7 +653,8 @@
   width: 2.3rem !important;
   line-height: 2.3rem !important;
   margin: 2px !important;
-  border-radius: 50% !important; /* Circle style for modern look */
+  border-radius: 50% !important;
+  /* Circle style for modern look */
   font-weight: 600 !important;
   font-size: 0.85rem !important;
   color: var(--text-primary) !important;
@@ -740,34 +760,34 @@
 /* ── Premium Forms ── */
 .input {
   width: 100%;
-  padding: 0.875rem 1.25rem!important;
-  background: var(--surface)!important;
-  border: 1.5px solid var(--border)!important;
-  border-radius: 12px!important;
-  color: var(--text-primary)!important;
-  font-size: 0.95rem!important;
-  font-weight: 600!important;
-  transition: all 0.3s ease!important;
-  outline: none!important;
+  padding: 0.875rem 1.25rem !important;
+  background: var(--surface) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  outline: none !important;
 }
 
 .input:focus {
-  border-color: var(--primary)!important;
-  background: var(--surface-hover)!important;
-  box-shadow: 0 0 0 4px var(--primary-light)!important;
+  border-color: var(--primary) !important;
+  background: var(--surface-hover) !important;
+  box-shadow: 0 0 0 4px var(--primary-light) !important;
 }
 
 .select {
   width: 100%;
-  padding: 0.875rem 1.25rem!important;
-  background: var(--surface)!important;
-  border: 1.5px solid var(--border)!important;
-  border-radius: 12px!important;
-  color: var(--text-primary)!important;
-  font-size: 0.95rem!important;
-  font-weight: 600!important;
-  transition: all 0.3s ease!important;
-  outline: none!important;
+  padding: 0.875rem 1.25rem !important;
+  background: var(--surface) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  outline: none !important;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231A4B8C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -776,21 +796,21 @@
 }
 
 .submitBtn {
-  background: var(--primary)!important;
-  color: white!important;
-  border: none!important;
-  padding: 0.7rem 1.5rem!important;
-  border-radius: 10px!important;
-  font-size: 0.88rem!important;
-  font-weight: 700!important;
-  cursor: pointer!important;
-  transition: background 0.15s ease!important;
-  white-space: nowrap!important;
-  letter-spacing: 0.2px!important;
-  display: inline-flex!important;
-  align-items: center!important;
-  justify-content: center!important;
-  gap: 0.75rem!important;
+  background: var(--primary) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.7rem 1.5rem !important;
+  border-radius: 10px !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
 }
 
 /* ── Employee Dashboard Layout ── */
@@ -905,13 +925,14 @@
   gap: 0.5rem;
 }
 
-.noteBlue { 
-  background: var(--surface); 
+.noteBlue {
+  background: var(--surface);
   border: 1px solid var(--border);
   border-left: 4px solid #3B82F6;
 }
-.noteYellow { 
-  background: var(--surface); 
+
+.noteYellow {
+  background: var(--surface);
   border: 1px solid var(--border);
   border-left: 4px solid #F59E0B;
 }

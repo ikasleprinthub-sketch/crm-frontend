@@ -10,7 +10,7 @@ import styles from './configurations.module.css';
 import {
   Plus, Edit2, Trash2, Layers, Tag, Globe,
   ToggleLeft, ToggleRight, Users, CheckCircle, XCircle, BarChart2,
-  ClipboardList, TrendingUp, Search,
+  ClipboardList, TrendingUp, Search, X
 } from 'lucide-react';
 import SOPBuilder from '@/components/admin/SOPBuilder';
 
@@ -124,31 +124,31 @@ function ConfigurationsContent() {
 
   // ── Loaders ────────────────────────────────────────────────────────────────
 
-  const loadDepartments = useCallback(async () => {
-    setDeptLoading(true);
+  const loadDepartments = useCallback(async (showLoader = true) => {
+    if (showLoader) setDeptLoading(true);
     try {
       const res = await api.get('/departments');
       if (res.data?.success) setDepartments(res.data.data);
     } catch { showToast('Error', 'Failed to load departments', 'error'); }
-    finally { setDeptLoading(false); }
+    finally { if (showLoader) setDeptLoading(false); }
   }, [showToast]);
 
-  const loadTaskTypes = useCallback(async () => {
-    setTtLoading(true);
+  const loadTaskTypes = useCallback(async (showLoader = true) => {
+    if (showLoader) setTtLoading(true);
     try {
       const res = await api.get('/task-types');
       if (res.data?.success) setTaskTypes(res.data.data);
     } catch { showToast('Error', 'Failed to load task types', 'error'); }
-    finally { setTtLoading(false); }
+    finally { if (showLoader) setTtLoading(false); }
   }, [showToast]);
 
-  const loadSources = useCallback(async () => {
-    setSrcLoading(true);
+  const loadSources = useCallback(async (showLoader = true) => {
+    if (showLoader) setSrcLoading(true);
     try {
       const res = await api.get('/sources/analytics');
       if (res.data?.success) setSources(res.data.data);
     } catch { showToast('Error', 'Failed to load sources', 'error'); }
-    finally { setSrcLoading(false); }
+    finally { if (showLoader) setSrcLoading(false); }
   }, [showToast]);
 
   useEffect(() => {
@@ -195,7 +195,7 @@ function ConfigurationsContent() {
     try {
       await api.patch(`/departments/${d.id}/status`);
       showToast('Updated', `Department ${d.isActive ? 'disabled' : 'enabled'}`, 'success');
-      loadDepartments();
+      loadDepartments(false);
     } catch (err: any) { showToast('Error', err.response?.data?.message || 'Toggle failed', 'error'); }
   };
 
@@ -236,7 +236,7 @@ function ConfigurationsContent() {
     try {
       await api.patch(`/task-types/${tt.id}/status`);
       showToast('Updated', `Task type ${tt.isActive ? 'disabled' : 'enabled'}`, 'success');
-      loadTaskTypes();
+      loadTaskTypes(false);
     } catch (err: any) { showToast('Error', err.response?.data?.message || 'Toggle failed', 'error'); }
   };
 
@@ -273,7 +273,7 @@ function ConfigurationsContent() {
     try {
       await api.patch(`/sources/${s.id}/status`);
       showToast('Updated', `Source ${s.isActive ? 'disabled' : 'enabled'}`, 'success');
-      loadSources();
+      loadSources(false);
     } catch (err: any) { showToast('Error', err.response?.data?.message || 'Toggle failed', 'error'); }
   };
 
@@ -451,8 +451,26 @@ function ConfigurationsContent() {
                     value={ttSearch}
                     onChange={e => setTtSearch(e.target.value)}
                     placeholder="Search task types..."
-                    style={{ paddingLeft: '2rem', fontSize: '0.85rem', padding: '0.5rem 1rem 0.5rem 2rem', minWidth: 200 }}
+                    style={{ paddingLeft: '2rem', paddingRight: '2rem', fontSize: '0.85rem', padding: '0.5rem 2rem 0.5rem 2rem', minWidth: 200 }}
                   />
+                  {ttSearch && (
+                    <button
+                      onClick={() => setTtSearch('')}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)',
+                        padding: 0,
+                        display: 'flex'
+                      }}
+                      title="Clear search"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
                 <select
                   className={styles.select}

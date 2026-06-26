@@ -93,7 +93,7 @@ export default function UsersPage() {
         } catch (e: any) {
           console.error('[UsersPage] Deletion handler error:', e);
           const errorMsg = e.message || 'An unexpected error occurred';
-          
+
           showToast('Action Blocked', errorMsg, 'error');
         }
       }
@@ -138,15 +138,15 @@ export default function UsersPage() {
         {/* Tabs & Filters */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div className={styles.filterRow} style={{ marginBottom: 0 }}>
-            <button 
-              className={`${styles.filterBtn} ${activeTab === 'ACTIVE' ? styles.active : ''}`} 
+            <button
+              className={`${styles.filterBtn} ${activeTab === 'ACTIVE' ? styles.active : ''}`}
               onClick={() => setActiveTab('ACTIVE')}
             >
               Active Members ({activeCount})
             </button>
             {(currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN') && (
-              <button 
-                className={`${styles.filterBtn} ${activeTab === 'PENDING' ? styles.active : ''}`} 
+              <button
+                className={`${styles.filterBtn} ${activeTab === 'PENDING' ? styles.active : ''}`}
                 onClick={() => setActiveTab('PENDING')}
                 style={{ position: 'relative' }}
               >
@@ -173,9 +173,9 @@ export default function UsersPage() {
             const activeTasks = userTasks.filter(t => t.status !== 'COMPLETED').length;
 
             return (
-              <div key={user.id} className="glass-card" style={{ 
-                padding: '2rem 1.5rem', 
-                position: 'relative', 
+              <div key={user.id} className="glass-card" style={{
+                padding: '2rem 1.5rem',
+                position: 'relative',
                 textAlign: 'center',
                 overflow: 'hidden'
               }}>
@@ -203,11 +203,11 @@ export default function UsersPage() {
                     boxShadow: '0 10px 20px var(--primary-glow)',
                     margin: '0 auto 1.25rem',
                     border: '4px solid var(--surface)',
-                  }}>{user.name.slice(0,2).toUpperCase()}</div>
-                  
+                  }}>{user.name.slice(0, 2).toUpperCase()}</div>
+
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>{user.name}</h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4, fontWeight: 500 }}>{user.email}</p>
-                  
+
                   <div style={{ marginTop: '0.875rem' }}>
                     <span className={`${styles.badge} ${roleBadge(user.role)}`}>
                       {user.role === 'MANAGER' ? 'Team Leader' : user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase().replace('_', ' ')}
@@ -215,35 +215,35 @@ export default function UsersPage() {
                   </div>
 
                   {/* Actions - Subtle & Clean */}
-                  {((currentUser?.role === 'SUPER_ADMIN') || 
+                  {((currentUser?.role === 'SUPER_ADMIN') ||
                     (currentUser?.role === 'ADMIN' && (user.role === 'MANAGER' || user.role === 'EMPLOYEE'))) && (
-                    <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', display: 'flex', gap: '0.4rem' }}>
-                      <button 
-                        className={styles.iconBtn} 
-                        onClick={(e) => { e.stopPropagation(); setEditingUser(user); }}
-                        style={{ width: 28, height: 28, opacity: 0.6 }}
-                      >
-                        <Edit2 size={12} />
-                      </button>
-                      {user.role !== 'SUPER_ADMIN' && (
-                        <button 
-                          className={styles.iconBtn} 
-                          style={{ color: 'var(--accent-red)', width: 28, height: 28, opacity: 0.6 }}
-                          onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.id); }}
+                      <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', display: 'flex', gap: '0.4rem' }}>
+                        <button
+                          className={styles.iconBtn}
+                          onClick={(e) => { e.stopPropagation(); setEditingUser(user); }}
+                          style={{ width: 28, height: 28, opacity: 0.6 }}
                         >
-                          <Trash2 size={12} />
+                          <Edit2 size={14} color="#FFFFFF" />
                         </button>
-                      )}
-                    </div>
-                  )}
+                        {user.role !== 'SUPER_ADMIN' && (
+                          <button
+                            className={styles.iconBtn}
+                            style={{ color: 'var(--accent-white)', width: 28, height: 28, opacity: 0.8 }}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.id); }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 {/* Statistics Box - Clean Aesthetic */}
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(3, 1fr)', 
-                  gap: '1px', 
-                  background: 'var(--border)', 
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '1px',
+                  background: 'var(--border)',
                   borderRadius: 'var(--radius-lg)',
                   overflow: 'hidden',
                   margin: '1.5rem 0'
@@ -273,15 +273,15 @@ export default function UsersPage() {
 
                 {user.status === 'PENDING' && (
                   <div style={{ marginTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <button 
-                      className={styles.primaryBtn} 
+                    <button
+                      className={styles.primaryBtn}
                       onClick={() => handleApprove(user.id)}
                       style={{ padding: '0.5rem', fontSize: '0.75rem' }}
                     >
                       Approve
                     </button>
-                    <button 
-                      className={styles.secondaryBtn} 
+                    <button
+                      className={styles.secondaryBtn}
                       onClick={() => handleReject(user.id)}
                       style={{ padding: '0.5rem', fontSize: '0.75rem', color: 'var(--accent-red)' }}
                     >

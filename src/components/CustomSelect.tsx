@@ -26,11 +26,11 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = useState<{ top: number | null, left: number, width: number, openUp: boolean }>({ 
-    top: null, 
-    left: 0, 
-    width: 0, 
-    openUp: false 
+  const [coords, setCoords] = useState<{ top: number | null, left: number, width: number, openUp: boolean }>({
+    top: null,
+    left: 0,
+    width: 0,
+    openUp: false
   });
   const [mounted, setMounted] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -40,7 +40,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   }, []);
 
   const selectedOption = options.find(o => o.id === value);
-  const filteredOptions = options.filter(o => 
+  const filteredOptions = options.filter(o =>
     o.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -120,9 +120,9 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
     if (!isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      const menuHeight = 240; 
+      const menuHeight = 240;
       const shouldOpenUp = spaceBelow < menuHeight && rect.top > menuHeight;
-      
+
       setCoords({
         top: shouldOpenUp ? rect.top : rect.bottom,
         left: rect.left,
@@ -166,13 +166,13 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   }, [isOpen]);
 
   const menuElement = isOpen && coords.top !== null && mounted && (
-    <div 
+    <div
       ref={menuRef}
       className={`${styles.customSelectMenu} ${coords.openUp ? styles.openUp : ''}`}
       style={{
         position: 'fixed',
-        top: coords.openUp 
-          ? (coords.top as number) - 6 
+        top: coords.openUp
+          ? (coords.top as number) - 6
           : (coords.top as number) + 6,
         left: coords.left,
         width: coords.width,
@@ -184,9 +184,9 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
       {options.length > 8 && (
         <div className={styles.selectSearchWrapper}>
           <Search size={14} />
-          <input 
-            type="text" 
-            placeholder="Search..." 
+          <input
+            type="text"
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onClick={(e) => e.stopPropagation()}
@@ -199,7 +199,7 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
           <div className={styles.noOptions}>No results found</div>
         )}
         {filteredOptions.map((option, index) => (
-          <div 
+          <div
             key={option.id}
             className={`${styles.optionItem} ${value === option.id ? styles.selected : ''} ${index === focusedIndex ? styles.focused : ''}`}
             onClick={() => {
@@ -216,14 +216,14 @@ export default function CustomSelect({ label, options, value, onChange, icon, pl
   );
 
   return (
-    <div 
-      className={`${styles.customSelectContainer} ${size === 'sm' ? styles.sm : ''} ${isOpen ? styles.isOpen : ''}`} 
+    <div
+      className={`${styles.customSelectContainer} ${size === 'sm' ? styles.sm : ''} ${isOpen ? styles.isOpen : ''}`}
       ref={containerRef}
       onKeyDown={handleKeyDown}
     >
       {label && <label className={styles.filterLabel}>{label}</label>}
-      
-      <div 
+
+      <div
         ref={triggerRef}
         tabIndex={disabled ? -1 : 0}
         className={`${styles.customSelectTrigger} ${isOpen ? styles.active : ''} ${size === 'sm' ? styles.smTrigger : ''}`}

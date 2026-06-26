@@ -7,10 +7,10 @@ import { Plus, Trash2, Edit3, Save, X, StickyNote, Search, Lightbulb } from 'luc
 import styles from './notes.module.css';
 
 const COLORS = [
-  { id: 'blue',   label: 'Note',      hex: '#3B82F6', bg: 'rgba(59,130,246,0.06)'  },
-  { id: 'yellow', label: 'Important', hex: '#F59E0B', bg: 'rgba(245,158,11,0.06)'  },
-  { id: 'green',  label: 'Done',      hex: '#10B981', bg: 'rgba(16,185,129,0.06)'  },
-  { id: 'red',    label: 'Urgent',    hex: '#EF4444', bg: 'rgba(239,68,68,0.06)'   },
+  { id: 'blue', label: 'Note', hex: '#3B82F6', bg: 'rgba(59,130,246,0.06)' },
+  { id: 'yellow', label: 'Important', hex: '#F59E0B', bg: 'rgba(245,158,11,0.06)' },
+  { id: 'green', label: 'Done', hex: '#10B981', bg: 'rgba(16,185,129,0.06)' },
+  { id: 'red', label: 'Urgent', hex: '#EF4444', bg: 'rgba(239,68,68,0.06)' },
 ] as const;
 type ColorId = typeof COLORS[number]['id'];
 
@@ -18,10 +18,10 @@ const colorMeta = (color: string) => COLORS.find(c => c.id === color) ?? COLORS[
 
 export default function NotesPage() {
   const { currentUser, notes, addNote, updateNote, deleteNote } = useApp();
-  const [isAdding, setIsAdding]     = useState(false);
-  const [editingId, setEditingId]   = useState<string | null>(null);
-  const [formData, setFormData]     = useState({ title: '', content: '', color: 'blue' as ColorId });
-  const [search, setSearch]         = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ title: '', content: '', color: 'blue' as ColorId });
+  const [search, setSearch] = useState('');
   const [colorFilter, setColorFilter] = useState<string>('all');
 
   const openAdd = () => {
@@ -113,8 +113,28 @@ export default function NotesPage() {
                 placeholder="Search notes..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ padding: '0.4rem 0.75rem 0.4rem 1.9rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '0.8rem', outline: 'none', width: 170, fontFamily: 'inherit' }}
+                style={{ padding: '0.4rem 1.9rem 0.4rem 1.9rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '0.8rem', outline: 'none', width: 170, fontFamily: 'inherit' }}
               />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  style={{
+                    position: 'absolute',
+                    right: 9,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                    padding: 0,
+                    display: 'flex'
+                  }}
+                  title="Clear search"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
           </div>
 

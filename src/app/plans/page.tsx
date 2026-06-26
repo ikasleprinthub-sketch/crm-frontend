@@ -22,7 +22,8 @@ interface DayRecord {
   checkIn: string | null;
   checkOut: string | null;
   totalHours: number | null;
-  morningPlan: string | null;
+  todayPlan: string | null;
+  morningPlan?: string | null;
   afternoonPlan: string | null;
   dayCompletion: string | null;
   userId?: string;
@@ -46,8 +47,8 @@ const STATUS_STYLE: Record<string, { color: string; bg: string; label: string }>
 };
 
 const PLAN_SECTIONS = [
-  { key: 'morningPlan'   as const, label: 'Morning Plan',   color: '#f59e0b', icon: <Sun size={13} />,          empty: 'No morning plan entered.' },
-  { key: 'afternoonPlan' as const, label: 'Afternoon Plan', color: '#3b82f6', icon: <Clock size={13} />,        empty: 'No afternoon plan entered.' },
+  { key: 'todayPlan'   as const, label: 'Today Plan',   color: '#f59e0b', icon: <Sun size={13} />,          empty: 'No today plan entered.' },
+  // { key: 'afternoonPlan' as const, label: 'Afternoon Plan', color: '#3b82f6', icon: <Clock size={13} />,        empty: 'No afternoon plan entered.' },
   { key: 'dayCompletion' as const, label: 'Day Completion', color: '#10b981', icon: <CheckCircle2 size={13} />, empty: 'No completion summary recorded.' },
 ];
 
@@ -91,7 +92,7 @@ function GuideBanner() {
   const [open, setOpen] = useState(true);
   const steps = [
     { icon: <LogIn size={18} />, color: '#4f46e5', title: 'Check In', desc: 'Go to Attendance and click Check In to start your workday.' },
-    { icon: <Sun size={18} />,   color: '#f59e0b', title: 'Morning Plan', desc: 'Write what you plan to accomplish today and click Save Plan.' },
+    { icon: <Sun size={18} />,   color: '#f59e0b', title: 'Today Plan', desc: 'Write what you plan to accomplish today and click Save Plan.' },
     { icon: <LogOut size={18} />, color: '#ea580c', title: 'Check Out', desc: 'At the end of the day, click Check Out and enter your Day Completion — a summary of what you actually did.' },
   ];
 
@@ -267,7 +268,7 @@ function DayRow({ rec, showUser }: { rec: DayRecord; showUser?: boolean }) {
 function MemberPlanCard({ name, records }: { name: string; records: DayRecord[] }) {
   const [open, setOpen] = useState(false);
   const worked    = records.filter(r => ['PRESENT','HALF_DAY'].includes(r.status)).length;
-  const morning   = records.filter(r => r.morningPlan).length;
+  const morning   = records.filter(r => r.todayPlan || r.morningPlan).length;
   const done      = records.filter(r => r.dayCompletion).length;
   const fillPct   = worked > 0 ? Math.round((Math.min(morning, done) / worked) * 100) : 0;
   const barColor  = fillPct >= 80 ? '#16a34a' : fillPct >= 40 ? '#f59e0b' : '#ef4444';
@@ -285,7 +286,7 @@ function MemberPlanCard({ name, records }: { name: string; records: DayRecord[] 
           <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{worked} worked</span>
-            <span style={{ fontSize: '0.65rem', color: '#f59e0b', fontWeight: 700 }}>{morning} morning</span>
+            <span style={{ fontSize: '0.65rem', color: '#f59e0b', fontWeight: 700 }}>{morning} today plans</span>
             <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700 }}>{done} done</span>
           </div>
         </div>
@@ -379,7 +380,7 @@ export default function PlansPage() {
 
   // My-view stats
   const workedDays  = useMemo(() => myRecords.filter(r => ['PRESENT','HALF_DAY'].includes(r.status)).length, [myRecords]);
-  const withMorning = useMemo(() => myRecords.filter(r => r.morningPlan).length, [myRecords]);
+  const withMorning = useMemo(() => myRecords.filter(r => r.todayPlan || r.morningPlan).length, [myRecords]);
   const withDone    = useMemo(() => myRecords.filter(r => r.dayCompletion).length, [myRecords]);
   const fillRate    = workedDays > 0 ? Math.round((Math.min(withMorning, withDone) / workedDays) * 100) : 0;
 
@@ -395,7 +396,7 @@ export default function PlansPage() {
   }, [teamRecords]);
 
   const teamPresent  = useMemo(() => teamRecords.filter(r => ['PRESENT','HALF_DAY'].includes(r.status)).length, [teamRecords]);
-  const teamMorning  = useMemo(() => teamRecords.filter(r => r.morningPlan).length, [teamRecords]);
+  const teamMorning  = useMemo(() => teamRecords.filter(r => r.todayPlan || r.morningPlan).length, [teamRecords]);
   const teamDone     = useMemo(() => teamRecords.filter(r => r.dayCompletion).length, [teamRecords]);
 
   const sortedMy = useMemo(() => [...myRecords].sort((a, b) => b.date.localeCompare(a.date)), [myRecords]);
@@ -404,12 +405,12 @@ export default function PlansPage() {
     ? [
         { label: 'Team Records',    value: teamRecords.length,              sub: `${teamMembers.length} members` },
         { label: 'Days Present',    value: teamPresent,                     sub: 'across team' },
-        { label: 'Morning Plans',   value: teamMorning,                     sub: 'submitted' },
+        { label: 'Today Plans',   value: teamMorning,                     sub: 'submitted' },
         { label: 'Completions',     value: teamDone,                        sub: 'submitted' },
       ]
     : [
         { label: 'Days Worked',     value: workedDays,                      sub: `of ${myRecords.length} total` },
-        { label: 'Morning Plans',   value: withMorning,                     sub: 'written' },
+        { label: 'Today Plans',   value: withMorning,                     sub: 'written' },
         { label: 'Completions',     value: withDone,                        sub: 'day-end reports' },
         { label: 'Plan Score',      value: `${fillRate}%`,                  sub: 'fully filled days' },
       ];

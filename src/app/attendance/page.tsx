@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { useApp } from '@/context/AppContext';
@@ -15,7 +17,7 @@ import {
 import {
   Clock, LogIn, LogOut, FileText, Users, ShieldCheck, CheckCircle,
   XCircle, Search, RefreshCw, UserCheck, UserX, Calendar,
-  ChevronDown, ChevronRight, Activity, History, ClipboardEdit,
+  ChevronDown, ChevronRight, Activity, History, ClipboardEdit, X
 } from 'lucide-react';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -35,7 +37,8 @@ interface AttendanceRecord {
   checkIn: string | null;
   checkOut: string | null;
   totalHours: number | null;
-  morningPlan: string | null;
+  todayPlan: string | null;
+  morningPlan?: string | null;
   afternoonPlan: string | null;
   dayCompletion: string | null;
   permission: PermissionStatus;
@@ -187,17 +190,6 @@ const PIE_COLORS: Record<AttendanceStatus, string> = {
   NOT_MARKED: '#d1d5db',
 };
 
-function getDynamicGreeting() {
-  return new Date().getHours() < 12 ? 'Morning Plan' : 'Afternoon Plan';
-}
-
-function getGreetingPrefix() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good Morning';
-  if (hour < 17) return 'Good Afternoon';
-  if (hour < 21) return 'Good Evening';
-  return 'Good Night';
-}
 
 // ─── TeamRow ──────────────────────────────────────────────────────────────────
 
@@ -350,6 +342,7 @@ function SuperAdminMonitor() {
   const [activeTab, setActiveTab] = useState<AdminTab>('productivity');
   const [showRolePerformance, setShowRolePerformance] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     const t = searchParams.get('tab');
@@ -557,9 +550,9 @@ function SuperAdminMonitor() {
     return matchSearch && matchRole && matchStatus && matchDept;
   }), [eligibleToday, search, filterRole, filterStatus, filterDept, users]);
 
-  const activeNow    = useMemo(() => eligibleToday.filter(r => r.checkIn && !r.checkOut), [eligibleToday]);
+  const activeNow = useMemo(() => eligibleToday.filter(r => r.checkIn && !r.checkOut), [eligibleToday]);
   const completedDay = useMemo(() => eligibleToday.filter(r => r.checkIn && r.checkOut), [eligibleToday]);
-  const notMarked    = useMemo(() => eligibleToday.filter(r => !r.checkIn && r.status !== 'SUNDAY'), [eligibleToday]);
+  const notMarked = useMemo(() => eligibleToday.filter(r => !r.checkIn && r.status !== 'SUNDAY'), [eligibleToday]);
   const pendingCount = useMemo(() => pendingPermissions.filter(r => r.permission === 'PENDING').length, [pendingPermissions]);
   const pendingCorrections = useMemo(() => corrections.filter(c => c.status === 'PENDING').length, [corrections]);
 
@@ -641,13 +634,13 @@ function SuperAdminMonitor() {
           {pendingCount > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)', borderLeft: '4px solid #f59e0b', borderRadius: '12px', padding: '0.75rem 1.1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.85rem', color: '#b45309', fontWeight: 700 }}>⚠ {pendingCount} permission request{pendingCount !== 1 ? 's' : ''} awaiting approval</span>
-              <button onClick={() => setActiveTab('permissions')} style={{ fontSize: '0.78rem', fontWeight: 800, color: '#b45309', background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.3)', padding: '0.35rem 0.85rem', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}>Review →</button>
+              <button onClick={() => router.push('/permissions')} style={{ fontSize: '0.78rem', fontWeight: 800, color: '#b45309', background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.3)', padding: '0.35rem 0.85rem', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}>Review →</button>
             </div>
           )}
           {pendingCorrections > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)', borderLeft: '4px solid #6366f1', borderRadius: '12px', padding: '0.75rem 1.1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.85rem', color: '#4338ca', fontWeight: 700 }}>📋 {pendingCorrections} correction request{pendingCorrections !== 1 ? 's' : ''} awaiting review</span>
-              <button onClick={() => setActiveTab('corrections')} style={{ fontSize: '0.78rem', fontWeight: 800, color: '#4338ca', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', padding: '0.35rem 0.85rem', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}>Review →</button>
+              <span style={{ fontSize: '0.85rem', color: '#4338ca', fontWeight: 700 }}>📋 {pendingCorrections} correction request{pendingCorrections !== 1 ? 's' : ''} a waiting review</span>
+              <button onClick={() => router.push('/permissions')} style={{ fontSize: '0.78rem', fontWeight: 800, color: '#4338ca', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', padding: '0.35rem 0.85rem', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}>Review →</button>
             </div>
           )}
         </div>
@@ -721,10 +714,10 @@ function SuperAdminMonitor() {
             <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={220}>
               <BarChart data={trendData} barSize={10} barGap={3}>
                 <defs>
-                  {[['colorPresent','#22c55e','#15803d'],['colorLate','#f97316','#c2410c'],['colorAbsent','#ef4444','#b91c1c'],['colorHalfDay','#eab308','#a16207']].map(([id,s,e]) => (
+                  {[['colorPresent', '#22c55e', '#15803d'], ['colorLate', '#f97316', '#c2410c'], ['colorAbsent', '#ef4444', '#b91c1c'], ['colorHalfDay', '#eab308', '#a16207']].map(([id, s, e]) => (
                     <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={s} stopOpacity={0.95}/>
-                      <stop offset="95%" stopColor={e} stopOpacity={0.75}/>
+                      <stop offset="5%" stopColor={s} stopOpacity={0.95} />
+                      <stop offset="95%" stopColor={e} stopOpacity={0.75} />
                     </linearGradient>
                   ))}
                 </defs>
@@ -733,10 +726,10 @@ function SuperAdminMonitor() {
                 <YAxis tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} allowDecimals={false} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--surface-hover)', opacity: 0.4 }} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '0.78rem', fontWeight: 600, paddingTop: '10px' }} />
-                <Bar dataKey="present" fill="url(#colorPresent)" radius={[4,4,0,0]} name="Present" />
-                <Bar dataKey="late" fill="url(#colorLate)" radius={[4,4,0,0]} name="Late" />
-                <Bar dataKey="absent" fill="url(#colorAbsent)" radius={[4,4,0,0]} name="Absent" />
-                <Bar dataKey="halfDay" fill="url(#colorHalfDay)" radius={[4,4,0,0]} name="Half Day" />
+                <Bar dataKey="present" fill="url(#colorPresent)" radius={[4, 4, 0, 0]} name="Present" />
+                <Bar dataKey="late" fill="url(#colorLate)" radius={[4, 4, 0, 0]} name="Late" />
+                <Bar dataKey="absent" fill="url(#colorAbsent)" radius={[4, 4, 0, 0]} name="Absent" />
+                <Bar dataKey="halfDay" fill="url(#colorHalfDay)" radius={[4, 4, 0, 0]} name="Half Day" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -745,11 +738,11 @@ function SuperAdminMonitor() {
 
       {/* Role Performance Toggle */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <button 
+        <button
           onClick={() => setShowRolePerformance(!showRolePerformance)}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'space-between',
             width: '100%',
             padding: '1rem 1.25rem',
@@ -769,12 +762,12 @@ function SuperAdminMonitor() {
           </div>
           {showRolePerformance ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
         </button>
-        
+
         {showRolePerformance && (
           <div className={styles.rolesGrid} style={{ marginTop: '1rem' }}>
             {roleStats.map(rs => {
               const rateColor = rs.rate >= 80 ? '#16a34a' : rs.rate >= 60 ? '#ea580c' : '#dc2626';
-              const barColor  = rs.rate >= 80 ? '#22c55e' : rs.rate >= 60 ? '#f97316' : '#ef4444';
+              const barColor = rs.rate >= 80 ? '#22c55e' : rs.rate >= 60 ? '#f97316' : '#ef4444';
               return (
                 <div key={rs.role} className={styles.roleCard}>
                   <div className={styles.roleCardHeader}>
@@ -835,7 +828,7 @@ function SuperAdminMonitor() {
             <div className={styles.sectionTitle} style={{ margin: 0 }}><Activity size={16} /> Employee Productivity Scores</div>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <select className={styles.monthSelect} value={perfMonth} onChange={e => setPerfMonth(Number(e.target.value))}>
-                {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
+                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => (
                   <option key={i + 1} value={i + 1}>{m}</option>
                 ))}
               </select>
@@ -891,10 +884,10 @@ function SuperAdminMonitor() {
                   <tbody>
                     {perfData.map((stat, idx) => {
                       const scoreColor = stat.score >= 80 ? '#16a34a' : stat.score >= 60 ? '#ea580c' : '#dc2626';
-                      const barColor  = stat.score >= 80 ? '#22c55e' : stat.score >= 60 ? '#f97316' : '#ef4444';
+                      const barColor = stat.score >= 80 ? '#22c55e' : stat.score >= 60 ? '#f97316' : '#ef4444';
                       return (
                         <tr key={stat.user.id}>
-                          <td style={{ fontWeight: 700, color: idx < 3 ? ['#f59e0b','#64748b','#cd7f32'][idx] : 'var(--text-muted)', textAlign: 'center' }}>
+                          <td style={{ fontWeight: 700, color: idx < 3 ? ['#f59e0b', '#64748b', '#cd7f32'][idx] : 'var(--text-muted)', textAlign: 'center' }}>
                             {idx + 1}
                           </td>
                           <td>
@@ -946,6 +939,26 @@ function SuperAdminMonitor() {
             <div className={styles.searchWrap}>
               <Search size={13} />
               <input className={styles.searchInput} placeholder="Search name or email…" value={search} onChange={e => setSearch(e.target.value)} />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                    padding: 0,
+                    display: 'flex'
+                  }}
+                  title="Clear search"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
             <select className={styles.monthSelect} value={filterRole} onChange={e => setFilterRole(e.target.value)}>
               <option value="ALL">All Roles</option>
@@ -1014,7 +1027,7 @@ function SuperAdminMonitor() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {pendingPermissions.map(r => {
                 const typeColor = r.permissionType === 'LEAVE' ? '#4f46e5' : r.permissionType === 'HALF_DAY' ? '#b45309' : '#ea580c';
-                const typeBg   = r.permissionType === 'LEAVE' ? 'rgba(99,102,241,0.1)' : r.permissionType === 'HALF_DAY' ? 'rgba(234,179,8,0.1)' : 'rgba(249,115,22,0.1)';
+                const typeBg = r.permissionType === 'LEAVE' ? 'rgba(99,102,241,0.1)' : r.permissionType === 'HALF_DAY' ? 'rgba(234,179,8,0.1)' : 'rgba(249,115,22,0.1)';
                 return (
                   <div key={r.id} style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', borderLeft: `4px solid ${r.permission === 'PENDING' ? '#f59e0b' : r.permission === 'APPROVED' ? '#16a34a' : '#ef4444'}` }}>
                     <div style={{ width: 38, height: 38, borderRadius: '9px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 900, flexShrink: 0 }}>
@@ -1274,8 +1287,7 @@ function RegularAttendancePage() {
   const [today, setToday] = useState<AttendanceRecord | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [morningPlanText, setMorningPlanText] = useState('');
-  const [afternoonPlanText, setAfternoonPlanText] = useState('');
+  const [todayPlanText, setTodayPlanText] = useState('');
   const [dayCompletion, setDayCompletion] = useState('');
   const [showCheckOutForm, setShowCheckOutForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -1336,9 +1348,9 @@ function RegularAttendancePage() {
       const res = await api.get('/configs');
       if (res.data?.success) {
         const start = res.data.data.find((c: any) => c.key === 'officeStartTime')?.value;
-        const end   = res.data.data.find((c: any) => c.key === 'officeEndTime')?.value;
+        const end = res.data.data.find((c: any) => c.key === 'officeEndTime')?.value;
         if (start) setOfficeStartTime(start);
-        if (end)   setOfficeEndTime(end);
+        if (end) setOfficeEndTime(end);
       }
     } catch { /* silent */ }
   }, []);
@@ -1349,17 +1361,16 @@ function RegularAttendancePage() {
       if (res.data?.success) {
         const rec = res.data.data;
         setToday(rec);
-        setMorningPlanText(rec.morningPlan ?? '');
-        setAfternoonPlanText(rec.afternoonPlan ?? '');
+        setTodayPlanText(rec.todayPlan ?? rec.morningPlan ?? '');
       }
     } catch { /* silent */ }
   }, []);
 
-  const loadStats    = useCallback(async () => { try { const r = await api.get('/attendance/stats'); if (r.data?.success) setStats(r.data.data); } catch { /* silent */ } }, []);
-  const loadHistory  = useCallback(async () => { try { const r = await api.get(`/attendance/my?month=${histMonth}&year=${histYear}`); if (r.data?.success) setHistory(r.data.data); } catch { /* silent */ } }, [histMonth, histYear]);
-  const loadTeam     = useCallback(async () => { try { const r = await api.get('/attendance/team'); if (r.data?.success) setTeamAttendance(r.data.data); } catch { /* silent */ } }, []);
-  const loadPending  = useCallback(async () => { try { const r = await api.get('/attendance/permission/team'); if (r.data?.success) setPendingPermissions(r.data.data); } catch { /* silent */ } }, []);
-  const loadAll      = useCallback(async () => { try { const r = await api.get('/attendance/all'); if (r.data?.success) setAllAttendance(r.data.data); } catch { /* silent */ } }, []);
+  const loadStats = useCallback(async () => { try { const r = await api.get('/attendance/stats'); if (r.data?.success) setStats(r.data.data); } catch { /* silent */ } }, []);
+  const loadHistory = useCallback(async () => { try { const r = await api.get(`/attendance/my?month=${histMonth}&year=${histYear}`); if (r.data?.success) setHistory(r.data.data); } catch { /* silent */ } }, [histMonth, histYear]);
+  const loadTeam = useCallback(async () => { try { const r = await api.get('/attendance/team'); if (r.data?.success) setTeamAttendance(r.data.data); } catch { /* silent */ } }, []);
+  const loadPending = useCallback(async () => { try { const r = await api.get('/attendance/permission/team'); if (r.data?.success) setPendingPermissions(r.data.data); } catch { /* silent */ } }, []);
+  const loadAll = useCallback(async () => { try { const r = await api.get('/attendance/all'); if (r.data?.success) setAllAttendance(r.data.data); } catch { /* silent */ } }, []);
   const loadCorrections = useCallback(async () => { try { const r = await api.get('/attendance/correction/requests'); if (r.data?.success) setCorrections(r.data.data); } catch { /* silent */ } }, []);
 
   const refreshPageData = useCallback(async () => {
@@ -1409,24 +1420,12 @@ function RegularAttendancePage() {
     finally { setSubmitting(false); }
   };
 
-  const handleSaveMorningPlan = async () => {
-    if (!morningPlanText.trim()) return;
+  const handleSaveTodayPlan = async () => {
+    if (!todayPlanText.trim()) return;
     setSubmitting(true);
     try {
-      await api.post('/attendance/morning-plan', { morningPlan: morningPlanText });
-      showToast('Plan Saved', 'Morning plan saved successfully', 'success');
-      await loadToday();
-    }
-    catch (e: any) { showToast('Save Failed', e.response?.data?.message ?? 'Failed to save plan', 'error'); }
-    finally { setSubmitting(false); }
-  };
-
-  const handleSaveAfternoonPlan = async () => {
-    if (!afternoonPlanText.trim()) return;
-    setSubmitting(true);
-    try {
-      await api.post('/attendance/morning-plan', { morningPlan: afternoonPlanText });
-      showToast('Plan Saved', 'Afternoon plan saved successfully', 'success');
+      await api.post('/attendance/morning-plan', { morningPlan: todayPlanText });
+      showToast('Plan Saved', 'Today plan saved successfully', 'success');
       await loadToday();
     }
     catch (e: any) { showToast('Save Failed', e.response?.data?.message ?? 'Failed to save plan', 'error'); }
@@ -1537,19 +1536,18 @@ function RegularAttendancePage() {
   const myMonthlyScore = (() => {
     const working = history.filter(r => r.status !== 'SUNDAY' && r.status !== 'NOT_MARKED');
     if (working.length === 0) return null;
-    const present  = working.filter(r => r.status === 'PRESENT' && r.checkInStatus === 'ON_TIME').length;
-    const late     = working.filter(r => r.status === 'LATE' || r.checkInStatus === 'LATE' || r.checkInStatus === 'VERY_LATE').length;
-    const halfDay  = working.filter(r => r.status === 'HALF_DAY').length;
-    const absent   = working.filter(r => r.status === 'ABSENT').length;
+    const present = working.filter(r => r.status === 'PRESENT' && r.checkInStatus === 'ON_TIME').length;
+    const late = working.filter(r => r.status === 'LATE' || r.checkInStatus === 'LATE' || r.checkInStatus === 'VERY_LATE').length;
+    const halfDay = working.filter(r => r.status === 'HALF_DAY').length;
+    const absent = working.filter(r => r.status === 'ABSENT').length;
     const weighted = present * 1 + late * 0.75 + halfDay * 0.5;
-    const score    = Math.round((weighted / working.length) * 100);
+    const score = Math.round((weighted / working.length) * 100);
     return { score, present, late, halfDay, absent, working: working.length };
   })();
 
-  const canCheckIn  = today && !today.checkIn && today.status !== 'SUNDAY';
+  const canCheckIn = today && !today.checkIn && today.status !== 'SUNDAY';
   const canCheckOut = today && today.checkIn && !today.checkOut;
-  const canSaveMorningPlan = today && today.checkIn && !today.checkOut && morningPlanText !== (today.morningPlan ?? '');
-  const canSaveAfternoonPlan = today && today.checkIn && !today.checkOut && afternoonPlanText !== (today.afternoonPlan ?? '');
+  const canSaveTodayPlan = today && today.checkIn && !today.checkOut && todayPlanText !== (today.todayPlan ?? today.morningPlan ?? '');
 
   if (loading) return <div className={styles.empty}>Loading attendance data…</div>;
 
@@ -1560,8 +1558,8 @@ function RegularAttendancePage() {
         <div className={styles.statsRow}>
           {[
             { val: stats.present, lbl: 'Present', color: '#16a34a' },
-            { val: stats.absent,  lbl: 'Absent',  color: '#dc2626' },
-            { val: stats.late,    lbl: 'Late',     color: '#ea580c' },
+            { val: stats.absent, lbl: 'Absent', color: '#dc2626' },
+            { val: stats.late, lbl: 'Late', color: '#ea580c' },
             { val: stats.halfDay, lbl: 'Half Day', color: '#b45309' },
             { val: stats.pendingPermissions, lbl: 'Pending Perms', color: '#b45309' },
           ].map(({ val, lbl, color }) => (
@@ -1651,68 +1649,34 @@ function RegularAttendancePage() {
         </div>
       </div>
 
-      {/* Morning Plan Card */}
+      {/* Today Plan Card */}
       {today?.checkIn && !today?.checkOut && (
         <div className={styles.planCard}>
           <div className={styles.planTitle}>
-            <FileText size={15} /> Morning Plan — Good Morning, what will you do today?
-            {new Date().getHours() >= 12 && (
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: 'auto', fontWeight: 600 }}>
-                (Locked in Afternoon)
-              </span>
-            )}
+            <FileText size={15} /> Today Plan — what will you do today?
           </div>
           <textarea
             className={styles.textarea}
-            value={morningPlanText}
-            onChange={e => setMorningPlanText(e.target.value)}
-            placeholder="Describe your morning plan..."
-            readOnly={new Date().getHours() >= 12}
-          />
-          {new Date().getHours() < 12 && (
-            <div style={{ marginTop: '0.75rem' }}>
-              <button
-                className={pageStyles.primaryBtn}
-                onClick={handleSaveMorningPlan}
-                disabled={!canSaveMorningPlan || submitting}
-                style={{ fontSize: '0.875rem', padding: '0.6rem 1.25rem' }}
-              >
-                Save Plan
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Afternoon Plan Card (Visible in Afternoon) */}
-      {today?.checkIn && !today?.checkOut && new Date().getHours() >= 12 && (
-        <div className={styles.planCard}>
-          <div className={styles.planTitle}>
-            <FileText size={15} /> Afternoon Plan — Good Afternoon, what will you do today?
-          </div>
-          <textarea
-            className={styles.textarea}
-            value={afternoonPlanText}
-            onChange={e => setAfternoonPlanText(e.target.value)}
-            placeholder="Describe your afternoon plan..."
+            value={todayPlanText}
+            onChange={e => setTodayPlanText(e.target.value)}
+            placeholder="Describe your plan for today..."
           />
           <div style={{ marginTop: '0.75rem' }}>
             <button
               className={pageStyles.primaryBtn}
-              onClick={handleSaveAfternoonPlan}
-              disabled={!canSaveAfternoonPlan || submitting}
+              onClick={handleSaveTodayPlan}
+              disabled={!canSaveTodayPlan || submitting}
               style={{ fontSize: '0.875rem', padding: '0.6rem 1.25rem' }}
             >
-              Save Plan
+              {(today.todayPlan || today.morningPlan) ? 'Update Plan' : 'Save Plan'}
             </button>
           </div>
         </div>
       )}
 
-      {today?.checkIn && today?.checkOut && (today.morningPlan || today.afternoonPlan) && (
+      {today?.checkIn && today?.checkOut && (today.todayPlan || today.morningPlan) && (
         <div className={styles.planCard}>
-          {today.morningPlan && (<><div className={styles.planTitle}><FileText size={15} /> Morning Plan</div><textarea className={styles.textarea} value={today.morningPlan} readOnly /></>)}
-          {today.afternoonPlan && (<><div className={styles.planTitle} style={{ marginTop: '1rem' }}><FileText size={15} /> Afternoon Plan</div><textarea className={styles.textarea} value={today.afternoonPlan} readOnly /></>)}
+          {(today.todayPlan || today.morningPlan) && (<><div className={styles.planTitle}><FileText size={15} /> Today Plan</div><textarea className={styles.textarea} value={today.todayPlan || today.morningPlan || ''} readOnly /></>)}
           {today.dayCompletion && (<><div className={styles.planTitle} style={{ marginTop: '1rem' }}><CheckCircle size={15} /> Day Completion</div><textarea className={styles.textarea} value={today.dayCompletion} readOnly /></>)}
         </div>
       )}

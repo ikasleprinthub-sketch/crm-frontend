@@ -732,6 +732,7 @@
   padding: 0.5rem 0.875rem;
   color: var(--text-secondary);
   transition: border-color 0.2s;
+  position: relative;
 }
 .searchWrap:focus-within { border-color: var(--primary); color: var(--primary); }
 

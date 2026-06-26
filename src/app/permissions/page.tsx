@@ -9,7 +9,7 @@ import pageStyles from '../page.module.css';
 import {
   FileText, Clock, CheckCircle, XCircle, AlertCircle,
   Calendar, Send, Search, Users, Filter,
-  ChevronDown, ChevronRight, ShieldCheck,
+  ChevronDown, ChevronRight, ShieldCheck, X
 } from 'lucide-react';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -17,7 +17,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 
 type AttendanceStatus = 'NOT_MARKED' | 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'LEAVE' | 'SUNDAY';
 type PermissionStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
-type PermissionType   = 'HALF_DAY' | 'LEAVE' | 'LATE_PERMISSION';
+type PermissionType = 'HALF_DAY' | 'LEAVE' | 'LATE_PERMISSION';
 
 interface AttendanceRecord {
   id: string;
@@ -35,15 +35,15 @@ interface AttendanceRecord {
 
 const PERMISSION_TYPES: { value: PermissionType; label: string; color: string; bg: string }[] = [
   { value: 'LATE_PERMISSION', label: 'Late Permission', color: '#ea580c', bg: 'rgba(249,115,22,0.1)' },
-  { value: 'HALF_DAY',        label: 'Half Day',        color: '#b45309', bg: 'rgba(234,179,8,0.1)'  },
-  { value: 'LEAVE',           label: 'Full Leave',      color: '#4f46e5', bg: 'rgba(99,102,241,0.1)' },
+  { value: 'HALF_DAY', label: 'Half Day', color: '#b45309', bg: 'rgba(234,179,8,0.1)' },
+  { value: 'LEAVE', label: 'Full Leave', color: '#4f46e5', bg: 'rgba(99,102,241,0.1)' },
 ];
 
 const STATUS_META: Record<PermissionStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-  NONE:     { label: 'None',     color: '#9ca3af', bg: 'rgba(156,163,175,0.1)', icon: <AlertCircle size={11} /> },
-  PENDING:  { label: 'Pending',  color: '#b45309', bg: 'rgba(234,179,8,0.1)',   icon: <Clock size={11} /> },
-  APPROVED: { label: 'Approved', color: '#16a34a', bg: 'rgba(34,197,94,0.1)',   icon: <CheckCircle size={11} /> },
-  REJECTED: { label: 'Rejected', color: '#dc2626', bg: 'rgba(239,68,68,0.1)',   icon: <XCircle size={11} /> },
+  NONE: { label: 'None', color: '#9ca3af', bg: 'rgba(156,163,175,0.1)', icon: <AlertCircle size={11} /> },
+  PENDING: { label: 'Pending', color: '#b45309', bg: 'rgba(234,179,8,0.1)', icon: <Clock size={11} /> },
+  APPROVED: { label: 'Approved', color: '#16a34a', bg: 'rgba(34,197,94,0.1)', icon: <CheckCircle size={11} /> },
+  REJECTED: { label: 'Rejected', color: '#dc2626', bg: 'rgba(239,68,68,0.1)', icon: <XCircle size={11} /> },
 };
 
 function fmtDate(iso: string) {
@@ -52,8 +52,8 @@ function fmtDate(iso: string) {
 
 function roleLabel(role: string | undefined) {
   if (role === 'SUPER_ADMIN') return 'Super Admin';
-  if (role === 'ADMIN')       return 'Admin';
-  if (role === 'MANAGER')     return 'Team Leader';
+  if (role === 'ADMIN') return 'Admin';
+  if (role === 'MANAGER') return 'Team Leader';
   return 'Employee';
 }
 
@@ -172,29 +172,29 @@ function RequestCard({
 
 export default function PermissionsPage() {
   const { currentUser, showToast } = useApp();
-  const role      = currentUser?.role;
+  const role = currentUser?.role;
   const isManager = role === 'MANAGER';
-  const isAdmin   = role === 'ADMIN';
-  const isSuper   = role === 'SUPER_ADMIN';
+  const isAdmin = role === 'ADMIN';
+  const isSuper = role === 'SUPER_ADMIN';
   const canManage = isSuper || isAdmin || isManager;
 
-  const [loading,    setLoading]    = useState(true);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [allRequests, setAllRequests] = useState<AttendanceRecord[]>([]);
-  const [myHistory,   setMyHistory]   = useState<AttendanceRecord[]>([]);
+  const [myHistory, setMyHistory] = useState<AttendanceRecord[]>([]);
 
   // Default tab: managers/admins go to approvals first; employees go to apply
-  const [activeTab, setActiveTab]   = useState<'apply' | 'pending' | 'my'>(canManage ? 'pending' : 'apply');
+  const [activeTab, setActiveTab] = useState<'apply' | 'pending' | 'my'>(canManage ? 'pending' : 'apply');
 
   // Filter state
-  const [search,       setSearch]       = useState('');
+  const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'ALL' | PermissionStatus>('PENDING');
-  const [filterType,   setFilterType]   = useState<'ALL' | PermissionType>('ALL');
+  const [filterType, setFilterType] = useState<'ALL' | PermissionType>('ALL');
 
   // Apply form state
-  const [permType,   setPermType]   = useState<PermissionType>('LATE_PERMISSION');
+  const [permType, setPermType] = useState<PermissionType>('LATE_PERMISSION');
   const [permReason, setPermReason] = useState('');
-  const [permDate,   setPermDate]   = useState<Date | null>(new Date());
+  const [permDate, setPermDate] = useState<Date | null>(new Date());
 
   const loadRequests = useCallback(async () => {
     if (!canManage) return;
@@ -222,7 +222,7 @@ export default function PermissionsPage() {
   }, [loadRequests, loadMyHistory]);
 
   // Stats
-  const pendingCount  = useMemo(() => allRequests.filter(r => r.permission === 'PENDING').length,  [allRequests]);
+  const pendingCount = useMemo(() => allRequests.filter(r => r.permission === 'PENDING').length, [allRequests]);
   const approvedCount = useMemo(() => allRequests.filter(r => r.permission === 'APPROVED').length, [allRequests]);
   const rejectedCount = useMemo(() => allRequests.filter(r => r.permission === 'REJECTED').length, [allRequests]);
 
@@ -233,13 +233,13 @@ export default function PermissionsPage() {
       || r.user?.name?.toLowerCase().includes(q)
       || r.user?.email?.toLowerCase().includes(q);
     const matchStatus = filterStatus === 'ALL' || r.permission === filterStatus;
-    const matchType   = filterType   === 'ALL' || r.permissionType === filterType;
+    const matchType = filterType === 'ALL' || r.permissionType === filterType;
     return matchSearch && matchStatus && matchType;
   }).sort((a, b) => b.date.localeCompare(a.date)), [allRequests, search, filterStatus, filterType]);
 
   const handleApplyPermission = async () => {
     if (!permReason.trim()) { showToast('Missing Reason', 'Please provide a reason', 'error'); return; }
-    if (!permDate)           { showToast('Missing Date',   'Please select a date',    'error'); return; }
+    if (!permDate) { showToast('Missing Date', 'Please select a date', 'error'); return; }
     setSubmitting(true);
     try {
       const dateStr = permDate.toISOString().split('T')[0];
@@ -280,9 +280,9 @@ export default function PermissionsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
             {[
               { label: 'Total Requests', value: allRequests.length, color: 'var(--primary)', bg: 'rgba(26,75,140,0.08)', icon: <ShieldCheck size={18} /> },
-              { label: 'Pending',        value: pendingCount,        color: '#b45309',       bg: 'rgba(234,179,8,0.08)', icon: <Clock size={18} /> },
-              { label: 'Approved',       value: approvedCount,       color: '#16a34a',       bg: 'rgba(34,197,94,0.08)', icon: <CheckCircle size={18} /> },
-              { label: 'Rejected',       value: rejectedCount,       color: '#dc2626',       bg: 'rgba(239,68,68,0.08)', icon: <XCircle size={18} /> },
+              { label: 'Pending', value: pendingCount, color: '#b45309', bg: 'rgba(234,179,8,0.08)', icon: <Clock size={18} /> },
+              { label: 'Approved', value: approvedCount, color: '#16a34a', bg: 'rgba(34,197,94,0.08)', icon: <CheckCircle size={18} /> },
+              { label: 'Rejected', value: rejectedCount, color: '#dc2626', bg: 'rgba(239,68,68,0.08)', icon: <XCircle size={18} /> },
             ].map(s => (
               <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div style={{ width: 36, height: 36, borderRadius: '10px', background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -302,7 +302,8 @@ export default function PermissionsPage() {
           {canManage && (
             <button
               onClick={() => setActiveTab('pending')}
-              style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
+              style={{
+                flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
                 background: activeTab === 'pending' ? 'var(--primary)' : 'transparent',
                 color: activeTab === 'pending' ? '#fff' : 'var(--text-secondary)',
               }}>
@@ -316,7 +317,8 @@ export default function PermissionsPage() {
           )}
           <button
             onClick={() => setActiveTab('apply')}
-            style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
+            style={{
+              flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
               background: activeTab === 'apply' ? 'var(--primary)' : 'transparent',
               color: activeTab === 'apply' ? '#fff' : 'var(--text-secondary)',
             }}>
@@ -324,7 +326,8 @@ export default function PermissionsPage() {
           </button>
           <button
             onClick={() => setActiveTab('my')}
-            style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
+            style={{
+              flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
               background: activeTab === 'my' ? 'var(--primary)' : 'transparent',
               color: activeTab === 'my' ? '#fff' : 'var(--text-secondary)',
             }}>
@@ -350,8 +353,28 @@ export default function PermissionsPage() {
                   placeholder="Search by name or email…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem 0.75rem 0.5rem 2rem', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '0.5rem 2rem 0.5rem 2rem', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
                 />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    style={{
+                      position: 'absolute',
+                      right: 10,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-secondary)',
+                      padding: 0,
+                      display: 'flex'
+                    }}
+                    title="Clear search"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
               </div>
 
               {/* Status filter */}

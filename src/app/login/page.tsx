@@ -42,11 +42,11 @@ export default function LoginPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.logoSection}>
-          <Image 
-            src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'} 
-            alt="Capnero Logo" 
-            width={240} 
-            height={64} 
+          <Image
+            src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
+            alt="Capnero Logo"
+            width={240}
+            height={64}
             priority
             className={styles.logoImage}
           />

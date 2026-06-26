@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
-import { Bell, Search, Moon, Sun, User, Settings, LogOut, ChevronRight, Menu } from 'lucide-react';
+import { Bell, Search, Moon, Sun, User, Settings, LogOut, ChevronRight, Menu, X } from 'lucide-react';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -16,14 +16,14 @@ interface HeaderProps {
 export default function Header({ title, subtitle }: HeaderProps) {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
-  const { 
-    currentUser, logout, notifications, unreadCount, 
+  const {
+    currentUser, logout, notifications, unreadCount,
     markAsRead, markAllAsRead, toggleSidebar,
-    searchQuery, setSearchQuery 
+    searchQuery, setSearchQuery
   } = useApp();
   const [showNotif, setShowNotif] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  
+
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -56,13 +56,33 @@ export default function Header({ title, subtitle }: HeaderProps) {
         {/* Search */}
         <div className={styles.searchBox}>
           <Search size={16} className={styles.searchIcon} />
-          <input 
-            type="text" 
-            placeholder="Search anything..." 
-            className={styles.searchInput} 
+          <input
+            type="text"
+            placeholder="Search anything..."
+            className={styles.searchInput}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                padding: 0,
+                display: 'flex'
+              }}
+              title="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
         {/* Theme Toggle */}
@@ -72,14 +92,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
         {/* Notifications */}
         <div className={styles.popoverWrapper} ref={notifRef}>
-          <button 
-            className={`${styles.actionBtn} ${showNotif ? styles.active : ''}`} 
+          <button
+            className={`${styles.actionBtn} ${showNotif ? styles.active : ''}`}
             onClick={() => { setShowNotif(!showNotif); setShowProfile(false); }}
           >
             <Bell size={18} />
             {unreadCount > 0 && <span className={styles.notifDot}>{unreadCount}</span>}
           </button>
-          
+
           {showNotif && (
             <div className={styles.dropdown}>
               <div className={styles.dropdownHeader}>
@@ -91,13 +111,13 @@ export default function Header({ title, subtitle }: HeaderProps) {
                   <div className={styles.emptyNotif}>No notifications</div>
                 ) : (
                   notifications.map(n => (
-                    <div 
-                      key={n.id} 
+                    <div
+                      key={n.id}
                       className={`${styles.notifItem} ${!n.isRead ? styles.unread : ''}`}
                       onClick={() => {
                         if (!n.isRead) markAsRead(n.id);
                         setShowNotif(false);
-                        
+
                         // Handle redirection
                         if (n.link) {
                           router.push(n.link);
@@ -125,8 +145,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
         {/* Profile */}
         <div className={styles.popoverWrapper} ref={profileRef}>
-          <div 
-            className={styles.avatarBtn} 
+          <div
+            className={styles.avatarBtn}
             onClick={() => { setShowProfile(!showProfile); setShowNotif(false); }}
           >
             {currentUser?.name?.slice(0, 2).toUpperCase() ?? 'AU'}
@@ -141,6 +161,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                 <div className={styles.profileInfo}>
                   <p className={styles.profileName}>{currentUser?.name ?? 'Account'}</p>
                   <p className={styles.profileEmail}>{currentUser?.email ?? 'user@capnero.com'}</p>
+                                    <p className={styles.profileRole}>{currentUser?.role?.replace('_', ' ') ?? ''}</p>
                 </div>
               </div>
               <div className={styles.dropdownDivider} />
