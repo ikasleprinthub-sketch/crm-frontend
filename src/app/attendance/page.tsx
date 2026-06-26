@@ -16,7 +16,7 @@ import {
   Clock, LogIn, LogOut, FileText, Users, ShieldCheck, CheckCircle,
   XCircle, Search, RefreshCw, UserCheck, UserX, Calendar,
   ChevronDown, ChevronRight, Activity, History, ClipboardEdit,
-  Download, X,
+  Download, X, User,
 } from 'lucide-react';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -2202,35 +2202,111 @@ function RegularAttendancePage() {
 
 export default function AttendancePage() {
   const { currentUser } = useApp();
-  const isMonitor = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN';
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
+  const [viewMode, setViewMode] = useState<'monitor' | 'personal'>(
+    isSuperAdmin ? 'monitor' : 'personal'
+  );
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+
+  const isMonitor = isSuperAdmin || (isAdmin && viewMode === 'monitor');
+
+  // Dynamic header and title elements
+  const headerTitle = isMonitor ? "Attendance Monitor" : "Attendance";
+  const headerSubtitle = isMonitor ? "Organization-wide attendance command center" : "Track daily attendance, plans, and permissions";
+  
+  const pageTitle = isMonitor ? "Attendance Command Center" : "Attendance Management";
+  const pageDesc = isMonitor 
+    ? "Real-time monitoring — all teams, all roles, daily · weekly · monthly" 
+    : "Check in, fill your daily plan, manage permissions, and request corrections";
 
   return (
     <div className={pageStyles.wrapper}>
       <Sidebar />
       <main className={pageStyles.main}>
-        {isMonitor ? (
-          <>
-            <Header title="Attendance Monitor" subtitle="Organization-wide attendance command center" />
-            <div className={pageStyles.pageTitleRow}>
-              <div>
-                <h2>Attendance Command Center</h2>
-                <p>Real-time monitoring — all teams, all roles, daily · weekly · monthly</p>
+        {showDownloadModal && <DownloadReportModal onClose={() => setShowDownloadModal(false)} />}
+
+        <Header title={headerTitle} subtitle={headerSubtitle} />
+
+        <div className={pageStyles.pageTitleRow}>
+          <div>
+            <h2>{pageTitle}</h2>
+            <p>{pageDesc}</p>
+          </div>
+
+          {isAdmin && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-hover)', padding: '4px', borderRadius: '10px', width: 'fit-content', border: '1px solid var(--border)' }}>
+                <button
+                  onClick={() => setViewMode('personal')}
+                  style={{
+                    padding: '0.45rem 1.1rem',
+                    borderRadius: '7px',
+                    border: 'none',
+                    background: viewMode === 'personal' ? 'var(--background)' : 'transparent',
+                    color: viewMode === 'personal' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    fontWeight: 700,
+                    fontSize: '0.825rem',
+                    cursor: 'pointer',
+                    boxShadow: viewMode === 'personal' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <User size={13} /> My Attendance
+                </button>
+                <button
+                  onClick={() => setViewMode('monitor')}
+                  style={{
+                    padding: '0.45rem 1.1rem',
+                    borderRadius: '7px',
+                    border: 'none',
+                    background: viewMode === 'monitor' ? 'var(--background)' : 'transparent',
+                    color: viewMode === 'monitor' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    fontWeight: 700,
+                    fontSize: '0.825rem',
+                    cursor: 'pointer',
+                    boxShadow: viewMode === 'monitor' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <Activity size={13} /> Command Center
+                </button>
               </div>
+
+              {viewMode === 'personal' && (
+                <button
+                  onClick={() => setShowDownloadModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.55rem 1.1rem',
+                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: '0.825rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px -2px rgba(99,102,241,0.4)',
+                    transition: 'opacity 0.2s',
+                  }}
+                >
+                  <Download size={13} /> Download Report
+                </button>
+              )}
             </div>
-            <SuperAdminMonitor />
-          </>
-        ) : (
-          <>
-            <Header title="Attendance" subtitle="Track daily attendance, plans, and permissions" />
-            <div className={pageStyles.pageTitleRow}>
-              <div>
-                <h2>Attendance Management</h2>
-                <p>Check in, fill your daily plan, manage permissions, and request corrections</p>
-              </div>
-            </div>
-            <RegularAttendancePage />
-          </>
-        )}
+          )}
+        </div>
+
+        {isMonitor ? <SuperAdminMonitor /> : <RegularAttendancePage />}
       </main>
     </div>
   );
