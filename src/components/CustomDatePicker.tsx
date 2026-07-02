@@ -23,8 +23,9 @@ export default function CustomDatePicker({ label, selected, onChange, placeholde
           <CalendarIcon size={16} className={styles.filterInputIcon} style={{ left: '16px', position: 'absolute', top: '50%', transform: 'translateY(-50%)' }} />
           <DatePicker
             selected={selected}
-            onChange={(date) => { onChange(date); setIsOpen(false); }}
+            onChange={(date: Date | null) => { onChange(date); setIsOpen(false); }}
             onChangeRaw={(e) => {
+              if (!e) return;
               const target = e.target as HTMLInputElement;
               if (target && typeof target.value === 'string') {
                 // Remove all non-digit characters, cap at 8 digits (DDMMYYYY)

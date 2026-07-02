@@ -221,17 +221,17 @@ export default function UsersPage() {
                         <button
                           className={styles.iconBtn}
                           onClick={(e) => { e.stopPropagation(); setEditingUser(user); }}
-                          style={{ width: 28, height: 28, opacity: 0.6 }}
+                          style={{ width: 28, height: 28, color: 'var(--text-secondary)', background: 'var(--surface)', border: '1px solid var(--border)' }}
                         >
-                          <Edit2 size={14} color="#FFFFFF" />
+                          <Edit2 size={15} />
                         </button>
                         {user.role !== 'SUPER_ADMIN' && (
                           <button
                             className={styles.iconBtn}
-                            style={{ color: 'var(--accent-white)', width: 28, height: 28, opacity: 0.8 }}
+                            style={{ width: 28, height: 28, color: 'var(--accent-red)', background: 'var(--surface)', border: '1px solid var(--border)' }}
                             onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.id); }}
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={15} />
                           </button>
                         )}
                       </div>

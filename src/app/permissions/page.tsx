@@ -9,7 +9,8 @@ import pageStyles from '../page.module.css';
 import {
   FileText, Clock, CheckCircle, XCircle, AlertCircle,
   Calendar, Send, Search, Users, Filter,
-  ChevronDown, ChevronRight, ShieldCheck, X
+  ChevronDown, ChevronRight, ShieldCheck, X,
+  Edit2, Trash2
 } from 'lucide-react';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
@@ -195,13 +196,17 @@ export default function PermissionsPage() {
   const [permType, setPermType] = useState<PermissionType>('LATE_PERMISSION');
   const [permReason, setPermReason] = useState('');
   const [permDate, setPermDate] = useState<Date | null>(new Date());
+  const [editId, setEditId] = useState<string | null>(null);
 
   const loadRequests = useCallback(async () => {
     if (!canManage) return;
     try {
       const r = await api.get('/attendance/permission/team');
+      console.log("TEAM REQUESTS FETCHED:", r.data);
       if (r.data?.success) setAllRequests(r.data.data ?? []);
-    } catch { /* silent */ }
+    } catch (err: any) { 
+      console.error("TEAM REQUESTS ERROR:", err);
+    }
   }, [canManage]);
 
   const loadMyHistory = useCallback(async () => {
@@ -243,14 +248,38 @@ export default function PermissionsPage() {
     setSubmitting(true);
     try {
       const dateStr = permDate.toISOString().split('T')[0];
-      await api.post('/attendance/permission/apply', { permissionType: permType, reason: permReason, date: dateStr });
+      if (editId) {
+        await api.put(`/attendance/permission/my/${editId}`, { permissionType: permType, reason: permReason, date: dateStr });
+        showToast('Request Updated', 'Your leave request has been updated.', 'success');
+        setEditId(null);
+      } else {
+        await api.post('/attendance/permission/apply', { permissionType: permType, reason: permReason, date: dateStr });
+        showToast('Request Submitted', 'Your leave request has been sent for approval.', 'success');
+      }
       setPermReason('');
+      setPermDate(new Date());
       await loadMyHistory();
       setActiveTab('my');
-      showToast('Request Submitted', 'Your leave request has been sent for approval.', 'success');
     } catch (e: any) {
       showToast('Request Failed', e.response?.data?.message ?? 'Failed to apply permission', 'error');
     } finally { setSubmitting(false); }
+  };
+
+  const handleDeletePermission = (id: string) => {
+    showToast(
+      'Delete Request?',
+      'Are you sure you want to delete this pending request?',
+      'confirm',
+      async () => {
+        try {
+          await api.delete(`/attendance/permission/my/${id}`);
+          await loadMyHistory();
+          showToast('Deleted', 'Request deleted successfully.', 'success');
+        } catch (e: any) {
+          showToast('Error', e.response?.data?.message ?? 'Failed to delete request', 'error');
+        }
+      }
+    );
   };
 
   const handleApprove = async (id: string) => {
@@ -315,29 +344,33 @@ export default function PermissionsPage() {
               )}
             </button>
           )}
-          <button
-            onClick={() => setActiveTab('apply')}
-            style={{
-              flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
-              background: activeTab === 'apply' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'apply' ? '#fff' : 'var(--text-secondary)',
-            }}>
-            <FileText size={14} /> Apply Permission
-          </button>
-          <button
-            onClick={() => setActiveTab('my')}
-            style={{
-              flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
-              background: activeTab === 'my' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'my' ? '#fff' : 'var(--text-secondary)',
-            }}>
-            <Calendar size={14} /> My Requests
-            {myHistory.length > 0 && (
-              <span style={{ background: activeTab === 'my' ? 'rgba(255,255,255,0.25)' : 'var(--primary-light)', color: activeTab === 'my' ? '#fff' : 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, padding: '1px 6px', borderRadius: '20px' }}>
-                {myHistory.length}
-              </span>
-            )}
-          </button>
+          {!isSuper && (
+            <button
+              onClick={() => setActiveTab('apply')}
+              style={{
+                flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
+                background: activeTab === 'apply' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'apply' ? '#fff' : 'var(--text-secondary)',
+              }}>
+              <FileText size={14} /> Apply Permission
+            </button>
+          )}
+          {!isSuper && (
+            <button
+              onClick={() => setActiveTab('my')}
+              style={{
+                flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', transition: 'all 0.15s',
+                background: activeTab === 'my' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'my' ? '#fff' : 'var(--text-secondary)',
+              }}>
+              <Calendar size={14} /> My Requests
+              {myHistory.length > 0 && (
+                <span style={{ background: activeTab === 'my' ? 'rgba(255,255,255,0.25)' : 'var(--primary-light)', color: activeTab === 'my' ? '#fff' : 'var(--primary)', fontSize: '0.65rem', fontWeight: 800, padding: '1px 6px', borderRadius: '20px' }}>
+                  {myHistory.length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* ─── All Requests Tab ──────────────────────────────────────── */}
@@ -446,8 +479,8 @@ export default function PermissionsPage() {
                   <FileText size={16} />
                 </div>
                 <div>
-                  <p style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', margin: 0 }}>New Permission Request</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>Submit a request for leave, half-day, or late arrival</p>
+                  <p style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', margin: 0 }}>{editId ? 'Edit Permission Request' : 'New Permission Request'}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>{editId ? 'Modify your existing request' : 'Submit a request for leave, half-day, or late arrival'}</p>
                 </div>
               </div>
 
@@ -498,12 +531,26 @@ export default function PermissionsPage() {
                 </div>
 
                 {/* Submit */}
-                <button
-                  onClick={handleApplyPermission}
-                  disabled={submitting || !permReason.trim()}
-                  style={{ width: '100%', padding: '0.85rem', borderRadius: '10px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: submitting || !permReason.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !permReason.trim() ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontFamily: 'inherit', transition: 'opacity 0.15s' }}>
-                  <Send size={15} /> {submitting ? 'Submitting…' : 'Submit Request'}
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {editId && (
+                    <button
+                      onClick={() => {
+                        setEditId(null);
+                        setPermReason('');
+                        setPermDate(new Date());
+                        setActiveTab('my');
+                      }}
+                      style={{ flex: 1, padding: '0.85rem', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' }}>
+                      Cancel
+                    </button>
+                  )}
+                  <button
+                    onClick={handleApplyPermission}
+                    disabled={submitting || !permReason.trim()}
+                    style={{ flex: editId ? 2 : 1, padding: '0.85rem', borderRadius: '10px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: submitting || !permReason.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !permReason.trim() ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontFamily: 'inherit', transition: 'opacity 0.15s' }}>
+                    <Send size={15} /> {submitting ? (editId ? 'Updating…' : 'Submitting…') : (editId ? 'Update Request' : 'Submit Request')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -548,6 +595,29 @@ export default function PermissionsPage() {
                         <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{r.permissionReason}</p>
                       )}
                     </div>
+                    
+                    {r.permission === 'PENDING' && (
+                      <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+                        <button
+                          onClick={() => {
+                            setEditId(r.id);
+                            setPermType(r.permissionType || 'LEAVE');
+                            setPermReason(r.permissionReason || '');
+                            setPermDate(new Date(r.date));
+                            setActiveTab('apply');
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '0.35rem 0.6rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.75rem' }}
+                        >
+                          <Edit2 size={12} /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeletePermission(r.id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '0.35rem 0.6rem', borderRadius: '8px', border: 'none', background: 'rgba(239,68,68,0.1)', color: '#dc2626', cursor: 'pointer', fontWeight: 600, fontSize: '0.75rem' }}
+                        >
+                          <Trash2 size={12} /> Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })

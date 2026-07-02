@@ -592,7 +592,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     newSocket.on('connect_error', (err) => {
-      console.error('🔌 WebSocket connection error:', err.message);
+      console.warn('🔌 WebSocket connection error:', err.message);
     });
 
     newSocket.on('notification', (notif: Notification) => {

@@ -24,14 +24,7 @@ export default function StatCard({ label, value, icon, change, changeType = 'up'
           {icon}
         </div>
       </div>
-      {change && (
-        <p className={styles.change}>
-          <span className={changeType === 'down' ? styles.changeDown : styles.changeUp}>
-            {changeType === 'down' ? '↓' : '↑'} {change}
-          </span>
-          <span className={styles.changeLabel}> vs last month</span>
-        </p>
-      )}
+
     </div>
   );
 }

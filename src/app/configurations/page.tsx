@@ -347,7 +347,7 @@ function ConfigurationsContent() {
             {/* Summary stats */}
             <div className={styles.statGrid}>
               {[
-                { label: 'Total Teams', value: departments.length, color: 'var(--primary)', icon: <Layers size={20} /> },
+                { label: 'Total Departments', value: departments.length, color: 'var(--primary)', icon: <Layers size={20} /> },
                 { label: 'Active', value: activeDepts, color: 'var(--accent-green)', icon: <CheckCircle size={20} /> },
                 { label: 'Inactive', value: departments.length - activeDepts, color: 'var(--text-muted)', icon: <XCircle size={20} /> },
               ].map(s => (
@@ -363,10 +363,10 @@ function ConfigurationsContent() {
 
             <div className={styles.pageTitleRow} style={{ alignItems: 'center', marginBottom: '1.5rem' }}>
               <div>
-                <h2>Teams</h2>
-                <p>Manage functional teams and departments</p>
+                <h2>Departments</h2>
+                <p>Manage functional departments</p>
               </div>
-              <button className={styles.primaryBtn} onClick={openDeptAdd}><Plus size={18} /> Add Team</button>
+              <button className={styles.primaryBtn} onClick={openDeptAdd}><Plus size={18} /> Add Department</button>
             </div>
 
             {deptLoading ? (
@@ -445,13 +445,13 @@ function ConfigurationsContent() {
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Services and task categories</p>
                 </div>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Search size={14} style={{ position: 'absolute', left: '10px', color: 'var(--text-secondary)', pointerEvents: 'none' }} />
+                  <Search size={16} style={{ position: 'absolute', left: '12px', color: 'var(--text-secondary)', pointerEvents: 'none' }} />
                   <input
-                    className={styles.input}
+                    className={`${styles.input} ${styles.searchInput}`}
                     value={ttSearch}
                     onChange={e => setTtSearch(e.target.value)}
                     placeholder="Search task types..."
-                    style={{ paddingLeft: '2rem', paddingRight: '2rem', fontSize: '0.85rem', padding: '0.5rem 2rem 0.5rem 2rem', minWidth: 200 }}
+                    style={{ paddingTop: '0.5rem', paddingBottom: '0.5rem', paddingLeft: '2.5rem', paddingRight: '2rem', fontSize: '0.85rem', minWidth: 220 }}
                   />
                   {ttSearch && (
                     <button
@@ -630,15 +630,15 @@ function ConfigurationsContent() {
         )}
 
         {/* ── DEPT MODAL ── */}
-        <Modal isOpen={deptModal} onClose={() => setDeptModal(false)} title={deptEdit ? 'Edit Team' : 'Add Team'}>
+        <Modal isOpen={deptModal} onClose={() => setDeptModal(false)} title={deptEdit ? 'Edit Department' : 'Add Department'}>
           <form onSubmit={saveDept} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Team Name *</label>
-              <input className={styles.input} required value={deptForm.name} onChange={e => setDeptForm({ ...deptForm, name: e.target.value })} placeholder="e.g. Book Keeping Team" />
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Department Name *</label>
+              <input className={styles.input} required value={deptForm.name} onChange={e => setDeptForm({ ...deptForm, name: e.target.value })} placeholder="e.g. Book Keeping Department" />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
               <button type="button" className={styles.filterBtn} onClick={() => setDeptModal(false)}>Cancel</button>
-              <button type="submit" className={styles.submitBtn}>{deptEdit ? 'Update' : 'Create Team'}</button>
+              <button type="submit" className={styles.submitBtn}>{deptEdit ? 'Update' : 'Create Department'}</button>
             </div>
           </form>
         </Modal>

@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
-import { Bell, Search, Moon, Sun, User, Settings, LogOut, ChevronRight, Menu, X } from 'lucide-react';
+import { Bell, Moon, Sun, User, Settings, LogOut, ChevronRight, Menu } from 'lucide-react';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -53,37 +53,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
       </div>
 
       <div className={styles.actions}>
-        {/* Search */}
-        <div className={styles.searchBox}>
-          <Search size={16} className={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Search anything..."
-            className={styles.searchInput}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--text-secondary)',
-                padding: 0,
-                display: 'flex'
-              }}
-              title="Clear search"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
+
 
         {/* Theme Toggle */}
         <button className={styles.actionBtn} onClick={toggleTheme} title="Toggle theme">

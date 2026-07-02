@@ -557,7 +557,6 @@ export function AddTaskForm({ onSubmit, initialLeadId }: { onSubmit: (data: any)
               placeholderText="Select start date"
               required
               minDate={new Date()}
-              portalId="root"
               popperClassName="react-datepicker-popper"
               calendarClassName="premium-datepicker"
               dayClassName={() => 'premium-day'}
@@ -588,7 +587,6 @@ export function AddTaskForm({ onSubmit, initialLeadId }: { onSubmit: (data: any)
               placeholderText="Select completion date"
               required
               minDate={new Date()}
-              portalId="root"
               popperClassName="react-datepicker-popper"
               calendarClassName="premium-datepicker"
               dayClassName={() => 'premium-day'}
