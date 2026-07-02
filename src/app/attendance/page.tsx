@@ -17,7 +17,7 @@ import {
 import {
   Clock, LogIn, LogOut, FileText, Users, ShieldCheck, CheckCircle,
   XCircle, Search, RefreshCw, UserCheck, UserX, Calendar,
-  ChevronDown, ChevronRight, Activity, History, ClipboardEdit, X
+  ChevronDown, ChevronRight, Activity, History, ClipboardEdit, X, Download, User
 } from 'lucide-react';
 import CustomDatePicker from '@/components/CustomDatePicker';
 
