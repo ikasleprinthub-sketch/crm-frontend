@@ -647,10 +647,15 @@ function SuperAdminMonitor() {
   );
 
   const pieData = useMemo(() => {
-    const counts: Partial<Record<AttendanceStatus, number>> = {};
-    eligibleToday.forEach(r => { counts[r.status] = (counts[r.status] ?? 0) + 1; });
+    const counts: Partial<Record<AttendanceStatus, number>> = { PRESENT: 0, LATE: 0, ABSENT: 0, HALF_DAY: 0 };
+    eligibleToday.forEach(r => {
+      let s = r.status;
+      if (s === 'PRESENT' && (r.checkInStatus === 'LATE' || r.checkInStatus === 'VERY_LATE')) {
+        s = 'LATE';
+      }
+      counts[s] = (counts[s] ?? 0) + 1;
+    });
     return (Object.entries(counts) as [AttendanceStatus, number][])
-      .filter(([, v]) => v > 0)
       .map(([name, value]) => ({ name, value }));
   }, [eligibleToday]);
 
@@ -992,8 +997,15 @@ function SuperAdminMonitor() {
                       </div>
                     ))}
                   </div>
-                  <div className={styles.progressBarWrap}>
-                    <div className={styles.progressBar} style={{ width: `${rs.rate}%`, background: barColor }} />
+                  <div className={styles.progressBarWrap} style={{ display: 'flex' }}>
+                    {rs.total > 0 && (
+                      <>
+                        <div className={styles.progressBar} style={{ width: `${(rs.present / rs.total) * 100}%`, background: '#16a34a', borderRadius: 0 }} title={`Present: ${rs.present}`} />
+                        <div className={styles.progressBar} style={{ width: `${(rs.late / rs.total) * 100}%`, background: '#f97316', borderRadius: 0 }} title={`Late: ${rs.late}`} />
+                        <div className={styles.progressBar} style={{ width: `${(rs.halfDay / rs.total) * 100}%`, background: '#b45309', borderRadius: 0 }} title={`Half Day: ${rs.halfDay}`} />
+                        <div className={styles.progressBar} style={{ width: `${(rs.absent / rs.total) * 100}%`, background: '#dc2626', borderRadius: 0 }} title={`Absent: ${rs.absent}`} />
+                      </>
+                    )}
                   </div>
                   <div className={styles.roleTotal}>{rs.total} total employees</div>
                 </div>
@@ -2177,9 +2189,9 @@ export default function AttendancePage() {
 
   // Dynamic header and title elements
   const headerTitle = isMonitor ? "Attendance Monitor" : "Attendance";
-  const headerSubtitle = isMonitor ? "Organization-wide attendance command center" : "Track daily attendance, plans, and permissions";
+  const headerSubtitle = isMonitor ? "Organization-wide attendance monitor" : "Track daily attendance, plans, and permissions";
   
-  const pageTitle = isMonitor ? "Attendance Command Center" : "Attendance Management";
+  const pageTitle = isMonitor ? "Attendance Monitor" : "Attendance Management";
   const pageDesc = isMonitor 
     ? "Real-time monitoring — all teams, all roles, daily · weekly · monthly" 
     : "Check in, fill your daily plan, manage permissions, and request corrections";
@@ -2239,7 +2251,7 @@ export default function AttendancePage() {
                     gap: '0.35rem',
                   }}
                 >
-                  <Activity size={13} /> Command Center
+                  <Activity size={13} /> Monitor
                 </button>
               </div>
 

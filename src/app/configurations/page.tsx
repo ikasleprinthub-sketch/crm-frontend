@@ -632,19 +632,9 @@ function ConfigurationsContent() {
         {/* ── DEPT MODAL ── */}
         <Modal isOpen={deptModal} onClose={() => setDeptModal(false)} title={deptEdit ? 'Edit Team' : 'Add Team'}>
           <form onSubmit={saveDept} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Team Name *</label>
-                <input className={styles.input} required value={deptForm.name} onChange={e => setDeptForm({ ...deptForm, name: e.target.value })} placeholder="e.g. Book Keeping Team" />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Code</label>
-                <input className={styles.input} value={deptForm.code} onChange={e => setDeptForm({ ...deptForm, code: e.target.value })} placeholder="e.g. BKT" style={{ width: 90, textTransform: 'uppercase' }} maxLength={10} />
-              </div>
-            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Description</label>
-              <textarea className={styles.input} value={deptForm.description} onChange={e => setDeptForm({ ...deptForm, description: e.target.value })} placeholder="Brief description of this team..." rows={2} style={{ resize: 'vertical' }} />
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Team Name *</label>
+              <input className={styles.input} required value={deptForm.name} onChange={e => setDeptForm({ ...deptForm, name: e.target.value })} placeholder="e.g. Book Keeping Team" />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
               <button type="button" className={styles.filterBtn} onClick={() => setDeptModal(false)}>Cancel</button>
